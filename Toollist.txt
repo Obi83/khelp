@@ -1,0 +1,27 @@
+### Tool Installing
+
+## This step focuses on installing essential tools and utilities that enhance the functionality of your Fedora system. The script performs the following actions:
+
+# Installing Flatpak and Gnome Platform: 
+The script installs the org.gnome.Platform/x86_64/47 package using Flatpak, which provides a runtime for Gnome applications.
+
+# Adding RPM Fusion Repositories: 
+It adds both free and nonfree RPM Fusion repositories, which are popular sources for additional software not included in the default Fedora repositories.
+
+# Installing Essential Packages: 
+The script checks for and installs a list of useful tools, including:
+
+        terminator:          A terminal emulator with advanced features.
+        kali-linux-large:    A comprehensive package of tools for Kali Linux.
+	kali-tools-windows-resources: Tools useful for Windows resources.
+        shellcheck:          A static analysis tool for shell scripts.
+        inxi:                A system information tool.
+        bpytop: 	     A resource monitor.
+	htop: 		     An interactive process viewer.
+        ufw:                 A user-friendly firewall.
+        tor:                 Anonymity network client.
+        fastfetch:           A fast system information tool.
+        guake:               A dropdown terminal.
+        torbrowser-launcher: A tool to help download and install the Tor Browser.
+        
+        
