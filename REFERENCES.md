@@ -3,12 +3,13 @@
 ### This script was created by Obi83 with assistance from AI. 
 ### Here are the references and sources that inspired parts of this script:
 
-1. **Flatpak Installation Command**
-   - Source: 
-   
+1. **Package Installation Command**
+   - Source: Kali-Tweaks.
+   - Description: Common commands to install 2 additional metapackages of Kali-Tweaks.
+
 2. **System Update and Cleanup Commands**
-   - Source: Fedora Documentation and various Fedora community contributions.
-   - Description: Common commands used to update and clean Fedora systems.
+   - Source: Kali Documentation and various Kali community contributions.
+   - Description: Common commands used to update and clean Kali systems.
 
 3. **Package Installation Script**
    - Source: General scripting practices and package management guides for Kali-Linux.
