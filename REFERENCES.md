@@ -1,7 +1,7 @@
-### References and Sources
+# References and Sources
 
-# This script was created by Obi83 with assistance from AI. 
-# Here are the references and sources that inspired parts of this script:
+### This script was created by Obi83 with assistance from AI. 
+### Here are the references and sources that inspired parts of this script:
 
 1. **Flatpak Installation Command**
    - Source: 
