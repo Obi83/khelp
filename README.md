@@ -3,6 +3,8 @@
 `khelp` is a helper script designed for fresh Kali Linux installations. It automates the process of updating the system, installing useful packages, useful tools and configuring services to save time and effort. This script also includes features to spoof the hostname and MAC address for enhanced privacy. This script was tested on Kali Linux - Gnome Desktop. 
 
 
+![Fedora 41 Workstation - fastfetch](https://github.com/Obi83/khelp/blob/main/media/fastfetch.png)
+
 
 ### Features
 - Full update/upgrade cycle
@@ -14,6 +16,9 @@
 
 
 # Detailed Steps
+
+
+![Fedora 41 Workstation - khelp](https://github.com/Obi83/khelp/blob/main/media/khelp.png)
 
 
 ### 1. Full Update Cycle
@@ -60,6 +65,10 @@ For additional privacy, the script includes a service that spoofs the MAC addres
 - **Changing the MAC Address**: Sets the new MAC address.
 - **Displaying the New MAC Address**: Confirms the change by displaying the new MAC address.
 - **Systemd Service**: Ensures the MAC address is changed at boot.
+
+
+![Fedora 41 Workstation - spoofer](https://github.com/Obi83/khelp/blob/main/media/hogen-mspoo1.png)
+![Fedora 41 Workstation - spoofer](https://github.com/Obi83/khelp/blob/main/media/hogen-mspoo2.png)
 
 
 # Installation
