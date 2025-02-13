@@ -74,19 +74,11 @@ if ! sudo make install; then
     exit 1
 fi
 
-# Start kalitorify
-if ! sudo kalitorify -t; then
-    echo "Failed to start kalitorify."
-    exit 1
-fi
-
 echo "kalitorify has been successfully installed."
 
-exit
 
 # Create the kato.sh file 
 echo "create: /usr/local/bin/kato.sh"
-
 cat << 'EOF' > /usr/local/bin/kato.sh
 #!/bin/bash
 
@@ -101,10 +93,12 @@ sudo kalitorify -t
 exit
 EOF
 
+# Make the hogen.sh file executable
+chmod +x /usr/local/bin/kato.sh
+
 
 # create a restart script for kalitorify
 echo "create: /usr/local/bin/kator.sh"
-
 cat << 'EOF' > /usr/local/bin/kator.sh
 #!/bin/bash
 
@@ -119,9 +113,7 @@ sudo kalitorify -r
 exit
 EOF
 
-
 # Make the hogen.sh file executable
-chmod +x /usr/local/bin/kato.sh
 chmod +x /usr/local/bin/kator.sh
 
 
@@ -328,6 +320,30 @@ echo "create: /usr/local/bin/verify.sh"
 cat << 'EOF' > /usr/local/bin/verify.sh
 #!/bin/bash
 
+# Function to detect the default terminal
+detect_terminal() {
+    if command -v gnome-terminal &> /dev/null; then
+        echo "gnome-terminal"
+    elif command -v konsole &> /dev/null; then
+        echo "konsole"
+    elif command -v xterm &> /dev/null; then
+        echo "xterm"
+    elif command -v lxterminal &> /dev/null; then
+        echo "lxterminal"
+    else
+        echo ""
+    fi
+}
+
+# Detect the default terminal
+terminal=$(detect_terminal)
+
+# If no terminal is found, exit the script with an error
+if [ -z "$terminal" ]; then
+    echo "No supported terminal emulator found. Please install one of the following: gnome-terminal, konsole, xterm, lxterminal."
+    exit 1
+fi
+
 # Verify hostname change
 sudo hostnamectl
 echo "hostname changed"
@@ -349,12 +365,12 @@ echo "create: /etc/systemd/system/verify.service"
 cat << 'EOF' > /etc/systemd/system/verify.service
 [Unit]
 Description=Verify khelp.sh setup
-After=network-online.target
+After=network-online.target graphical.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/verify.sh
+ExecStart=/usr/bin/env bash -c 'terminal=$(source /usr/local/bin/verify.sh; detect_terminal) && $terminal -hold -e /usr/local/bin/verify.sh'
 Restart=on-failure
 RestartSec=3
 
