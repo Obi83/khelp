@@ -41,7 +41,22 @@ echo ""
 
 # Install helper packages
 apt install -y kali-linux-large kali-tools-windows-resources terminator bpytop htop shellcheck seclists inxi ufw tor fastfetch guake 
-echo "installation of useful helpers is done. Enjoy!"
+
+# Function to download kalitorify
+download_kalitorify() {
+    echo "Downloading kalitorify..."
+    user_home=$(eval echo ~${SUDO_USER})
+    if [ -z "$user_home" ]; then
+        echo "Could not determine the home directory of the user."
+        exit 1
+    fi
+    git clone https://github.com/brainfucksec/kalitorify.git "$user_home/kalitorify"
+    echo "kalitorify has been downloaded to $user_home/kalitorify."
+}
+
+# Download kalitorify
+download_kalitorify
+
 echo "khelp will create now: hogen - hostname generator service."
 echo ""
 
@@ -110,7 +125,6 @@ chmod +x /etc/systemd/system/hogen.service
 systemctl daemon-reload
 systemctl enable hogen.service
 
-echo "The hogen spoofing service has been installed and enabled."
 echo "khelp will now create: mspoo - mac spoofy service"
 echo ""
 
@@ -214,8 +228,14 @@ chmod +x /etc/systemd/system/mspoo.service
 # Enable the new service and start it
 systemctl daemon-reload
 systemctl enable mspoo.service
-echo "The mspoo spoofing service has been installed and enabled."
-
+echo ""
+echo ""
+echo "systeme is fresh and clean!"
+echo "tools and packages are installed."
+echo "hogen spoofing service has been installed and enabled."
+echo "mspoo spoofing service has been installed and enabled."
+echo "kalitorify has been downloaded to $user_home/kalitorify."
+echo ""
 echo ""
 echo "##*khelp*##+##*khelp*##"
 echo "##*khelp*##+##*khelp*##"
@@ -239,9 +259,6 @@ echo ""
 echo "##*khelp*##+##*khelp*##"
 echo "##*khelp*##+##*khelp*##"
 echo ""
-# Last Words
-echo "Happy to say everything is done! khelp updated your systeme,"
-echo "installed some useful helpers, and spoofed your hostname and MAC address."
 echo ""
 
 # Reboot the system
