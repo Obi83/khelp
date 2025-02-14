@@ -307,21 +307,25 @@ systemctl enable mspoo.service
 configure_ufw() {
     echo "Configuring UFW firewall..."
 
+    # Enable UFW service at boot
+    sudo systemctl enable ufw
+
     # Enable UFW
-    ufw --force enable
+    sudo ufw --force enable
 
     # Set default policies
-    ufw default deny incoming
-    ufw default allow outgoing
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
 
     # Allow SSH
-    ufw allow ssh
+    sudo ufw allow ssh
 
     # Enable logging
-    ufw logging on
+    sudo ufw logging on
 
     echo "UFW firewall configured successfully."
 }
+
 # Call the function to configure UFW
 configure_ufw
 
@@ -329,6 +333,9 @@ configure_ufw
 echo "Creating /usr/local/bin/khelp-verify.sh..."
 cat << 'EOF' > /usr/local/bin/khelp-verify.sh
 #!/bin/bash
+
+# Log file
+LOGFILE="/var/log/khelp-verify.log"
 
 # Function to detect the default terminal
 detect_terminal() {
@@ -351,30 +358,28 @@ detect_terminal() {
 
 # Detect the default terminal
 terminal=$(detect_terminal)
+echo "Detected terminal: $terminal" | tee -a $LOGFILE
 
 # If no terminal is found, exit the script with an error
 if [ -z "$terminal" ]; then
-    echo "No supported terminal emulator found. Please install one of the following: gnome-terminal, konsole, xterm, lxterminal, xfce4-terminal, terminator."
+    echo "No supported terminal emulator found. Please install one of the following: gnome-terminal, konsole, xterm, lxterminal, xfce4-terminal, terminator." | tee -a $LOGFILE
     exit 1
 fi
 
 # Verify hostname change
-sudo hostnamectl
-echo "hostname changed"
+sudo hostnamectl | tee -a $LOGFILE
+echo "hostname changed" | tee -a $LOGFILE
 
 # Verify MAC spoof
-sudo ip link show
-echo "MAC address spoofed"
+sudo ip link show | tee -a $LOGFILE
+echo "MAC address spoofed" | tee -a $LOGFILE
 
 # Verify kalitorify
-sudo kalitorify -s
-echo "Tor routing active"
+sudo kalitorify -s | tee -a $LOGFILE
+echo "Tor routing active" | tee -a $LOGFILE
 
 exit
 EOF
-
-# Make the khelp-verify.sh script executable
-chmod +x /usr/local/bin/khelp-verify.sh
 
 # Make the khelp-verify.sh script executable
 chmod +x /usr/local/bin/khelp-verify.sh
@@ -388,8 +393,11 @@ After=network-online.target graphical.target
 Wants=network-online.target
 
 [Service]
-Type=oneshot
-ExecStart=/usr/bin/env bash -c 'terminal=$(source /usr/local/bin/khelp-verify.sh; detect_terminal) && $terminal -hold -e /usr/local/bin/khelp-verify.sh'
+Type=idle
+ExecStart=/usr/local/bin/khelp-verify.sh
+ExecStartPost=/bin/bash -c '$terminal -e "cat /var/log/khelp-verify.log"'
+StandardOutput=journal
+StandardError=journal
 Restart=on-failure
 RestartSec=3
 
@@ -404,6 +412,9 @@ chmod 644 /etc/systemd/system/khelp-verify.service
 echo "Setting up khelp-verify service..."
 sudo systemctl daemon-reload
 sudo systemctl enable khelp-verify.service
+
+# Check the status of the service
+sudo systemctl status khelp-verify.service
 
 echo ""
 echo "khelp setups a service to verify config on startups"
