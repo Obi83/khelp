@@ -21,6 +21,7 @@ The script checks for and installs a list of useful tools, including:
         ufw:                 A user-friendly firewall.
         tor:                 Anonymity network client.
         fastfetch:           A fast system information tool.
+	guake: 		     A dropdown terminal.     
         torbrowser-launcher: A tool to help download and install the Tor Browser.
         
         
