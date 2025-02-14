@@ -1,6 +1,6 @@
 # khelp - Ultimate Kali Linux Post-Install Helper
 
-`khelp` is a helper script designed for fresh Kali Linux installations. It automates the process of updating the system, installing useful packages, useful tools and configuring services to save time and effort. This script also includes features to spoof the hostname and MAC address for enhanced privacy. This script was tested on Kali Linux - Gnome Desktop. 
+`khelp` is a helper script designed for fresh Kali Linux installations. It automates the process of updating the system, installing useful packages, useful tools and configuring services to save time and effort. This script also includes features to spoof the hostname and MAC address for enhanced privacy. This script was tested on Kali Linux - Gnome Desktop (bare metal) and inside VMware.
 
 
 ![Fedora 41 Workstation - fastfetch](https://github.com/Obi83/khelp/blob/main/media/fastfetch.png)
