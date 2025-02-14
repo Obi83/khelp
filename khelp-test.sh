@@ -76,19 +76,13 @@ fi
 
 echo "kalitorify has been successfully installed."
 
-
 # Create the kato.sh file 
 echo "create: /usr/local/bin/kato.sh"
 cat << 'EOF' > /usr/local/bin/kato.sh
 #!/bin/bash
 
-# Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root."
-    exit 1
-
 # start kalitorify auto 
-sudo kalitorify -t
+sudo kalitorify --tor
 
 exit
 EOF
@@ -102,20 +96,14 @@ echo "create: /usr/local/bin/kator.sh"
 cat << 'EOF' > /usr/local/bin/kator.sh
 #!/bin/bash
 
-# Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root."
-    exit 1
-
-# start kalitorify auto 
-sudo kalitorify -r
+# restart kalitorify auto 
+sudo kalitorify --restart
 
 exit
 EOF
 
 # Make the hogen.sh file executable
 chmod +x /usr/local/bin/kator.sh
-
 
 echo "create: /etc/systemd/system/kato.service"
 echo ""
@@ -315,9 +303,9 @@ chmod +x /etc/systemd/system/mspoo.service
 systemctl daemon-reload
 systemctl enable mspoo.service
 
-# Create the verify.sh script
-echo "create: /usr/local/bin/verify.sh"
-cat << 'EOF' > /usr/local/bin/verify.sh
+# Create the khelp-verify.sh script
+echo "create: /usr/local/bin/khelp-verify.sh"
+cat << 'EOF' > /usr/local/bin/khelp-verify.sh
 #!/bin/bash
 
 # Function to detect the default terminal
@@ -355,14 +343,16 @@ echo "mac address spoofed"
 # Verify kalitorify
 sudo kalitorify -s
 echo "tor routing active"
+
+exit
 EOF
 
 # Make the verify.sh script executable
-chmod +x /usr/local/bin/verify.sh
+chmod +x /usr/local/bin/khelp-verify.sh
 
-# Create the verify.service file
-echo "create: /etc/systemd/system/verify.service"
-cat << 'EOF' > /etc/systemd/system/verify.service
+# Create the khelp-verify.service file
+echo "create: /etc/systemd/system/khelp-verify.service"
+cat << 'EOF' > /etc/systemd/system/khelp-verify.service
 [Unit]
 Description=Verify khelp.sh setup
 After=network-online.target graphical.target
@@ -370,7 +360,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/env bash -c 'terminal=$(source /usr/local/bin/verify.sh; detect_terminal) && $terminal -hold -e /usr/local/bin/verify.sh'
+ExecStart=/usr/bin/env bash -c 'terminal=$(source /usr/local/bin/khelp-verify.sh; detect_terminal) && $terminal -hold -e /usr/local/bin/khelp-verify.sh'
 Restart=on-failure
 RestartSec=3
 
@@ -379,24 +369,20 @@ WantedBy=multi-user.target
 EOF
 
 # Set permissions for the verify.service file
-chmod +x /etc/systemd/system/verify.service
+chmod +x /etc/systemd/system/khelp-verify.service
 
 # Reload systemd to recognize the new service, enable it, and start it
 systemctl daemon-reload
-systemctl enable verify.service
+systemctl enable khelp-verify.service
 
 echo ""
 echo "khelp setups a service to verify config on startups"
 echo ""
-
-
 echo ""
-echo ""
-echo "systeme is fresh and clean!"
-echo "tools and packages are installed."
+echo "systeme is fresh and clean! tools and packages are installed!"
 echo "hogen spoofing service has been installed and enabled."
 echo "mspoo spoofing service has been installed and enabled."
-echo "kalitorify has been downloaded to $user_home/kalitorify and installed."
+echo "kalitorify has been downloaded to $user_home/kalitorify, installed and enabled."
 echo ""
 echo "configuration is done. script will reboot and show all changes."
 echo ""
@@ -426,6 +412,7 @@ echo ""
 echo ""
 echo "let the script reboot to show all changes after startup."
 # Reboot the system
+echo ""
 echo "Rebooting the system to apply changes in 1 minute..."
 shutdown -r +1
 
