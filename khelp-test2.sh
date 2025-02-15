@@ -329,125 +329,44 @@ configure_ufw() {
 # Call the function to configure UFW
 configure_ufw
 
-# Create the khelp-verify.sh script
-echo "create: /usr/local/bin/khelp-verify.sh"
-cat << 'EOF' > /usr/local/bin/khelp-verify.sh
+# script and service for ufw
+echo "create: /usr/local/bin/ufw.sh"
+cat << 'EOF' > /usr/local/bin/ufwe.sh
 #!/bin/bash
 
-# Function to display the hostname information
-show_hostname() {
-  echo "Hostname Information:"
-  hostnamectl
-  echo ""
-}
-
-# Function to display the MAC address information
-show_mac_address() {
-  echo "MAC Address Information:"
-  ip link show
-  echo ""
-}
-
-# Function to display the status of kalitorify and tor
-show_kalitorify_status() {
-  echo "Kalitorify and Tor Status:"
-  kalitorify -s
-  echo ""
-}
-
-# Function to display the status of UFW
-show_ufw_status() {
-  echo "UFW Status:"
-  sudo ufw status
-  echo ""
-}
-
-# Main function to execute all tasks
-main() {
-  show_hostname
-  show_mac_address
-  show_kalitorify_status
-  show_ufw_status
-}
-
-# Execute the main function
-main
+# make sure ufw starts on startup
+sudo ufw enable
 
 exit
 EOF
 
-# set permissions for the script
-chmod +x /usr/local/bin/khelp-verfiy.sh
+# Make the hogen.sh file executable
+chmod +x /usr/local/bin/ufwe.sh
 
+echo "create: /etc/systemd/system/ufw.service"
 echo ""
-# Create khelp-verify.service file with systemd unit configuration
-echo "create: /etc/systemd/system/khelp-verify.service"
-cat << 'EOF' > /etc/systemd/system/khelp-verify.service
+# Create the ufw.service file with systemd unit configuration
+cat << 'EOF' > /etc/systemd/system/ufwe.service
 [Unit]
-Description=Show Script Results After Reboot
-After=multi-user.target
+Description=ufw service for startups
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-Type=simple
-ExecStart=/usr/local/bin/khelp-verify.sh
-StandardOutput=tty
-TTYPath=/dev/tty1
+ExecStart=/usr/local/bin/ufwe.sh
+Restart=on-failure
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Set permissions for the service file
-chmod +x /etc/systemd/system/khelp-verify.service
+# Set the correct permissions for the service file
+chmod +x /etc/systemd/system/ufwe.service
 
-# Enable the new service
+# Reload systemd to recognize the new service ans enable it
 systemctl daemon-reload
-systemctl enable khelp-verify.service
-
-# Create result script to show changes
-echo "create: /usr/local/bin/resu.sh"
-cat << 'EOF' > /usr/local/bin/resu.sh
-#!/bin/bash
-
-# Path to your script
-SCRIPT_PATH="/path/to/your/script.sh"
-
-# List of terminals to check
-TERMINALS=(
-  "gnome-terminal -- bash -c \"$SCRIPT_PATH; exec bash\""
-  "xfce4-terminal -- bash -c \"$SCRIPT_PATH; exec bash\""
-  "konsole -e bash -c \"$SCRIPT_PATH; exec bash\""
-  "xterm -e bash -c \"$SCRIPT_PATH; exec bash\""
-  "lxterminal -e bash -c \"$SCRIPT_PATH; exec bash\""
-  "mate-terminal -- bash -c \"$SCRIPT_PATH; exec bash\""
-  "tilix -e bash -c \"$SCRIPT_PATH; exec bash\""
-  "terminator -x bash -c \"$SCRIPT_PATH; exec bash\""
-  "urxvt -e bash -c \"$SCRIPT_PATH; exec bash\""
-  "alacritty -e bash -c \"$SCRIPT_PATH; exec bash\""
-  "kitty bash -c \"$SCRIPT_PATH; exec bash\""
-  "st -e bash -c \"$SCRIPT_PATH; exec bash\""
-  "eterm -e bash -c \"$SCRIPT_PATH; exec bash\""
-)
-
-# Function to check and run the script with the available terminal
-launch_script() {
-  for terminal in "${TERMINALS[@]}"; do
-    if command -v $(echo $terminal | awk '{print $1}') &> /dev/null; then
-      eval $terminal
-      return
-    fi
-  done
-  echo "No suitable terminal found."
-}
-
-# Execute the function
-launch_script
-
-exit
-EOF
-
-# Set permissions for result script
-chmod +x /usr/local/bin/resu.sh
+systemctl enable ufwe.service
 
 echo ""
 echo "khelp setups a service to verify config on startups"
