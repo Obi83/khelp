@@ -330,91 +330,124 @@ configure_ufw() {
 configure_ufw
 
 # Create the khelp-verify.sh script
-echo "Creating /usr/local/bin/khelp-verify.sh..."
+echo "create: /usr/local/bin/khelp-verify.sh"
 cat << 'EOF' > /usr/local/bin/khelp-verify.sh
 #!/bin/bash
 
-# Log file
-LOGFILE="/var/log/khelp-verify.log"
-
-# Function to detect the default terminal
-detect_terminal() {
-    if command -v gnome-terminal &> /dev/null; then
-        echo "gnome-terminal"
-    elif command -v konsole &> /dev/null; then
-        echo "konsole"
-    elif command -v xterm &> /dev/null; then
-        echo "xterm"
-    elif command -v lxterminal &> /dev/null; then
-        echo "lxterminal"
-    elif command -v xfce4-terminal &> /dev/null; then
-        echo "xfce4-terminal"
-    elif command -v terminator &> /dev/null; then
-        echo "terminator"
-    else
-        echo ""
-    fi
+# Function to display the hostname information
+show_hostname() {
+  echo "Hostname Information:"
+  hostnamectl
+  echo ""
 }
 
-# Detect the default terminal
-terminal=$(detect_terminal)
-echo "Detected terminal: $terminal" | tee -a $LOGFILE
+# Function to display the MAC address information
+show_mac_address() {
+  echo "MAC Address Information:"
+  ip link show
+  echo ""
+}
 
-# If no terminal is found, exit the script with an error
-if [ -z "$terminal" ]; then
-    echo "No supported terminal emulator found. Please install one of the following: gnome-terminal, konsole, xterm, lxterminal, xfce4-terminal, terminator." | tee -a $LOGFILE
-    exit 1
-fi
+# Function to display the status of kalitorify and tor
+show_kalitorify_status() {
+  echo "Kalitorify and Tor Status:"
+  kalitorify -s
+  echo ""
+}
 
-# Verify hostname change
-sudo hostnamectl | tee -a $LOGFILE
-echo "hostname changed" | tee -a $LOGFILE
+# Function to display the status of UFW
+show_ufw_status() {
+  echo "UFW Status:"
+  sudo ufw status
+  echo ""
+}
 
-# Verify MAC spoof
-sudo ip link show | tee -a $LOGFILE
-echo "MAC address spoofed" | tee -a $LOGFILE
+# Main function to execute all tasks
+main() {
+  show_hostname
+  show_mac_address
+  show_kalitorify_status
+  show_ufw_status
+}
 
-# Verify kalitorify
-sudo kalitorify -s | tee -a $LOGFILE
-echo "Tor routing active" | tee -a $LOGFILE
+# Execute the main function
+main
 
 exit
 EOF
 
-# Make the khelp-verify.sh script executable
-chmod +x /usr/local/bin/khelp-verify.sh
+# set permissions for the script
+chmod +x /usr/local/bin/khelp-verfiy.sh
 
-# Create the khelp-verify.service file
-echo "Creating /etc/systemd/system/khelp-verify.service..."
+echo ""
+# Create khelp-verify.service file with systemd unit configuration
+echo "create: /etc/systemd/system/khelp-verify.service"
 cat << 'EOF' > /etc/systemd/system/khelp-verify.service
 [Unit]
-Description=Verify khelp.sh setup
-After=network-online.target graphical.target
-Wants=network-online.target
+Description=Show Script Results After Reboot
+After=multi-user.target
 
 [Service]
-Type=idle
+Type=simple
 ExecStart=/usr/local/bin/khelp-verify.sh
-ExecStartPost=/bin/bash -c '$terminal -e "cat /var/log/khelp-verify.log"'
-StandardOutput=journal
-StandardError=journal
-Restart=on-failure
-RestartSec=3
+StandardOutput=tty
+TTYPath=/dev/tty1
 
 [Install]
-WantedBy=graphical.target
+WantedBy=multi-user.target
 EOF
 
-# Set permissions for the khelp-verify.service file
-chmod 644 /etc/systemd/system/khelp-verify.service
+# Set permissions for the service file
+chmod +x /etc/systemd/system/khelp-verify.service
 
-# Reload systemd to recognize the new service, enable it, and start it
-echo "Setting up khelp-verify service..."
-sudo systemctl daemon-reload
-sudo systemctl enable khelp-verify.service
+# Enable the new service
+systemctl daemon-reload
+systemctl enable khelp-verify.service
 
-# Check the status of the service
-sudo systemctl status khelp-verify.service
+# Create result script to show changes
+echo "create: /usr/local/bin/resu.sh"
+cat << 'EOF' > /usr/local/bin/resu.sh
+#!/bin/bash
+
+# Path to your script
+SCRIPT_PATH="/path/to/your/script.sh"
+
+# List of terminals to check
+TERMINALS=(
+  "gnome-terminal -- bash -c \"$SCRIPT_PATH; exec bash\""
+  "xfce4-terminal -- bash -c \"$SCRIPT_PATH; exec bash\""
+  "konsole -e bash -c \"$SCRIPT_PATH; exec bash\""
+  "xterm -e bash -c \"$SCRIPT_PATH; exec bash\""
+  "lxterminal -e bash -c \"$SCRIPT_PATH; exec bash\""
+  "mate-terminal -- bash -c \"$SCRIPT_PATH; exec bash\""
+  "tilix -e bash -c \"$SCRIPT_PATH; exec bash\""
+  "terminator -x bash -c \"$SCRIPT_PATH; exec bash\""
+  "urxvt -e bash -c \"$SCRIPT_PATH; exec bash\""
+  "alacritty -e bash -c \"$SCRIPT_PATH; exec bash\""
+  "kitty bash -c \"$SCRIPT_PATH; exec bash\""
+  "st -e bash -c \"$SCRIPT_PATH; exec bash\""
+  "eterm -e bash -c \"$SCRIPT_PATH; exec bash\""
+)
+
+# Function to check and run the script with the available terminal
+launch_script() {
+  for terminal in "${TERMINALS[@]}"; do
+    if command -v $(echo $terminal | awk '{print $1}') &> /dev/null; then
+      eval $terminal
+      return
+    fi
+  done
+  echo "No suitable terminal found."
+}
+
+# Execute the function
+launch_script
+
+exit
+EOF
+
+# Set permissions for result script
+chmod +x /usr/local/bin/resu.sh
 
 echo ""
 echo "khelp setups a service to verify config on startups"
