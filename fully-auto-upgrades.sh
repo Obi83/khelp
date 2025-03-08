@@ -36,19 +36,6 @@ echo "Installing tools and packages."
 apt install -y kali-linux-large kali-tools-windows-resources terminator bpytop htop shellcheck seclists inxi ufw tor curl proxychains iptables fastfetch guake impacket-scripts bloodhound powershell-empire fail2ban
 echo "Installed all useful helper tools."
 
-# Validate URL function
-validate_url() {
-    if [[ ! $1 =~ ^https?://[a-zA-Z0-9./?=_-]+$ ]]; then
-        echo "Invalid URL: $1"
-        exit 1
-    fi
-}
-
-# Validate the proxy API URLs
-validate_url "$PROXY_API_URL1"
-validate_url "$PROXY_API_URL2"
-validate_url "$PROXY_API_URL3"
-
 # Environment variables for paths and configurations
 export PROXY_API_URL1="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
 export PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
@@ -474,6 +461,8 @@ uname -a
 ip link show
 sudo ufw status
 traceroute www.showmyip.com
+apt install -y kali-linux-large kali-tools-windows-resources terminator bpytop htop shellcheck seclists inxi ufw tor curl proxychains iptables fastfetch guake impacket-scripts bloodhound powershell-empire fail2ban
+echo "double checked all useful helper tools."
 EOF
 chmod +x "$STARTUP_SCRIPT_PATH"
 
