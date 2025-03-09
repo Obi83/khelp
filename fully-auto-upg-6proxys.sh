@@ -485,8 +485,27 @@ uname -a
 ip link show
 sudo ufw status
 traceroute www.showmyip.com
+traceroute www.stromanmelden.online
 EOF
 chmod +x "$STARTUP_SCRIPT_PATH"
+
+cat << EOF > /etc/systemd/system/startup_script.service
+[Unit]
+Description=Startup Script Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/startup_script.sh
+Type=oneshot
+
+[Install]
+WantedBy=default.target
+EOF
+chmod +x /etc/systemd/system/startup_script.service
+
+systemctl daemon-reload
+systemctl enable startup_script.service
 
 mkdir -p "$USER_HOME/.config/autostart"
 cat << 'EOF' > "$DESKTOP_ENTRY_PATH"
