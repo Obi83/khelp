@@ -423,8 +423,13 @@ fetch_random_name() {
 
 newhn=$(fetch_random_name)
 hostnamectl set-hostname $newhn
-echo "127.0.0.1    localhost" > /etc/hosts
-echo "127.0.0.1    $newhn" >> /etc/hosts
+
+# Update /etc/hosts
+cat << EOF > /etc/hosts
+127.0.0.1    localhost
+127.0.0.1    $newhn
+EOF
+
 exit
 EOF
 chmod +x /usr/local/bin/hogen.sh
@@ -446,6 +451,7 @@ EOF
 chmod +x /etc/systemd/system/hogen.service
 systemctl daemon-reload
 systemctl enable hogen.service
+
 
 # Function to set Terminator as the default terminal for GNOME
 set_gnome_default_terminal() {
