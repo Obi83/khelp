@@ -429,9 +429,6 @@ cat << EOF > /etc/hosts
 127.0.0.1    localhost
 127.0.0.1    $newhn
 EOF
-
-exit
-EOF
 chmod +x /usr/local/bin/hogen.sh
 
 cat << EOF > /etc/systemd/system/hogen.service
@@ -451,7 +448,6 @@ EOF
 chmod +x /etc/systemd/system/hogen.service
 systemctl daemon-reload
 systemctl enable hogen.service
-
 
 # Function to set Terminator as the default terminal for GNOME
 set_gnome_default_terminal() {
