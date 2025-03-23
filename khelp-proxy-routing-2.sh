@@ -6,6 +6,31 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# Ensure ProxyChains is installed
+if ! command -v proxychains &> /dev/null; then
+    echo "ProxyChains is not installed. Installing ProxyChains..."
+    apt update && apt install -y proxychains
+fi
+
+# Check if the proxychains.conf file exists
+if [ ! -f /etc/proxychains.conf ]; then
+    echo "Creating /etc/proxychains.conf file..."
+    cat << 'EOF' > /etc/proxychains.conf
+# ProxyChains default configuration
+# Dynamic chain
+dynamic_chain
+
+# Proxy DNS requests - no leak for DNS data
+proxy_dns
+
+[ProxyList]
+# add proxy here ...
+# meanwile
+# defaults set to "tor"
+socks4  127.0.0.1 9050
+EOF
+fi
+
 # Environment variables for paths and configurations
 export PROXY_API_URL1="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
 export PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
@@ -50,7 +75,7 @@ echo ""
 
 # Install helper packages
 echo "Installing tools and packages."
-apt install -y ufw tor curl proxychains iptables fail2ban sslh
+apt install -y ufw tor curl iptables fail2ban sslh
 echo "Installed all useful helper tools."
 
 # Improved URL validation function
@@ -270,7 +295,7 @@ systemctl daemon-reload
 systemctl enable update_proxies.service
 
 # Summary and Reboot
-echo "systeme is fresh and clean!"
+echo "system is fresh and clean!"
 echo "khelp configured standard ufw, iptables, fail2ban and sshl"
 echo ""
 echo "network setup with tor and proxchains is complete."
