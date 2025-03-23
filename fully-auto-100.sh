@@ -22,6 +22,12 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# Logging function
+log() {
+    local message="$1"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $message" | tee -a /var/log/proxy_script.log
+}
+
 # Preconfigure sslh to install as standalone
 log "Preconfiguring sslh to install as standalone..."
 echo "sslh sslh/inetd_or_standalone select standalone" | sudo debconf-set-selections
@@ -73,12 +79,6 @@ export PROXYCHAINS_CONF="/etc/proxychains.conf"
 export USER_HOME=$(eval echo ~${SUDO_USER})
 export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
 export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
-
-# Logging function
-log() {
-    local message="$1"
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $message" | tee -a /var/log/proxy_script.log
-}
 
 # Improved URL validation function
 validate_url() {
