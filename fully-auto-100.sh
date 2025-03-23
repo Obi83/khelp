@@ -416,14 +416,7 @@ fetch_random_name() {
     local last_name=$(echo $response | jq -r '.results[0].name.last')
     local name="${first_name}${last_name}"
 
-    # Ensure the name is at least 6 characters and at most 10 characters long
-    if [ ${#name} -lt 6 ]; then
-        name="${name}$(tr -dc 'a-z' < /dev/urandom | head -c $((6 - ${#name})))"
-    elif [ ${#name} -gt 10 ]; then
-        name="${name:0:10}"
-    fi
-
-    # Capitalize the first letter
+    # Capitalize the first letter of the first name and last name
     name="$(tr '[:lower:]' '[:upper:]' <<< ${name:0:1})${name:1}"
     echo $name
 }
