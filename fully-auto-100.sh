@@ -404,10 +404,19 @@ chmod +x /etc/systemd/system/mspoo.service
 systemctl daemon-reload
 systemctl enable mspoo.service
 
+# Ensure curl and jq are installed
+if ! command -v curl &> /dev/null || ! command -v jq &> /dev/null
+then
+    echo "curl and jq are required but not installed. Please install them."
+    exit 1
+fi
+
 # Create and enable hostname generator service
 echo "Creating and enabling hostname generator service..."
+
 cat << 'EOF' > /usr/local/bin/hogen.sh
 #!/bin/bash
+
 # Function to fetch a random name from the Random User Generator API
 fetch_random_name() {
     local api_url="https://randomuser.me/api/"
@@ -417,18 +426,24 @@ fetch_random_name() {
     local name="${first_name}${last_name}"
 
     # Capitalize the first letter of the first name and last name
-    name="$(tr '[:lower:]' '[:upper:]' <<< ${name:0:1})${name:1}"
+    name=$(echo $name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
     echo $name
 }
 
 newhn=$(fetch_random_name)
-hostnamectl set-hostname $newhn
+hostnamectl set-hostname "$newhn"
 
-# Update /etc/hosts
-cat << EOF > /etc/hosts
-127.0.0.1    localhost
-127.0.0.1    $newhn
+# Ensure /etc/hosts has the correct entries
+grep -q "127.0.0.1    localhost" /etc/hosts || echo "127.0.0.1    localhost" >> /etc/hosts
+grep -q "127.0.0.1    $newhn" /etc/hosts || echo "127.0.0.1    $newhn" >> /etc/hosts
+
+# Ensure the current hostname is also mapped correctly
+current_hostname=$(hostname)
+grep -q "127.0.0.1    $current_hostname" /etc/hosts || echo "127.0.0.1    $current_hostname" >> /etc/hosts
+
+echo "Hostname set to $newhn and /etc/hosts updated"
 EOF
+
 chmod +x /usr/local/bin/hogen.sh
 
 cat << EOF > /etc/systemd/system/hogen.service
@@ -445,9 +460,11 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
+
 chmod +x /etc/systemd/system/hogen.service
 systemctl daemon-reload
 systemctl enable hogen.service
+systemctl start hogen.service
 
 # Function to set Terminator as the default terminal for GNOME
 set_gnome_default_terminal() {
