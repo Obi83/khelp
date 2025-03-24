@@ -29,9 +29,11 @@ fetch_random_name() {
 newhn=$(fetch_random_name)
 hostnamectl set-hostname "$newhn"
 
-# Update /etc/hosts
-echo "127.0.0.1    localhost" > /etc/hosts
-echo "127.0.0.1    $newhn" >> /etc/hosts
+# Ensure /etc/hosts has the correct entries
+grep -q "127.0.0.1    localhost" /etc/hosts || echo "127.0.0.1    localhost" >> /etc/hosts
+grep -q "127.0.0.1    $newhn" /etc/hosts || echo "127.0.0.1    $newhn" >> /etc/hosts
+
+echo "Hostname set to $newhn and /etc/hosts updated"
 EOF
 
 chmod +x /usr/local/bin/hogen.sh
