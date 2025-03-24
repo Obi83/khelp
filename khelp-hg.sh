@@ -7,6 +7,12 @@ then
     exit 1
 fi
 
+# Create and enable hostname generator service
+echo "Creating and enabling hostname generator service..."
+
+cat << 'EOF' > /usr/local/bin/hogen.sh
+#!/bin/bash
+
 # Function to fetch a random name from the Random User Generator API
 fetch_random_name() {
     local api_url="https://randomuser.me/api/"
@@ -21,9 +27,31 @@ fetch_random_name() {
 }
 
 newhn=$(fetch_random_name)
-hostnamectl set-hostname $newhn
+hostnamectl set-hostname "$newhn"
 
 # Update /etc/hosts
-cat << EOF >> /etc/hosts
-127.0.0.1    $newhn
+echo "127.0.0.1    localhost" > /etc/hosts
+echo "127.0.0.1    $newhn" >> /etc/hosts
 EOF
+
+chmod +x /usr/local/bin/hogen.sh
+
+cat << EOF > /etc/systemd/system/hogen.service
+[Unit]
+Description=HOGEN Hostname Generator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/hogen.sh
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+chmod +x /etc/systemd/system/hogen.service
+systemctl daemon-reload
+systemctl enable hogen.service
+systemctl start hogen.service
