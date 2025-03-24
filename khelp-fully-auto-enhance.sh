@@ -575,7 +575,6 @@ log() {
     echo "$(date +'%Y-%m-%d %H:%M:%S') - $message" | tee -a "$LOG_FILE"
 }
 
-# Fetch a random name from the Random User Generator API
 fetch_random_name() {
     local response=$(curl -s "$API_URL")
     if [ $? -ne 0 ] || [ -z "$response" ]; then
@@ -594,6 +593,7 @@ fetch_random_name() {
     first_name=$(echo $first_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
     last_name=$(echo $last_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
     local name="${first_name}${last_name}"
+    log "Fetched random name: $name"
     echo $name
 }
 
@@ -674,7 +674,6 @@ EOF
 chmod +x /etc/systemd/system/hogen.service
 systemctl daemon-reload
 systemctl enable hogen.service
-systemctl start hogen.service
 
 # Function to set Terminator as the default terminal for GNOME
 set_gnome_default_terminal() {
