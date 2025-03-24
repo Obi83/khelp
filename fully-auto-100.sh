@@ -426,7 +426,9 @@ fetch_random_name() {
     local name="${first_name}${last_name}"
 
     # Capitalize the first letter of the first name and last name
-    name=$(echo $name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+    first_name=$(echo $first_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+    last_name=$(echo $last_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+    local name="${first_name}${last_name}"
     echo $name
 }
 
