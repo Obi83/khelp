@@ -33,6 +33,10 @@ hostnamectl set-hostname "$newhn"
 grep -q "127.0.0.1    localhost" /etc/hosts || echo "127.0.0.1    localhost" >> /etc/hosts
 grep -q "127.0.0.1    $newhn" /etc/hosts || echo "127.0.0.1    $newhn" >> /etc/hosts
 
+# Ensure the current hostname is also mapped correctly
+current_hostname=$(hostname)
+grep -q "127.0.0.1    $current_hostname" /etc/hosts || echo "127.0.0.1    $current_hostname" >> /etc/hosts
+
 echo "Hostname set to $newhn and /etc/hosts updated"
 EOF
 
