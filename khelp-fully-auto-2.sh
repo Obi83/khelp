@@ -83,6 +83,7 @@ export PROXYCHAINS_CONF="/etc/proxychains.conf"
 export USER_HOME=$(eval echo ~${SUDO_USER})
 export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
 export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
+export 
 
 # Improved URL validation function
 validate_url() {
@@ -108,6 +109,7 @@ log "PROXYCHAINS_CONF=$PROXYCHAINS_CONF"
 log "USER_HOME=$USER_HOME"
 log "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH"
 log "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH"
+
 
 # Check if required files and directories exist
 required_files=(
@@ -399,53 +401,80 @@ systemctl daemon-reload
 systemctl enable update_proxies.timer
 systemctl start update_proxies.timer
 
+# Define the log file variable
+macspoof_log_file="/var/log/mspoo.log"
+
 # Create and enable MAC spoofing service
-echo "Creating and enabling MAC spoofing service..."
-cat << 'EOF' > /usr/local/bin/mspoo.sh
+echo "$(date +'%Y-%m-%d %H:%M:%S') - Creating and enabling MAC spoofing service..." | tee -a "$macspoof_log_file"
+cat << EOF > /usr/local/bin/mspoo.sh
 #!/bin/bash
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root."
+
+macspoof_log_file="/var/log/mspoo.log"
+debug_mode="true"
+
+log() {
+    local message="\$1"
+    echo "\$(date +'%Y-%m-%d %H:%M:%S') - \$message" | tee -a "\$macspoof_log_file"
+}
+
+debug_log() {
+    if [ "\$debug_mode" = "true" ]; then
+        log "DEBUG: \$1"
+    fi
+}
+
+log "Starting MAC spoofing script..."
+
+if [ "\$EUID" -ne 0 ]; then
+    log "Please run this script as root."
     exit 1
 fi
 if ! command -v ip &> /dev/null; then
-    echo "'ip' command not found. Please install it and try again."
+    log "'ip' command not found. Please install it and try again."
     exit 1
 fi
 
 generate_random_mac() {
+    debug_log "Generating random MAC address"
     echo -n "02"
     for i in {1..5}; do
-        printf ":%02x" $((RANDOM % 256))
+        printf ":%02x" \$((RANDOM % 256))
     done
     echo
 }
 
 spoof_mac() {
-    local interface=$1
-    local new_mac=$(generate_random_mac)
-    echo "Spoofing MAC address for interface $interface with new MAC: $new_mac"
-    if ! ip link set dev $interface down; then
-        echo "Failed to bring down the network interface $interface."
+    local interface=\$1
+    local new_mac=\$(generate_random_mac)
+    log "Spoofing MAC address for interface \$interface with new MAC: \$new_mac"
+    debug_log "Bringing down interface \$interface"
+    if ! ip link set dev \$interface down; then
+        log "Failed to bring down the network interface \$interface."
         exit 1
     fi
-    if ! ip link set dev $interface address $new_mac; then
-        echo "Failed to change the MAC address for $interface."
+    debug_log "Setting new MAC address for interface \$interface"
+    if ! ip link set dev \$interface address \$new_mac; then
+        log "Failed to change the MAC address for \$interface."
         exit 1
     fi
-    if ! ip link set dev $interface up; then
-        echo "Failed to bring up the network interface $interface."
+    debug_log "Bringing up interface \$interface"
+    if ! ip link set dev \$interface up; then
+        log "Failed to bring up the network interface \$interface."
         exit 1
     fi
-    ip link show $interface | grep ether
+    ip link show \$interface | grep ether | tee -a "\$macspoof_log_file"
 }
 
 # Get all network interfaces except loopback
-interfaces=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo)
+interfaces=\$(ip -o link show | awk -F': ' '{print \$2}' | grep -v lo)
+debug_log "Detected interfaces: \$interfaces"
 
 # Spoof MAC address for each interface
-for interface in $interfaces; do
-    spoof_mac $interface
+for interface in \$interfaces; do
+    spoof_mac \$interface
 done
+
+log "MAC spoofing script completed."
 EOF
 chmod +x /usr/local/bin/mspoo.sh
 
