@@ -93,8 +93,8 @@ export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
 export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
 export LOG_FILE="/var/log/mspoo.log"
 export MAC_BACKUP_FILE="/var/log/original_macs.log"
-export HOSTNAME_CHANGER_LOG_FILE="/var/log/hostname_changer.log"
 export API_URL="https://randomuser.me/api/"
+export HOST_LOG_FILE="/var/log/hogen.log"
 export BACKUP_HOSTNAME_FILE="/var/log/hostname_backup.log"
 export BACKUP_HOSTS_FILE="/var/log/hosts_backup.log"
 
@@ -124,8 +124,8 @@ log "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH"
 log "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH"
 log "LOG_FILE=$LOG_FILE"
 log "MAC_BACKUP_FILE=$MAC_BACKUP_FILE"
-log "HOSTNAME_CHANGER_LOG_FILE=$HOSTNAME_CHANGER_LOG_FILE"
 log "API_URL=$API_URL"
+log "HOST_LOG_FILE=$HOST_LOG_FILE"
 log "BACKUP_HOSTNAME_FILE=$BACKUP_HOSTNAME_FILE"
 log "BACKUP_HOSTS_FILE=$BACKUP_HOSTS_FILE"
 
@@ -553,45 +553,54 @@ systemctl enable mspoo.service
 
 # Ensure curl is installed
 if ! command -v curl &> /dev/null; then
-    log "curl is not installed. Installing curl..."
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - curl is not installed. Installing curl..." | tee -a "$HOST_LOG_FILE"
     sudo apt install -y curl
 fi
 
 # Ensure jq is installed
 if ! command -v jq &> /dev/null; then
-    log "jq is not installed. Installing jq..."
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - jq is not installed. Installing jq..." | tee -a "$HOST_LOG_FILE"
     sudo apt install -y jq
 fi
 
 # Ensure required environment variables are set
-if [ -z "$API_URL" ] || [ -z "$LOG_FILE" ] || [ -z "$BACKUP_HOSTNAME_FILE" ] || [ -z "$BACKUP_HOSTS_FILE" ]; then
-    echo "Required environment variables are not set."
+if [ -z "$API_URL" ] || [ -z "$HOST_LOG_FILE" ] || [ -z "$BACKUP_HOSTNAME_FILE" ] || [ -z "$BACKUP_HOSTS_FILE" ]; then
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - Required environment variables are not set." | tee -a "$HOST_LOG_FILE"
     exit 1
 fi
 
 # Create and enable hostname generator service
-log "Creating and enabling hostname generator service..."
+echo "$(date +'%Y-%m-%d %H:%M:%S') - Creating and enabling hostname generator service..." | tee -a "$HOST_LOG_FILE"
 
 cat << 'EOF' > /usr/local/bin/hogen.sh
 #!/bin/bash
+
+# Ensure required environment variables are set
+if [ -z "$API_URL" ] || [ -z "$HOST_LOG_FILE" ] || [ -z "$BACKUP_HOSTNAME_FILE" ] || [ -z "$BACKUP_HOSTS_FILE" ]; then
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - Required environment variables are not set." | tee -a "$HOST_LOG_FILE"
+    exit 1
+fi
+
 # Logging function
 log() {
     local message="$1"
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $message" | tee -a "$LOG_FILE"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $message" | tee -a "$HOST_LOG_FILE"
 }
 
-# Fetch a random name from the Random User Generator API
+# Function to fetch a random name from the Random User Generator API
 fetch_random_name() {
+    log "Fetching random name from API: $API_URL"
     local response=$(curl -s "$API_URL")
     if [ $? -ne 0 ] || [ -z "$response" ]; then
-        log "Failed to fetch data from the API"
+        log "Failed to fetch data from the API."
         exit 1
     fi
 
+    log "API response: $response"
     local first_name=$(echo $response | jq -r '.results[0].name.first')
     local last_name=$(echo $response | jq -r '.results[0].name.last')
     if [ -z "$first_name" ] || [ -z "$last_name" ]; then
-        log "Invalid response from the API"
+        log "Invalid response from the API."
         exit 1
     fi
 
@@ -599,6 +608,7 @@ fetch_random_name() {
     first_name=$(echo $first_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
     last_name=$(echo $last_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
     local name="${first_name}${last_name}"
+    log "Fetched random name: $name"
     echo $name
 }
 
