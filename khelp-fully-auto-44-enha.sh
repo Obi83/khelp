@@ -113,7 +113,7 @@ install_packages() {
     log "INFO" "Installing tools and packages."
     local attempts=0
     local max_attempts=3
-    local packages="ufw tor curl jq iptables fail2ban sslh kali-linux-large kali-tools-windows-resources terminator bpytop htop shellcheck seclists inxi fastfetch guake impacket-scripts bloodhound powershell-empire"
+    local packages="ufw tor curl jq iptables iptables-persistent fail2ban sslh kali-linux-large kali-tools-windows-resources terminator bpytop htop shellcheck seclists inxi fastfetch guake impacket-scripts bloodhound powershell-empire"
 
     while [ $attempts -lt $max_attempts ]; do
         if sudo apt install -y $packages; then
@@ -452,6 +452,9 @@ Logs are saved to /var/log/fail2ban_script.log. The log file is rotated if it ex
 - The script validates the success of Fail2ban installation and configuration.
 EOF
 
+# Ensure the /etc/iptables directory exists
+mkdir -p /etc/iptables
+
 # Configure iptables
 configure_iptables() {
     log "INFO" "Configuring iptables..."
@@ -488,6 +491,7 @@ create_iptables_service() {
 #!/bin/bash
 iptables-restore < /etc/iptables/rules.v4
 EOF
+
 chmod +x /usr/local/bin/iptables.sh
 
 cat << EOF > /etc/systemd/system/iptables.service
