@@ -616,7 +616,15 @@ fetch_random_name() {
 backup() {
     log "Backing up current hostname and /etc/hosts"
     hostname > "$BACKUP_HOSTNAME_FILE"
+    if [ $? -ne 0 ]; then
+        log "Failed to backup current hostname"
+        exit 1
+    fi
     cp /etc/hosts "$BACKUP_HOSTS_FILE"
+    if [ $? -ne 0 ]; then
+        log "Failed to backup /etc/hosts"
+        exit 1
+    fi
 }
 
 # Restore hostname and /etc/hosts from backup
@@ -667,6 +675,8 @@ backup
 
 # Change the hostname
 change_hostname
+
+log "Script execution completed"
 EOF
 
 chmod +x /usr/local/bin/hogen.sh
