@@ -1242,7 +1242,7 @@ wait_for_service() {
             return 1
         fi
         echo "Waiting for $service_name to start... (attempt $attempt)"
-        sleep 2
+        sleep 5
         attempt=$((attempt + 1))
     done
     echo "Service $service_name is active."
