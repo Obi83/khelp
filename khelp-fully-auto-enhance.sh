@@ -563,6 +563,34 @@ if ! command -v jq &> /dev/null; then
     sudo apt install -y jq
 fi
 
+# Ensure ProxyChains is installed
+if ! command -v proxychains &> /dev/null; then
+    log "ProxyChains is not installed. Installing ProxyChains..."
+    if ! sudo apt install -y proxychains; then
+        log "ProxyChains installation failed."
+        exit 1
+    fi
+fi
+
+# Check if the proxychains.conf file exists
+if [ ! -f /etc/proxychains.conf ]; then
+    log "Creating /etc/proxychains.conf file..."
+    cat << 'PROXY_EOF' > /etc/proxychains.conf
+# ProxyChains default configuration
+# Dynamic chain
+dynamic_chain
+
+# Proxy DNS requests - no leak for DNS data
+proxy_dns
+
+[ProxyList]
+# add proxy here ...
+# meanwhile
+# defaults set to "tor"
+socks5  127.0.0.1 9050
+PROXY_EOF
+fi
+
 # Ensure required environment variables are set
 if [ -z "$API_URL" ] || [ -z "$HOST_LOG_FILE" ] || [ -z "$BACKUP_HOSTNAME_FILE" ] || [ -z "$BACKUP_HOSTS_FILE" ]; then
     echo "$(date +'%Y-%m-%d %H:%M:%S') - Required environment variables are not set." | tee -a "$HOST_LOG_FILE"
@@ -572,7 +600,7 @@ fi
 # Create and enable hostname generator service
 echo "$(date +'%Y-%m-%d %H:%M:%S') - Creating and enabling hostname generator service..." | tee -a "$HOST_LOG_FILE"
 
-cat << 'EOF' > /usr/local/bin/hogen.sh
+cat << 'SCRIPT_EOF' > /usr/local/bin/hogen.sh
 #!/bin/bash
 
 # Ensure required environment variables are set
@@ -590,7 +618,9 @@ log() {
 # Function to fetch a random name from the Random User Generator API
 fetch_random_name() {
     log "Fetching random name from API: $API_URL"
-    local response=$(curl -s "$API_URL")
+    
+    # Use ProxyChains to make the request
+    local response=$(proxychains curl -s "$API_URL")
     if [ $? -ne 0 ] || [ -z "$response" ]; then
         log "Failed to fetch data from the API."
         exit 1
@@ -677,24 +707,28 @@ backup
 change_hostname
 
 log "Script execution completed"
-EOF
+SCRIPT_EOF
 
 chmod +x /usr/local/bin/hogen.sh
 
-cat << EOF > /etc/systemd/system/hogen.service
+cat << SERVICE_EOF > /etc/systemd/system/hogen.service
 [Unit]
 Description=HOGEN Hostname Generator
 After=network-online.target
 Wants=network-online.target
 
 [Service]
+Environment="API_URL=https://randomuser.me/api/"
+Environment="HOST_LOG_FILE=/var/log/hogen.log"
+Environment="BACKUP_HOSTNAME_FILE=/var/log/hostname_backup.log"
+Environment="BACKUP_HOSTS_FILE=/var/log/hosts_backup.log"
 ExecStart=/usr/local/bin/hogen.sh
 Restart=on-failure
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
-EOF
+SERVICE_EOF
 
 chmod +x /etc/systemd/system/hogen.service
 systemctl daemon-reload
