@@ -203,7 +203,8 @@ proxy_dns
 [ProxyList]
 # add proxy here ...
 # defaults set to "tor"
-socks4  127.0.0.1 9050
+#socks4 127.0.0.1 9050
+socks5 127.0.0.1 9050
 EOF
     log "INFO" "ProxyChains configuration file created."
 else
@@ -779,15 +780,15 @@ cat << "EOF" > name=/usr/local/share/proxychains_script/README.md
 This script configures ProxyChains and sets up a systemd service and timer to fetch and validate proxies periodically.
 
 ## Functions
-- `log(level, message)`: Logs messages with a specified log level.
-- `configure_tor()`: Installs and configures Tor with a retry mechanism.
-- `configure_proxychains()`: Configures ProxyChains for Tor and updates the configuration with fetched proxies.
-- `fetch_and_validate_proxies()`: Fetches and validates proxies from a given API URL.
-- `is_anonymous_proxy()`: Checks if a proxy is anonymous.
-- `is_fast_proxy()`: Checks if a proxy is fast.
+- log(level, message): Logs messages with a specified log level.
+- configure_tor: Installs and configures Tor with a retry mechanism.
+- configure_proxychains: Configures ProxyChains for Tor and updates the configuration with fetched proxies.
+- fetch_and_validate_proxies: Fetches and validates proxies from a given API URL.
+- is_anonymous_proxy: Checks if a proxy is anonymous.
+- is_fast_proxy: Checks if a proxy is fast.
 
 ## Log File
-Logs are saved to `/var/log/proxychains_script.log`. The log file is rotated if it exceeds 1MB.
+Logs are saved to /var/log/proxychains_script.log. The log file is rotated if it exceeds 1MB.
 
 ## Requirements
 - The `apt` package manager must be available.
@@ -1289,7 +1290,6 @@ EOF
 chmod +x "$DESKTOP_ENTRY_PATH"
 
 log "INFO" "Startup verification script and desktop entry created successfully."
-
 
 # Documentation
 mkdir -p /usr/local/share/terminator_script
