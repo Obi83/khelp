@@ -574,22 +574,20 @@ log "Creating and enabling hostname generator service..."
 
 cat << 'EOF' > /usr/local/bin/hogen.sh
 #!/bin/bash
-
 # Logging function
 log() {
     local message="$1"
     echo "$(date +'%Y-%m-%d %H:%M:%S') - $message" | tee -a "$LOG_FILE"
 }
 
+# Fetch a random name from the Random User Generator API
 fetch_random_name() {
-    log "Fetching random name from API: $API_URL"
     local response=$(curl -s "$API_URL")
     if [ $? -ne 0 ] || [ -z "$response" ]; then
-        log "Failed to fetch data from the API. Response: $response"
+        log "Failed to fetch data from the API"
         exit 1
     fi
 
-    log "API response: $response"
     local first_name=$(echo $response | jq -r '.results[0].name.first')
     local last_name=$(echo $response | jq -r '.results[0].name.last')
     if [ -z "$first_name" ] || [ -z "$last_name" ]; then
@@ -601,7 +599,6 @@ fetch_random_name() {
     first_name=$(echo $first_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
     last_name=$(echo $last_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
     local name="${first_name}${last_name}"
-    log "Fetched random name: $name"
     echo $name
 }
 
