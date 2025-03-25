@@ -563,6 +563,12 @@ if ! command -v jq &> /dev/null; then
     sudo apt install -y jq
 fi
 
+# Ensure required environment variables are set
+if [ -z "$API_URL" ] || [ -z "$LOG_FILE" ] || [ -z "$BACKUP_HOSTNAME_FILE" ] || [ -z "$BACKUP_HOSTS_FILE" ]; then
+    echo "Required environment variables are not set."
+    exit 1
+fi
+
 # Create and enable hostname generator service
 log "Creating and enabling hostname generator service..."
 
@@ -576,12 +582,14 @@ log() {
 }
 
 fetch_random_name() {
+    log "Fetching random name from API: $API_URL"
     local response=$(curl -s "$API_URL")
     if [ $? -ne 0 ] || [ -z "$response" ]; then
-        log "Failed to fetch data from the API"
+        log "Failed to fetch data from the API. Response: $response"
         exit 1
     fi
 
+    log "API response: $response"
     local first_name=$(echo $response | jq -r '.results[0].name.first')
     local last_name=$(echo $response | jq -r '.results[0].name.last')
     if [ -z "$first_name" ] || [ -z "$last_name" ]; then
