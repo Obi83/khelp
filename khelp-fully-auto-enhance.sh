@@ -776,13 +776,6 @@ uname -a
 ip link show
 sudo ufw status
 traceroute www.showmyip.com
-
-# Check if the Tor service is running
-if systemctl is-active --quiet tor; then
-    log "Tor is running"
-else
-    log "Tor is not running"
-fi
 EOF
 chmod +x "$STARTUP_SCRIPT_PATH"
 
