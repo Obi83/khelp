@@ -113,7 +113,7 @@ install_packages() {
     log "INFO" "Installing tools and packages."
     local attempts=0
     local max_attempts=3
-    local packages="ufw tor curl jq iptables iptables-persistent fail2ban sslh kali-linux-large kali-tools-windows-resources terminator bpytop htop shellcheck seclists inxi fastfetch guake impacket-scripts bloodhound powershell-empire"
+    local packages="ufw tor curl jq iptables fail2ban sslh kali-linux-large kali-tools-windows-resources terminator bpytop htop shellcheck seclists inxi fastfetch guake impacket-scripts bloodhound powershell-empire"
 
     while [ $attempts -lt $max_attempts ]; do
         if sudo apt install -y $packages; then
@@ -327,9 +327,9 @@ ufw --force enable
 # Keep the script running to prevent the service from deactivating
 while true; do sleep 60; done
 EOF
-    chmod +x /usr/local/bin/ufw.sh
+chmod +x /usr/local/bin/ufw.sh
 
-    cat << EOF > /etc/systemd/system/ufw.service
+cat << EOF > /etc/systemd/system/ufw.service
 [Unit]
 Description=UFW service for startups
 After=multi-user.target
@@ -343,9 +343,9 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
-    chmod +x /etc/systemd/system/ufw.service
+chmod +x /etc/systemd/system/ufw.service
 
-    systemctl daemon-reload
+systemctl daemon-reload
     if systemctl enable ufw.service && systemctl start ufw.service; then
         log "INFO" "UFW service created and enabled."
     else
@@ -403,8 +403,8 @@ configure_fail2ban() {
         exit 1
     fi
 
-    # Create a Fail2ban configuration
-    cat << 'EOF' > /etc/fail2ban/jail.local
+# Create a Fail2ban configuration
+cat << 'EOF' > /etc/fail2ban/jail.local
 [DEFAULT]
 ignoreip = 127.0.0.1/8
 bantime  = 3600
@@ -418,8 +418,8 @@ enabled = true
 enabled = true
 EOF
 
-    systemctl enable fail2ban
-    systemctl start fail2ban
+systemctl enable fail2ban
+systemctl start fail2ban
     if systemctl is-active --quiet fail2ban; then
         log "INFO" "Fail2ban configured and started successfully."
     else
