@@ -63,7 +63,7 @@ update_system() {
     local attempts=0
     local max_attempts=3
 
-    while [ $attempts -lt $max_attempts ]; then
+    while [ $attempts -lt $max_attempts ]; do
         if apt update && apt full-upgrade -y && apt autoremove -y && apt autoclean; then
             log "INFO" "System update and upgrade completed."
             return 0
@@ -85,7 +85,7 @@ install_packages() {
     local max_attempts=3
     local packages="ufw tor curl jq iptables fail2ban sslh kali-linux-large kali-tools-windows-resources terminator bpytop htop shellcheck seclists inxi fastfetch guake impacket-scripts bloodhound powershell-empire"
 
-    while [ $attempts -lt $max_attempts ]; then
+    while [ $attempts -lt $max_attempts ]; do
         if sudo apt install -y $packages; then
             log "INFO" "Installed all useful helper tools."
             return 0
