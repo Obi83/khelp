@@ -101,9 +101,6 @@ install_packages() {
 }
 
 # Main script execution
-check_command "apt"
-check_command "curl"
-check_command "jq"
 check_internet
 update_system
 install_packages
