@@ -226,6 +226,9 @@ spoof_mac() {
     return 0
 }
 
+# Wait for network interfaces to be fully ready (adjust the sleep duration as needed)
+sleep 30
+
 # Get all network interfaces except loopback
 interfaces=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo)
 
@@ -244,7 +247,7 @@ chmod +x /usr/local/bin/mspoo.sh
 
 # Documentation
 mkdir -p usr/local/share/mac_spoofer
-cat << EOF > /usr/local/share/mac_spoofer/README.md
+cat << 'EOF' > /usr/local/share/mac_spoofer/README.md
 # MAC Spoofer Script 
 MACSPOO
 
@@ -272,7 +275,7 @@ EOF
 cat << EOF > /etc/systemd/system/mspoo.service
 [Unit]
 Description=MSPOO MACSpoofing Service
-After=network-online.target
+After=network-online.target proxy-setup.service
 Wants=network-online.target
 
 [Service]
