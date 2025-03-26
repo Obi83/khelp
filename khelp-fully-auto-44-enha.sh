@@ -88,7 +88,7 @@ update_system
 
 # Documentation
 mkdir -p /usr/local/share/system_update
-cat << "EOF" > /usr/local/share/system_update/README.md
+cat << 'EOF' > /usr/local/share/system_update/README.md
 # System Update Script
 
 ## Description
@@ -136,7 +136,7 @@ install_packages
 
 # Documentation
 mkdir -p /usr/local/share/package_installer
-cat << "EOF" > /usr/local/share/package_installer/README.md
+cat << 'EOF' > /usr/local/share/package_installer/README.md
 # Package Installer Script
 
 ## Description
@@ -280,7 +280,7 @@ validate_url "$PROXY_API_URL10"
 
 # Documentation
 mkdir -p /usr/local/share/proxy_script
-cat << "EOF" > /usr/local/share/proxy_script/README.md
+cat << 'EOF' > /usr/local/share/proxy_script/README.md
 # ProxyChains Configuration Script
 
 ## Description
@@ -331,9 +331,10 @@ ufw --force enable
 # Keep the script running to prevent the service from deactivating
 while true; do sleep 60; done
 EOF
+
 chmod +x /usr/local/bin/ufw.sh
 
-cat << EOF > /etc/systemd/system/ufw.service
+cat << 'EOF' > /etc/systemd/system/ufw.service
 [Unit]
 Description=UFW service for startups
 After=multi-user.target
@@ -347,6 +348,7 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
+    
 chmod +x /etc/systemd/system/ufw.service
 
 systemctl daemon-reload
@@ -361,9 +363,9 @@ systemctl daemon-reload
 configure_ufw
 create_ufw_service
 
-# Documentation
+# Documentation for UFW
 mkdir -p /usr/local/share/ufw_script
-cat << "EOF" > =/usr/local/share/ufw_script/README.md
+cat << 'EOF' > /usr/local/share/ufw_script/README.md
 # UFW Configuration Script
 
 ## Description
@@ -423,8 +425,8 @@ enabled = true
 enabled = true
 EOF
 
-systemctl enable fail2ban
-systemctl start fail2ban
+    systemctl enable fail2ban
+    systemctl start fail2ban
     if systemctl is-active --quiet fail2ban; then
         log "INFO" "Fail2ban configured and started successfully."
     else
@@ -435,9 +437,9 @@ systemctl start fail2ban
 
 configure_fail2ban
 
-# Documentation
+# Documentation for Fail2ban
 mkdir -p /usr/local/share/fail2ban_script
-cat << "EOF" > name=/usr/local/share/fail2ban_script/README.md
+cat << 'EOF' > /usr/local/share/fail2ban_script/README.md
 # Fail2ban Configuration Script
 
 ## Description
@@ -500,7 +502,7 @@ EOF
 
 chmod +x /usr/local/bin/iptables.sh
 
-cat << EOF > /etc/systemd/system/iptables.service
+cat << 'EOF' > /etc/systemd/system/iptables.service
 [Unit]
 Description=iptables service for startups
 After=network.target
@@ -513,9 +515,10 @@ RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 EOF
+
 chmod +x /etc/systemd/system/iptables.service
     
-systemctl daemon-reload
+    systemctl daemon-reload
     if systemctl enable iptables.service && systemctl start iptables.service; then
         log "INFO" "iptables service created and enabled."
     else
@@ -528,9 +531,9 @@ configure_iptables
 log_iptables_rules
 create_iptables_service
 
-# Documentation
+# Documentation for iptables
 mkdir -p /usr/local/share/iptables_script
-cat << "EOF" > name=/usr/local/share/iptables_script/README.md
+cat << 'EOF' > /usr/local/share/iptables_script/README.md
 # iptables Configuration Script
 
 ## Description
@@ -589,7 +592,7 @@ configure_tor
 
 # Documentation
 mkdir -p /usr/local/share/tor_script
-cat << "EOF" > name=/usr/local/share/tor_script/README.md
+cat << 'EOF' > /usr/local/share/tor_script/README.md
 # Tor Configuration Script
 
 ## Description
@@ -729,7 +732,7 @@ chmod +x /usr/local/bin/update_proxies.sh
 
 # Create a systemd service to run the proxy update script on startup
 log "INFO" "Creating systemd service to run the proxy update script on startup..."
-cat << EOF > /etc/systemd/system/update_proxies.service
+cat << 'EOF' > /etc/systemd/system/update_proxies.service
 [Unit]
 Description=Update Proxy List on Startup
 After=network.target
@@ -773,7 +776,7 @@ log "INFO" "Systemd timer created and started."
 
 # Documentation
 mkdir -p /usr/local/share/proxychains_script
-cat << "EOF" > name=/usr/local/share/proxychains_script/README.md
+cat << 'EOF' > /usr/local/share/proxychains_script/README.md
 # ProxyChains Configuration Script
 
 ## Description
@@ -881,7 +884,7 @@ chmod +x /usr/local/bin/mspoo.sh
 
 # Documentation
 mkdir -p usr/local/share/mac_spoofer
-cat << "EOF" > /usr/local/share/mac_spoofer/README.md
+cat << 'EOF' > /usr/local/share/mac_spoofer/README.md
 # MAC Spoofer Script
 
 ## Description
@@ -905,7 +908,7 @@ Logs are saved to /var/log/mac_spoofer.log. The log file is rotated if it exceed
 EOF
 
 # Create the systemd service unit file for MAC spoofing
-cat << EOF > /etc/systemd/system/mspoo.service
+cat << 'EOF' > /etc/systemd/system/mspoo.service
 [Unit]
 Description=MSPOO MACSpoofing Service
 After=network-online.target
@@ -985,7 +988,7 @@ fi
 
 # Documentation
 mkdir -p /usr/local/share/package_installer
-cat << "EOF" > /usr/local/share/package_installer/README.md
+cat << 'EOF' > /usr/local/share/package_installer/README.md
 # Package Installer Script
 
 ## Description
@@ -1074,7 +1077,7 @@ chmod +x /usr/local/bin/hogen.sh
 
 # Documentation
 mkdir -p /usr/local/share/hostname_spoofer
-cat << "EOF" > /usr/local/share/hostname_spoofer/README.md
+cat << 'EOF' > /usr/local/share/hostname_spoofer/README.md
 # Hostname Spoofer Script
 
 ## Description
@@ -1097,7 +1100,7 @@ Logs are saved to /var/log/hostname_spoofer.log. The log file is rotated if it e
 EOF
 
 # Create the systemd service unit file for hostname generator
-cat << EOF > /etc/systemd/system/hogen.service
+cat << 'EOF' > /etc/systemd/system/hogen.service
 [Unit]
 Description=HOGEN Hostname Generator
 After=network-online.target
@@ -1197,7 +1200,7 @@ check_and_set_default_terminal
 
 # Documentation
 mkdir -p /usr/local/share/terminator_script
-cat << EOF > name=/usr/local/share/terminator_script/README.md
+cat << 'EOF' > /usr/local/share/terminator_script/README.md
 # Terminator Configuration Script
 
 ## Description
@@ -1275,7 +1278,7 @@ chmod +x "$STARTUP_SCRIPT_PATH"
 
 # Create the desktop entry
 mkdir -p "$USER_HOME/.config/autostart"
-cat << EOF > "$DESKTOP_ENTRY_PATH"
+cat << 'EOF' > "$DESKTOP_ENTRY_PATH"
 [Desktop Entry]
 Type=Application
 Exec=terminator -e "bash -c '$STARTUP_SCRIPT_PATH; exec bash'"
@@ -1293,7 +1296,7 @@ log "INFO" "Startup verification script and desktop entry created successfully."
 
 # Documentation
 mkdir -p /usr/local/share/terminator_script
-cat << EOF > name=/usr/local/share/terminator_script/README.md
+cat << 'EOF' > /usr/local/share/terminator_script/README.md
 # Startup Verification Script
 
 ## Description
