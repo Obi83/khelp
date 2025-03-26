@@ -334,7 +334,7 @@ EOF
 
 chmod +x /usr/local/bin/ufw.sh
 
-cat << 'EOF' > /etc/systemd/system/ufw.service
+cat << EOF > /etc/systemd/system/ufw.service
 [Unit]
 Description=UFW service for startups
 After=multi-user.target
@@ -502,7 +502,7 @@ EOF
 
 chmod +x /usr/local/bin/iptables.sh
 
-cat << 'EOF' > /etc/systemd/system/iptables.service
+cat << EOF > /etc/systemd/system/iptables.service
 [Unit]
 Description=iptables service for startups
 After=network.target
@@ -732,7 +732,7 @@ chmod +x /usr/local/bin/update_proxies.sh
 
 # Create a systemd service to run the proxy update script on startup
 log "INFO" "Creating systemd service to run the proxy update script on startup..."
-cat << 'EOF' > /etc/systemd/system/update_proxies.service
+cat << EOF > /etc/systemd/system/update_proxies.service
 [Unit]
 Description=Update Proxy List on Startup
 After=network.target
@@ -908,7 +908,7 @@ Logs are saved to /var/log/mac_spoofer.log. The log file is rotated if it exceed
 EOF
 
 # Create the systemd service unit file for MAC spoofing
-cat << 'EOF' > /etc/systemd/system/mspoo.service
+cat << EOF > /etc/systemd/system/mspoo.service
 [Unit]
 Description=MSPOO MACSpoofing Service
 After=network-online.target
@@ -1100,7 +1100,7 @@ Logs are saved to /var/log/hostname_spoofer.log. The log file is rotated if it e
 EOF
 
 # Create the systemd service unit file for hostname generator
-cat << 'EOF' > /etc/systemd/system/hogen.service
+cat << EOF > /etc/systemd/system/hogen.service
 [Unit]
 Description=HOGEN Hostname Generator
 After=network-online.target
@@ -1278,7 +1278,7 @@ chmod +x "$STARTUP_SCRIPT_PATH"
 
 # Create the desktop entry
 mkdir -p "$USER_HOME/.config/autostart"
-cat << 'EOF' > "$DESKTOP_ENTRY_PATH"
+cat << EOF > "$DESKTOP_ENTRY_PATH"
 [Desktop Entry]
 Type=Application
 Exec=terminator -e "bash -c '$STARTUP_SCRIPT_PATH; exec bash'"
