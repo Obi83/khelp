@@ -312,12 +312,13 @@ EOF
 # Configure UFW
 configure_ufw() {
     log "INFO" "Configuring UFW firewall..."
-    if systemctl enable ufw && ufw --force enable && ufw default deny incoming && ufw default allow outgoing && ufw allow ssh && ufw logging on; then
-        log "INFO" "UFW firewall configured successfully."
-    else
-        log "ERROR" "Failed to configure UFW firewall."
-        exit 1
-    fi
+    systemctl enable ufw
+    ufw --force enable
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow ssh
+    ufw logging on
+    log "INFO" "UFW firewall configured successfully."
 }
 
 # Create and enable UFW service
@@ -332,15 +333,16 @@ ufw --force enable
 while true; do sleep 60; done
 EOF
 
-chmod +x /usr/local/bin/ufw.sh
+    chmod +x /usr/local/bin/ufw.sh
 
-cat << EOF > /etc/systemd/system/ufw.service
+    cat << EOF > /etc/systemd/system/ufw.service
 [Unit]
 Description=UFW service for startups
 After=multi-user.target
 Wants=multi-user.target
 
 [Service]
+Environment="USER_HOME=${USER_HOME}"
 ExecStart=/usr/local/bin/ufw.sh
 Restart=always
 RestartSec=3
@@ -348,16 +350,13 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
-    
-chmod +x /etc/systemd/system/ufw.service
 
-systemctl daemon-reload
-    if systemctl enable ufw.service && systemctl start ufw.service; then
-        log "INFO" "UFW service created and enabled."
-    else
-        log "ERROR" "Failed to create and enable UFW service."
-        exit 1
-    fi
+    chmod +x /etc/systemd/system/ufw.service
+    
+    systemctl daemon-reload
+    systemctl enable ufw.service
+    systemctl start ufw.service
+    log "INFO" "UFW service created and enabled."
 }
 
 configure_ufw
@@ -885,7 +884,8 @@ chmod +x /usr/local/bin/mspoo.sh
 # Documentation
 mkdir -p usr/local/share/mac_spoofer
 cat << 'EOF' > /usr/local/share/mac_spoofer/README.md
-# MAC Spoofer Script
+# MAC Spoofer Script 
+MACSPOO
 
 ## Description
 This script changes the MAC address of all network interfaces (except loopback) to a randomly generated address.
@@ -1078,7 +1078,8 @@ chmod +x /usr/local/bin/hogen.sh
 # Documentation
 mkdir -p /usr/local/share/hostname_spoofer
 cat << 'EOF' > /usr/local/share/hostname_spoofer/README.md
-# Hostname Spoofer Script
+# Hostname Spoofer Script 
+HOGEN
 
 ## Description
 This script changes the system hostname to a randomly generated name fetched from the Random User Generator API.
