@@ -162,6 +162,121 @@ check_internet
 update_system
 install_packages
 
+# Ensure ProxyChains is installed
+log "INFO" "Checking if ProxyChains is installed..."
+if ! command -v proxychains &> /dev/null; then
+    log "INFO" "ProxyChains is not installed. Installing ProxyChains..."
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        if apt install -y proxychains; then
+            log "INFO" "ProxyChains installed successfully."
+            break
+        else
+            log "ERROR" "Failed to install ProxyChains. Retrying in $((attempts * 5)) seconds..."
+            attempts=$((attempts + 1))
+            sleep $((attempts * 5))
+        fi
+
+        if [ $attempts -eq $max_attempts ]; then
+            log "ERROR" "Failed to install ProxyChains after $max_attempts attempts. Please check your network connection and try again."
+            exit 1
+        fi
+    done
+else
+    log "INFO" "ProxyChains is already installed."
+fi
+
+# Check if the proxychains.conf file exists
+log "INFO" "Checking if the proxychains.conf file exists..."
+if [ ! -f /etc/proxychains.conf ]; then
+    log "INFO" "Creating /etc/proxychains.conf file..."
+    cat << 'EOF' > /etc/proxychains.conf
+# ProxyChains default configuration
+# Dynamic chain
+dynamic_chain
+
+# Proxy DNS requests - no leak for DNS data
+proxy_dns
+
+[ProxyList]
+# add proxy here ...
+# defaults set to "tor"
+socks4  127.0.0.1 9050
+EOF
+    log "INFO" "ProxyChains configuration file created."
+else
+    log "INFO" "ProxyChains configuration file already exists."
+fi
+
+# Environment variables for paths and configurations
+export PROXY_API_URL1="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
+export PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
+export PROXY_API_URL3="https://spys.me/socks.txt"
+export PROXY_API_URL4="https://www.proxy-list.download/api/v1/get?type=socks5"
+export PROXY_API_URL5="https://proxylist.geonode.com/api/proxy-list?limit=100&page=1&sort_by=lastChecked&sort_type=desc&protocols=socks5"
+export PROXY_API_URL6="https://www.freeproxy.world/api/proxy?protocol=socks5&limit=100"
+export PROXY_API_URL7="https://www.free-proxy-list.net/socks5.txt"
+export PROXY_API_URL8="https://www.proxynova.com/proxy-server-list/"
+export PROXY_API_URL9="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
+export PROXY_API_URL10="https://hidemy.name/en/proxy-list/?type=5&anon=234"
+export PROXYCHAINS_CONF="/etc/proxychains.conf"
+export USER_HOME=$(eval echo ~${SUDO_USER})
+export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
+export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
+
+# Improved URL validation function
+validate_url() {
+    if [[ ! $1 =~ ^https?://.*$ ]]; then
+        log "ERROR" "Invalid URL: $1"
+        exit 1
+    fi
+}
+
+# Debugging: Print environment variables
+log "INFO" "Environment Variables:"
+log "INFO" "PROXY_API_URL1=$PROXY_API_URL1"
+log "INFO" "PROXY_API_URL2=$PROXY_API_URL2"
+log "INFO" "PROXY_API_URL3=$PROXY_API_URL3"
+log "INFO" "PROXY_API_URL4=$PROXY_API_URL4"
+log "INFO" "PROXY_API_URL5=$PROXY_API_URL5"
+log "INFO" "PROXY_API_URL6=$PROXY_API_URL6"
+log "INFO" "PROXY_API_URL7=$PROXY_API_URL7"
+log "INFO" "PROXY_API_URL8=$PROXY_API_URL8"
+log "INFO" "PROXY_API_URL9=$PROXY_API_URL9"
+log "INFO" "PROXY_API_URL10=$PROXY_API_URL10"
+log "INFO" "PROXYCHAINS_CONF=$PROXYCHAINS_CONF"
+log "INFO" "USER_HOME=$USER_HOME"
+log "INFO" "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH"
+log "INFO" "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH"
+
+# Check if required files and directories exist
+required_files=(
+    "$PROXYCHAINS_CONF"
+    "/etc/systemd/system"
+    "/usr/local/bin"
+)
+
+for file in "${required_files[@]}"; do
+    if [ ! -e "$file" ]; then
+        log "ERROR" "Error: $file does not exist."
+        exit 1
+    fi
+done
+
+# Validate the proxy API URLs
+validate_url "$PROXY_API_URL1"
+validate_url "$PROXY_API_URL2"
+validate_url "$PROXY_API_URL3"
+validate_url "$PROXY_API_URL4"
+validate_url "$PROXY_API_URL5"
+validate_url "$PROXY_API_URL6"
+validate_url "$PROXY_API_URL7"
+validate_url "$PROXY_API_URL8"
+validate_url "$PROXY_API_URL9"
+validate_url "$PROXY_API_URL10"
+
 # Configure UFW
 configure_ufw() {
     log "INFO" "Configuring UFW firewall..."
