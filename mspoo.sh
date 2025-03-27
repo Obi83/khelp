@@ -221,7 +221,7 @@ log $LOG_LEVEL_INFO "MAC spoofing service created and enabled successfully." "$M
 
 # Documentation
 mkdir -p "$MSPOO_DOC_DIR"
-cat << EOF > "$MSPOO_DOC_FILE"
+cat << 'EOF' > "$MSPOO_DOC_FILE"
 # MAC Spoofer Script 
 MSPOO
 
