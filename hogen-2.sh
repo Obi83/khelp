@@ -67,20 +67,32 @@ log $LOG_LEVEL_WARNING "This is a warning message." "$HOGEN_LOG_FILE"
 # Debugging: Print environment variables
 log $LOG_LEVEL_INFO "HOGEN_LOG_FILE=$HOGEN_LOG_FILE" "$HOGEN_LOG_FILE"
 
-# Check if required commands are available
+# Check if required commands are available and install if not
 check_command() {
     local cmd="$1"
-    if ! command -v "$cmd" &> /dev/null; then
-        log $LOG_LEVEL_ERROR "Required command '$cmd' not found. Please install it and try again." "$HOGEN_LOG_FILE"
-        exit 1
-    fi
-}
+    local attempts=0
+    local max_attempts=3
 
-# Check for internet connectivity
-check_internet() {
-    if ! ping -c 1 8.8.8.8 &> /dev/null; then
-        log $LOG_LEVEL_ERROR "No internet connectivity. Please check your network connection." "$HOGEN_LOG_FILE"
-        exit 1
+    if ! command -v "$cmd" &> /dev/null; then
+        log $LOG_LEVEL_INFO "$cmd is not installed. Installing $cmd..." "$HOGEN_LOG_FILE"
+
+        while [ $attempts -lt $max_attempts ]; do
+            if apt install -y "$cmd"; then
+                log $LOG_LEVEL_INFO "$cmd installed successfully." "$HOGEN_LOG_FILE"
+                break
+            else
+                log $LOG_LEVEL_ERROR "Failed to install $cmd. Retrying in $((attempts * 5)) seconds..." "$HOGEN_LOG_FILE"
+                attempts=$((attempts + 1))
+                sleep $((attempts * 5))
+            fi
+
+            if [ $attempts -eq $max_attempts ]; then
+                log $LOG_LEVEL_ERROR "Failed to install $cmd after $max_attempts attempts. Please check your network connection and try again." "$HOGEN_LOG_FILE"
+                exit 1
+            fi
+        done
+    else
+        log $LOG_LEVEL_INFO "$cmd is already installed." "$HOGEN_LOG_FILE"
     fi
 }
 
