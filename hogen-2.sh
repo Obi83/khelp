@@ -77,7 +77,7 @@ check_command() {
         log $LOG_LEVEL_INFO "$cmd is not installed. Installing $cmd..." "$HOGEN_LOG_FILE"
 
         while [ $attempts -lt $max_attempts ]; do
-            if apt install -y "$cmd"; then
+            if apt update -y && apt install -y "$cmd"; then
                 log $LOG_LEVEL_INFO "$cmd installed successfully." "$HOGEN_LOG_FILE"
                 break
             else
