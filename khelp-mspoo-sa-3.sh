@@ -128,6 +128,9 @@ for interface in $interfaces; do
         log "ERROR" "Failed to spoof MAC address for $interface"
     fi
 done
+
+# Add a delay to ensure network stabilization
+sleep 10
 EOF
 
 # Make the script executable
@@ -137,7 +140,7 @@ chmod +x /usr/local/bin/mspoo.sh
 cat << EOF > /etc/systemd/system/mspoo.service
 [Unit]
 Description=MSPOO MACSpoofing Service
-After=network-online.target proxy_script.service
+After=network-online.target 
 Wants=network-online.target
 
 [Service]
