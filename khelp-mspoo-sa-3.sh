@@ -55,15 +55,9 @@ log "INFO" "Creating and enabling MAC spoofing service..."
 cat << 'EOF' > /usr/local/bin/mspoo.sh
 #!/bin/bash
 
-# Ensure the script is run as root
+# Check if the script is run as root
 if [ "$EUID" -ne 0 ]; then
     echo "Please run this script as root."
-    exit 1
-fi
-
-# Check if 'ip' command is available
-if ! command -v ip &> /dev/null; then
-    echo "'ip' command not found. Please install it and try again."
     exit 1
 fi
 
@@ -112,18 +106,53 @@ spoof_mac() {
     return 0
 }
 
-# Wait for network interfaces to be fully ready
-sleep 3  # Adjusted sleep duration for troubleshooting
+# Function to determine the primary network interface
+get_primary_interface() {
+    ip route | grep default | awk '{print $5}'
+}
 
-# Get all network interfaces except loopback
-interfaces=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo)
+# Function to get the secondary interface
+get_secondary_interface() {
+    local primary_interface=$1
+    ip link show | awk -F': ' '{print $2}' | grep -v lo | grep -v $primary_interface
+}
 
-# Spoof MAC address for each interface
-for interface in $interfaces; do
-    if spoof_mac $interface; then
-        log "INFO" "Successfully spoofed MAC address for $interface"
+# Function to ensure the network interface is up
+wait_for_interface() {
+    local interface=$1
+    for i in {1..10}; do
+        if ip link show $interface | grep -q "state UP"; then
+            return 0
+        fi
+        sleep 1
+    done
+    log "ERROR" "Network interface $interface did not come up"
+    return 1
+}
+
+# Main logic
+primary_interface=$(get_primary_interface)
+log "INFO" "Primary network interface detected: $primary_interface"
+
+# Spoof the primary network interface
+if spoof_mac $primary_interface; then
+    log "INFO" "Successfully spoofed MAC address for primary interface $primary_interface"
+    wait_for_interface $primary_interface
+else
+    log "ERROR" "Failed to spoof MAC address for primary interface $primary_interface"
+fi
+
+# Get the secondary network interface
+secondary_interfaces=$(get_secondary_interface $primary_interface)
+log "INFO" "Secondary network interfaces detected: $secondary_interfaces"
+
+# Spoof the secondary network interfaces
+for secondary_interface in $secondary_interfaces; do
+    if spoof_mac $secondary_interface; then
+        log "INFO" "Successfully spoofed MAC address for secondary interface $secondary_interface"
+        wait_for_interface $secondary_interface
     else
-        log "ERROR" "Failed to spoof MAC address for $interface"
+        log "ERROR" "Failed to spoof MAC address for secondary interface $secondary_interface"
     fi
 done
 EOF
@@ -179,7 +208,7 @@ Logs are saved to /var/log/khelp_mspoo.log. The log file is rotated if it exceed
 - The script supports error handling and logs errors and info messages.
 - The script validates the generated MAC address format.
 EOF
-
+log "INFO" "MAC spoofing completed successfully."
 
 # Summary and Reboot
 log "INFO" ""
