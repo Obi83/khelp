@@ -138,17 +138,14 @@ cat << 'EOF' > "$KHELP_UPDATE_DIR/README.md"
 # System Update Documentation
 
 ## Overview
-
 This section documents the `update_system` function, which is designed to update and upgrade the system packages. It includes retry logic to handle potential network or package manager issues.
 
 ## Function Explanation
 
 ### Parameters
-
 - No parameters are required for this function.
 
 ### Function Logic
-
 1. **Logging**: Logs the start of the system update process with an informational log level.
 2. **Retry Mechanism**: Attempts to update and upgrade the system up to three times in case of failures.
 3. **Update and Upgrade**: Uses `apt update`, `apt full-upgrade -y`, `apt autoremove -y`, and `apt autoclean` to update and clean the system packages.
@@ -157,14 +154,11 @@ This section documents the `update_system` function, which is designed to update
 6. **Logging Failure**: Logs an error message if the update fails after the maximum attempts and exits with an error code.
 
 ### Example Usage
-
 ```bash
 # Example usage of the update_system function
 update_system
 ```
-
 ### Detailed Steps
-
 1. **Initial Logging**: The function starts by logging an informational message indicating the beginning of the system update.
 2. **Loop for Retry**: A loop is used to attempt the update up to three times. If the update is successful, it logs the success and returns.
 3. **Update and Upgrade Commands**: The following commands are executed to update the system:
@@ -209,17 +203,14 @@ cat << 'EOF' > "$KHELP_INSTALLER_DIR/README.md"
 # Package Installation Documentation
 
 ## Overview
-
 This section documents the `install_packages` function, which is designed to install essential helper tools and packages with a retry mechanism to handle potential issues during the installation process.
 
 ## Function Explanation
 
 ### Parameters
-
 - No parameters are required for this function.
 
 ### Function Logic
-
 1. **Logging**: Logs the start of the package installation process with an informational log level.
 2. **Retry Mechanism**: Attempts to install the packages up to three times in case of failures.
 3. **Package Installation**: Uses `sudo apt install -y` to install the specified packages.
@@ -228,14 +219,11 @@ This section documents the `install_packages` function, which is designed to ins
 6. **Logging Failure**: Logs an error message if the installation fails after the maximum attempts and exits with an error code.
 
 ### Example Usage
-
 ```bash
 # Install packages
 install_packages
 ```
-
 ### Detailed Steps
-
 1. **Initial Logging**: The function starts by logging an informational message indicating the beginning of the package installation.
 2. **Loop for Retry**: A loop is used to attempt the installation up to three times. If the installation is successful, it logs the success and returns.
 3. **Package Installation Command**: The following command is executed to install the packages:
@@ -300,13 +288,10 @@ else
 fi
 
 # Environment variables for paths and configurations
-
-# Environment variables for system update and package installation
+export USER_HOME=$(eval echo ~${SUDO_USER})
 export UPDATE_LOG_FILE="/var/log/khelp_proxy.log"
 export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
 export KHELP_INSTALLER_DIR="/usr/local/share/khelp_installer"
-
-# Environment variables for ProxyChains and proxy API URLs
 export PROXYCHAINS_CONF="/etc/proxychains.conf"
 export PROXY_API_URL1="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
 export PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
@@ -323,28 +308,20 @@ export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
 export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/update_proxies.service"
 export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/update_proxies.timer"
 export CRONTAB_FILE="/etc/crontab"
-
-# Environment variables for UFW and Fail2ban
 export KHELP_UFW_DIR="/usr/local/share/khelp_ufw"
 export UFW_SCRIPT="/usr/local/bin/ufw.sh"
 export UFW_SERVICE="/etc/systemd/system/ufw.service"
 export KHELP_FAIL2BAN_DIR="/usr/local/share/khelp_fail2ban"
 export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
-
-# Environment variables for iptables and Tor
 export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
 export IPTABLES_SCRIPT="/usr/local/bin/iptables.sh"
 export IPTABLES_SERVICE="/etc/systemd/system/iptables.service"
 export KHELP_IPTABLES_DIR="/usr/local/share/khelp_iptables"
 export KHELP_TOR_DIR="/usr/local/share/khelp_tor"
-
-# Environment variables for default terminal, desktop entry, and verify service
 export KHELP_TERMINATOR_DIR="/usr/local/share/khelp_terminator"
 export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
 export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
 export KHELP_VERIFY_DIR="/usr/local/share/khelp_verify"
-
-
 
 # Improved URL validation function
 validate_url() {
@@ -358,15 +335,10 @@ validate_url() {
 }
 
 # Debugging: Print environment variables
-
-# Debugging: Print environment variables
-log $LOG_LEVEL_INFO "Environment Variables:"
+log $LOG_LEVEL_INFO "USER_HOME=$USER_HOME"
 log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_UPDATE_DIR=$KHELP_UPDATE_DIR"
 log $LOG_LEVEL_INFO "KHELP_INSTALLER_DIR=$KHELP_INSTALLER_DIR"
-
-# Debugging: Print environment variables
-log $LOG_LEVEL_INFO "Environment Variables:"
 log $LOG_LEVEL_INFO "PROXYCHAINS_CONF=$PROXYCHAINS_CONF"
 log $LOG_LEVEL_INFO "PROXY_API_URL1=$PROXY_API_URL1"
 log $LOG_LEVEL_INFO "PROXY_API_URL2=$PROXY_API_URL2"
@@ -383,24 +355,16 @@ log $LOG_LEVEL_INFO "UPDATE_PROXIES_SCRIPT=$UPDATE_PROXIES_SCRIPT"
 log $LOG_LEVEL_INFO "SYSTEMD_UPDATE_PROXIES_SERVICE=$SYSTEMD_UPDATE_PROXIES_SERVICE"
 log $LOG_LEVEL_INFO "SYSTEMD_UPDATE_PROXIES_TIMER=$SYSTEMD_UPDATE_PROXIES_TIMER"
 log $LOG_LEVEL_INFO "CRONTAB_FILE=$CRONTAB_FILE"
-
-# Debugging: Print environment variables
-log $LOG_LEVEL_INFO "Environment Variables:"
 log $LOG_LEVEL_INFO "KHELP_UFW_DIR=$KHELP_UFW_DIR"
 log $LOG_LEVEL_INFO "UFW_SCRIPT=$UFW_SCRIPT"
 log $LOG_LEVEL_INFO "UFW_SERVICE=$UFW_SERVICE"
 log $LOG_LEVEL_INFO "KHELP_FAIL2BAN_DIR=$KHELP_FAIL2BAN_DIR"
 log $LOG_LEVEL_INFO "FAIL2BAN_CONFIG=$FAIL2BAN_CONFIG"
-
-# Debugging: Print environment variables
-log $LOG_LEVEL_INFO "Environment Variables:"
 log $LOG_LEVEL_INFO "IPTABLES_RULES_FILE=$IPTABLES_RULES_FILE"
 log $LOG_LEVEL_INFO "IPTABLES_SCRIPT=$IPTABLES_SCRIPT"
 log $LOG_LEVEL_INFO "IPTABLES_SERVICE=$IPTABLES_SERVICE"
 log $LOG_LEVEL_INFO "KHELP_IPTABLES_DIR=$KHELP_IPTABLES_DIR"
 log $LOG_LEVEL_INFO "KHELP_TOR_DIR=$KHELP_TOR_DIR"
-
-# Debugging: Print environment variables
 log $LOG_LEVEL_INFO "Environment Variables:"
 log $LOG_LEVEL_INFO "KHELP_TERMINATOR_DIR=$KHELP_TERMINATOR_DIR"
 log $LOG_LEVEL_INFO "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH"
