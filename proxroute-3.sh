@@ -179,6 +179,17 @@ log $LOG_LEVEL_INFO "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH"
 log $LOG_LEVEL_INFO "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH"
 log $LOG_LEVEL_INFO "KHELP_VERIFY_DIR=$KHELP_VERIFY_DIR"
 
+# Log file location
+UPDATE_LOG_FILE="/var/log/update_script.log"
+
+# Function to log messages
+log() {
+    local level="$1"
+    local message="$2"
+    local log_file="$3"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$log_file"
+}
+
 # Function to update and upgrade the system
 update_and_upgrade() {
     log $LOG_LEVEL_INFO "Starting system update and upgrade..." "$UPDATE_LOG_FILE"
@@ -226,6 +237,12 @@ autoclean_system() {
         exit 1
     fi
 }
+
+# Example usage of the functions
+update_and_upgrade
+install_packages curl wget
+remove_packages nano
+autoclean_system
 
 # Documentation System Update
 mkdir -p "$KHELP_UPDATE_DIR"
