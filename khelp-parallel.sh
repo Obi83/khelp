@@ -172,6 +172,30 @@ log $LOG_LEVEL_INFO "This is an informational message." "/var/log/khelp_proxy.lo
 log $LOG_LEVEL_ERROR "This is an error message." "/var/log/khelp_proxy.log"
 log $LOG_LEVEL_WARNING "This is a warning message." "/var/log/khelp_proxy.log"
 
+# Update the system
+update_system() {
+    log $LOG_LEVEL_INFO "Updating and upgrading system" "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        if apt update && apt full-upgrade -y && apt autoremove -y && apt autoclean; then
+            log $LOG_LEVEL_INFO "System update and upgrade completed." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            log $LOG_LEVEL_ERROR "System update and upgrade failed. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            attempts=$((attempts + 1))
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "System update and upgrade failed after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    exit 1
+}
+
+# Example usage of the updated function
+update_system
+
 # Define functions for independent tasks
 install_packages() {
     log $LOG_LEVEL_INFO "Installing tools and packages." "$UPDATE_LOG_FILE"
