@@ -96,6 +96,7 @@ This example demonstrates how to use the logging function to log messages with d
 EOF
 
 # Environment variables for paths and configurations
+export USER_HOME=$(eval echo ~${SUDO_USER})
 export UPDATE_LOG_FILE="/var/log/khelp_proxy.log"
 export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
 export KHELP_INSTALLER_DIR="/usr/local/share/khelp_installer"
@@ -143,6 +144,7 @@ validate_url() {
 
 # Debugging: Print environment variables
 log $LOG_LEVEL_INFO "Environment Variables:"
+log $LOG_LEVEL_INFO "USER_HOME=$USER_HOME"
 log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_UPDATE_DIR=$KHELP_UPDATE_DIR"
 log $LOG_LEVEL_INFO "KHELP_INSTALLER_DIR=$KHELP_INSTALLER_DIR"
@@ -176,11 +178,6 @@ log $LOG_LEVEL_INFO "KHELP_TERMINATOR_DIR=$KHELP_TERMINATOR_DIR"
 log $LOG_LEVEL_INFO "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH"
 log $LOG_LEVEL_INFO "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH"
 log $LOG_LEVEL_INFO "KHELP_VERIFY_DIR=$KHELP_VERIFY_DIR"
-
-# Example usage of the log function
-log $LOG_LEVEL_INFO "This is an informational message." "/var/log/khelp_proxy.log"
-log $LOG_LEVEL_ERROR "This is an error message." "/var/log/khelp_proxy.log"
-log $LOG_LEVEL_WARNING "This is a warning message." "/var/log/khelp_proxy.log"
 
 # Function to update and upgrade the system
 update_and_upgrade() {
