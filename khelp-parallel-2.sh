@@ -648,7 +648,7 @@ echo ""
 
 uname -a
 ip link show
-sudo ufw status
+sudo ufw status verbose
 traceroute www.showmyip.com
 EOF
     chmod +x "$STARTUP_SCRIPT_PATH"
