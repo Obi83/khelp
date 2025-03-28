@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check if the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run this script as root."
+    exit 1
+fi
+
 # Define the display_logo function
 display_logo() {                                                                                                      
 echo "KKKKKKKKK    KKKKKKKHHHHHHHHH     HHHHHHHHHEEEEEEEEEEEEEEEEEEEEEELLLLLLLLLLL             PPPPPPPPPPPPPPPPP"   
@@ -19,12 +25,9 @@ echo "K:::::::K    K:::::KH:::::::H     H:::::::HE::::::::::::::::::::EL::::::::
 echo "K:::::::K    K:::::KH:::::::H     H:::::::HE::::::::::::::::::::EL::::::::::::::::::::::LP::::::::P"          
 echo "KKKKKKKKK    KKKKKKKHHHHHHHHH     HHHHHHHHHEEEEEEEEEEEEEEEEEEEEEELLLLLLLLLLLLLLLLLLLLLLLLPPPPPPPPPP"          
 }
-                                                                                                             
-# Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root."
-    exit 1
-fi
+
+# Call the display_logo function
+display_logo
 
 # Set USER_HOME based on whether the script is run with sudo or not
 if [ -n "$SUDO_USER" ]; then
