@@ -1222,8 +1222,18 @@ create_logging_readme() {
   cat << 'EOF' > "$KHELP_LOGGING_DIR/README.md"
 # Logging Function Documentation
 
+## Table of Contents
+1. [Overview](#overview)
+2. [Log Levels](#log-levels)
+3. [Logging Function](#logging-function)
+   - [Parameters](#parameters)
+   - [Function Logic](#function-logic)
+4. [Example Usage](#example-usage)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
+
 ## Overview
-This section documents the enhanced logging function and log levels used in the scripts. The logging function is designed to provide detailed logging with various log levels, log rotation, and metadata formatting to help in debugging and monitoring the system.
+This section documents the enhanced logging function and log levels used in the scripts. The logging function provides detailed logging with various log levels, log rotation, and metadata formatting to assist in debugging and monitoring the system.
 
 ## Log Levels
 The following log levels are defined:
@@ -1237,7 +1247,7 @@ The following log levels are defined:
 The current log level is set using the `CURRENT_LOG_LEVEL` variable. This can be adjusted as needed to control the verbosity of the logs.
 
 ## Logging Function
-The logging function `log()` is designed to log messages with different levels of severity, rotate logs if they exceed a certain size, and include detailed metadata in each log entry. Below is the detailed explanation of the function:
+The logging function `log()` is designed to log messages with different levels of severity, rotate logs if they exceed a certain size, and include detailed metadata in each log entry.
 
 ### Parameters
 - `level`: The log level of the message (e.g., `LOG_LEVEL_INFO`).
@@ -1259,6 +1269,28 @@ log $LOG_LEVEL_ERROR "This is an error message." "/var/log/khelp_proxy.log"
 log $LOG_LEVEL_WARNING "This is a warning message." "/var/log/khelp_proxy.log"
 ```
 This example demonstrates how to use the logging function to log messages with different levels of severity to a specified log file.
+
+## Troubleshooting
+### Common Issues
+1. **Log File Not Created**:
+   - Ensure the script has write permissions to the directory where the log file is to be created.
+   - Check if the `log_file` path is correctly specified.
+
+2. **Log Rotation Not Working**:
+   - Verify if the log file size exceeds 1MB.
+   - Ensure there are no errors in the log rotation logic.
+
+3. **Log Messages Not Displayed**:
+   - Confirm the `CURRENT_LOG_LEVEL` is set to a level that includes the messages being logged.
+   - Check if the `tee` command is available and functioning correctly.
+
+## Best Practices
+- **Consistent Log Levels**: Use consistent log levels throughout the script to maintain clarity.
+- **Clear Messages**: Ensure log messages are clear and provide sufficient context.
+- **Regular Log Maintenance**: Regularly check and maintain log files to prevent excessive disk usage.
+- **Security Considerations**: Avoid logging sensitive information to prevent security risks.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the logging function.
 EOF
 }
 
@@ -1266,10 +1298,20 @@ EOF
 create_update_readme() {
   mkdir -p "$KHELP_UPDATE_DIR"
   cat << 'EOF' > "$KHELP_UPDATE_DIR/README.md"
-# System Update Documentation
+# System Update Function Documentation
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Parameters](#parameters)
+   - [Function Logic](#function-logic)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
 
 ## Overview
-This section documents the `update_system` function, which is designed to update and upgrade the system packages. It includes retry logic to handle potential network or package manager issues.
+This section documents the `update_system` function, which is designed to update and upgrade the system packages. It includes retry logic to handle potential network or package manager issues, ensuring system stability and reliability.
 
 ## Function Explanation
 
@@ -1284,12 +1326,13 @@ This section documents the `update_system` function, which is designed to update
 5. **Retry Logic**: If the update fails, it waits and retries up to a maximum of three attempts.
 6. **Logging Failure**: Logs an error message if the update fails after the maximum attempts and exits with an error code.
 
-### Example Usage
+## Example Usage
 ```bash
 # Example usage of the update_system function
 update_system
 ```
-### Detailed Steps
+
+## Detailed Steps
 1. **Initial Logging**: The function starts by logging an informational message indicating the beginning of the system update.
 2. **Loop for Retry**: A loop is used to attempt the update up to three times. If the update is successful, it logs the success and returns.
 3. **Update and Upgrade Commands**: The following commands are executed to update the system:
@@ -1300,7 +1343,26 @@ update_system
 4. **Failure Handling**: If any of the commands fail, it logs an error message, increments the attempt counter, and waits for a specified time before retrying.
 5. **Final Failure Logging**: If all attempts fail, it logs an error message and exits with an error code.
 
-This function ensures that the system is updated and cleaned, with proper logging and retry mechanisms to handle potential issues.
+## Troubleshooting
+### Common Issues
+1. **Network Issues**:
+   - Ensure the system has a stable internet connection.
+   - Check if the package manager's repository URLs are accessible.
+
+2. **Insufficient Permissions**:
+   - Ensure the script is run with sufficient privileges (e.g., using `sudo`).
+
+3. **Package Manager Errors**:
+   - Review the error messages logged to identify specific issues with the package manager.
+   - Check for broken dependencies or held packages that may need manual intervention.
+
+## Best Practices
+- **Regular Updates**: Schedule regular updates to keep the system secure and up-to-date.
+- **Monitor Logs**: Regularly review the update logs to ensure updates are applied successfully.
+- **Backup Before Updates**: Consider creating backups before performing system updates to prevent data loss in case of issues.
+- **Test Updates**: If possible, test updates in a staging environment before applying them to production systems.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the system update function.
 EOF
 }
 
@@ -1308,38 +1370,95 @@ EOF
 create_installer_readme() {
   mkdir -p "$KHELP_INSTALLER_DIR"
   cat << 'EOF' > "$KHELP_INSTALLER_DIR/README.md"
-# Package Installation Documentation
+# Package Installation Functions Documentation
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Parameters](#parameters)
+   - [Function Logic](#function-logic)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
 
 ## Overview
-This section documents the `install_packages` function, which is designed to install essential helper tools and packages with a retry mechanism to handle potential issues during the installation process.
+This section documents the individual package installation functions, which are designed to install essential helper tools and packages with a retry mechanism to handle potential issues during the installation process. Each function incorporates advanced logging and error handling to ensure reliability and ease of debugging.
 
 ## Function Explanation
 
 ### Parameters
-- No parameters are required for this function.
+- No parameters are required for these functions.
 
 ### Function Logic
 1. **Logging**: Logs the start of the package installation process with an informational log level.
-2. **Retry Mechanism**: Attempts to install the packages up to three times in case of failures.
-3. **Package Installation**: Uses `sudo apt install -y` to install the specified packages.
-4. **Logging Success**: Logs a message indicating the successful installation of the packages.
-5. **Retry Logic**: If the installation fails, it waits and retries up to a maximum of three attempts.
-6. **Logging Failure**: Logs an error message if the installation fails after the maximum attempts and exits with an error code.
+2. **Retry Mechanism**: Attempts to install each package up to three times in case of failures.
+3. **Package Installation**: Uses `sudo apt install -y` to install the specified packages individually.
+4. **Logging Success**: Logs a message indicating the successful installation of each package.
+5. **Retry Logic**: If the installation of a package fails, it waits and retries up to a maximum of three attempts.
+6. **Logging Failure**: Logs an error message if the installation fails after the maximum attempts and exits with an error code for that package.
 
-### Example Usage
+## Example Usage
 ```bash
-# Install packages
-install_packages
-```
-### Detailed Steps
-1. **Initial Logging**: The function starts by logging an informational message indicating the beginning of the package installation.
-2. **Loop for Retry**: A loop is used to attempt the installation up to three times. If the installation is successful, it logs the success and returns.
-3. **Package Installation Command**: The following command is executed to install the packages:
-   - `sudo apt install -y ufw tor curl jq iptables fail2ban sslh terminator`
-4. **Failure Handling**: If the installation command fails, it logs an error message, increments the attempt counter, and waits for a specified time before retrying.
-5. **Final Failure Logging**: If all attempts fail, it logs an error message and exits with an error code.
+# Install curl
+install_curl
 
-This function ensures that the necessary helper tools and packages are installed, with proper logging and retry mechanisms to handle potential issues.
+# Install tor
+install_tor
+
+# Install ufw
+install_ufw
+
+# Install jq
+install_jq
+
+# Install iptables
+install_iptables
+
+# Install fail2ban
+install_fail2ban
+
+# Install sslh
+install_sslh
+
+# Install terminator
+install_terminator
+
+# Install proxychains
+install_proxychains
+
+# Install snort
+install_snort
+```
+
+## Detailed Steps
+1. **Initial Logging**: Each function starts by logging an informational message indicating the beginning of the package installation.
+2. **Loop for Retry**: For each package, a loop is used to attempt the installation up to three times. If the installation is successful, it logs the success and returns.
+3. **Package Installation Command**: The following command is executed to install each package:
+   - `sudo apt install -y <package>`
+4. **Failure Handling**: If the installation command for a package fails, it logs an error message, increments the attempt counter, and waits for a specified time before retrying.
+5. **Final Failure Logging**: If all attempts to install a package fail, it logs an error message and exits with an error code for that package.
+
+## Troubleshooting
+### Common Issues
+1. **Network Issues**:
+   - Ensure the system has a stable internet connection.
+   - Check if the package manager's repository URLs are accessible.
+
+2. **Insufficient Permissions**:
+   - Ensure the script is run with sufficient privileges (e.g., using `sudo`).
+
+3. **Package Manager Errors**:
+   - Review the error messages logged to identify specific issues with the package manager.
+   - Check for broken dependencies or held packages that may need manual intervention.
+
+## Best Practices
+- **Regular Updates**: Schedule regular updates to keep the system secure and up-to-date.
+- **Monitor Logs**: Regularly review the installation logs to ensure packages are installed successfully.
+- **Backup Before Installation**: Consider creating backups before installing new packages to prevent data loss in case of issues.
+- **Test Installations**: If possible, test the installation process in a staging environment before applying it to production systems.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the package installation functions.
 EOF
 }
 
@@ -1348,6 +1467,16 @@ create_proxychains_readme() {
   mkdir -p "$KHELP_PROXYCHAINS_DIR"
   cat << 'EOF' > "$KHELP_PROXYCHAINS_DIR/README.md"
 # ProxyChains Configuration Documentation
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Checking ProxyChains Installation](#checking-proxychains-installation)
+   - [Configuring ProxyChains](#configuring-proxychains)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
 
 ## Overview
 This section documents the process of ensuring ProxyChains is installed and properly configured. ProxyChains is a tool that allows you to redirect connections through proxy servers.
@@ -1362,13 +1491,63 @@ This section documents the process of ensuring ProxyChains is installed and prop
 5. **Logging Failure**: Logs an error message if the installation fails after the maximum attempts and exits with an error code.
 
 ### Configuring ProxyChains
-1. **Logging**: Logs the start of the process to check if the `proxychains.conf` file exists.
+1. **Logging**: Logs the start of the process to configure ProxyChains.
 2. **Check Configuration File**: Checks if the `/etc/proxychains.conf` file exists.
 3. **Creating Configuration File**: If the configuration file does not exist, it creates the file with the default configuration.
-4. **Logging Configuration**: Logs a message indicating the creation or existence of the `proxychains.conf` file.
+4. **Updating Configuration**: Updates the necessary lines in the `proxychains.conf` file to ensure proper configuration.
+5. **Appending Proxy List**: Appends the fetched proxy list to the `proxychains.conf` file.
+6. **Logging Configuration**: Logs messages indicating the creation or update of the `proxychains.conf` file.
 
+## Example Usage
+```bash
+# Ensure ProxyChains is installed and configured
+configure_proxychains
+```
+
+## Detailed Steps
+1. **Initial Logging**: The function starts by logging an informational message indicating the beginning of the ProxyChains installation and configuration process.
+2. **Check and Install ProxyChains**: Uses `command -v proxychains` to check if ProxyChains is installed. If not, it attempts to install it up to three times.
+3. **Check Configuration File**: Checks if the `/etc/proxychains.conf` file exists. If not, creates the file with the default configuration.
+4. **Update Configuration**: Uses `sed` to update necessary lines in the `proxychains.conf` file to ensure proper configuration.
+5. **Append Proxy List**: Appends the fetched proxy list to the `proxychains.conf` file.
+6. **Final Logging**: Logs messages indicating the successful installation and configuration of ProxyChains.
+
+## Troubleshooting
+### Common Issues
+1. **ProxyChains Not Installed**:
+   - Ensure the system has a stable internet connection.
+   - Check if the package manager's repository URLs are accessible.
+
+2. **Configuration File Issues**:
+   - Verify the permissions of the `/etc/proxychains.conf` file.
+   - Ensure the configuration file is correctly formatted.
+
+3. **Proxy List Not Appended**:
+   - Check if the proxy list fetching script is running correctly.
+   - Verify the validity of the proxy list URLs.
+
+## Best Practices
+- **Regular Updates**: Keep the proxy list and ProxyChains configuration updated to ensure optimal performance.
+- **Monitor Logs**: Regularly review the logs to identify and resolve any issues.
+- **Backup Configuration**: Consider creating backups of the `proxychains.conf` file before making changes.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the ProxyChains configuration.
 
 # Proxy List Setup Documentation
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Checking Required Files and Directories](#checking-required-files-and-directories)
+   - [Ensuring ProxyChains Installation](#ensuring-proxychains-installation)
+   - [Configuring ProxyChains](#configuring-proxychains)
+   - [Creating Proxy Fetching Script](#creating-proxy-fetching-script)
+   - [Creating Systemd Service](#creating-systemd-service)
+   - [Creating Systemd Timer](#creating-systemd-timer)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
 
 ## Overview
 This section documents the process of ensuring ProxyChains is configured, fetching a list of proxies, and setting up systemd services and timers to keep the proxy list updated.
@@ -1405,16 +1584,62 @@ This section documents the process of ensuring ProxyChains is configured, fetchi
 3. **Enabling Service**: Enables the systemd service.
 4. **Logging Service Creation**: Logs a message indicating the creation and enabling of the systemd service.
 
-### Creating Cron Job
-1. **Logging**: Logs the start of the process to create a cron job.
-2. **Cron Job Creation**: Creates a cron job to run the proxy update script every 30 minutes.
-3. **Logging Cron Job Creation**: Logs a message indicating the creation of the cron job.
-
 ### Creating Systemd Timer
 1. **Logging**: Logs the start of the process to create a systemd timer.
 2. **Timer Creation**: Creates the systemd timer `/etc/systemd/system/update_proxies.timer` to run the proxy update script every 30 minutes.
 3. **Enabling Timer**: Enables and starts the systemd timer.
 4. **Logging Timer Creation**: Logs a message indicating the creation and starting of the systemd timer.
+
+## Example Usage
+```bash
+# Ensure ProxyChains is installed and configured
+configure_proxychains
+
+# Create proxy fetching script
+create_proxy_fetching_script
+
+# Create and enable systemd service and timer
+create_systemd_service_and_timer
+```
+
+## Detailed Steps
+1. **Initial Logging**: The function starts by logging an informational message indicating the beginning of the required file and directory checks.
+2. **Check Required Files and Directories**: Checks if the specified files and directories exist. Logs an error message if any are missing.
+3. **Ensure ProxyChains Installation**: Uses `command -v proxychains` to check if ProxyChains is installed. If not, attempts to install it up to three times.
+4. **Check Configuration File**: Checks if the `/etc/proxychains.conf` file exists and creates it if it does not.
+5. **Update Configuration**: Ensures the configuration is set up for Tor and appends the fetched proxy list.
+6. **Create Proxy Fetching Script**: Logs the start of the process, creates the script, and logs the completion.
+7. **Create Systemd Service**: Logs the start of the process, creates the service, enables it, and logs the completion.
+8. **Create Systemd Timer**: Logs the start of the process, creates the timer, enables and starts it, and logs the completion.
+
+## Troubleshooting
+### Common Issues
+1. **Missing Files/Directories**:
+   - Verify the existence and permissions of required files and directories.
+
+2. **ProxyChains Not Installed**:
+   - Ensure the system has a stable internet connection.
+   - Check if the package manager's repository URLs are accessible.
+
+3. **Configuration File Issues**:
+   - Verify the permissions of the `/etc/proxychains.conf` file.
+   - Ensure the configuration file is correctly formatted.
+
+4. **Proxy List Not Appended**:
+   - Check if the proxy list fetching script is running correctly.
+   - Verify the validity of the proxy list URLs.
+
+5. **Systemd Service/Timer Issues**:
+   - Ensure the service and timer files are correctly formatted.
+   - Check the status of the service and timer using `systemctl status`.
+
+## Best Practices
+- **Regular Updates**: Keep the proxy list and ProxyChains configuration updated to ensure optimal performance.
+- **Monitor Logs**: Regularly review the logs to identify and resolve any issues.
+- **Backup Configuration**: Consider creating backups of the `proxychains.conf` file before making changes.
+- **Test Configuration**: Test the proxy fetching script, systemd service, and timer in a staging environment before deploying to production.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the ProxyChains configuration and proxy list setup.
 EOF
 }
 
@@ -1424,8 +1649,18 @@ create_ufw_readme() {
   cat << 'EOF' > "$KHELP_UFW_DIR/README.md"
 # UFW Configuration Documentation
 
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Configuring UFW](#configuring-ufw)
+   - [Creating and Enabling UFW Service](#creating-and-enabling-ufw-service)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
+
 ## Overview
-This section documents the process of configuring UFW (Uncomplicated Firewall) and setting up a systemd service to ensure it runs on startup.
+This section documents the process of configuring UFW (Uncomplicated Firewall) and setting up a systemd service to ensure it runs on startup. UFW is a user-friendly interface for managing iptables firewall rules.
 
 ## Function Explanation
 
@@ -1443,11 +1678,100 @@ This section documents the process of configuring UFW (Uncomplicated Firewall) a
 2. **Create Script**: Creates a script `/usr/local/bin/ufw.sh` to enable and start UFW, and keep the script running to prevent the service from deactivating.
 3. **Make Script Executable**: Sets the script as executable.
 4. **Create Service File**: Creates a systemd service file `/etc/systemd/system/ufw.service` to run the UFW script on startup.
-5. **Make Service File Executable**: Sets the service file as executable.
-6. **Reload Systemd**: Reloads the systemd daemon to recognize the new service.
-7. **Enable Service**: Enables the UFW service to start at boot.
-8. **Start Service**: Starts the UFW service.
-9. **Logging Success**: Logs a message indicating the successful creation and enabling of the UFW service.
+5. **Reload Systemd**: Reloads the systemd daemon to recognize the new service.
+6. **Enable Service**: Enables the UFW service to start at boot.
+7. **Start Service**: Starts the UFW service.
+8. **Logging Success**: Logs a message indicating the successful creation and enabling of the UFW service.
+
+## Example Usage
+```bash
+# Configure UFW
+configure_ufw
+
+# Create and enable UFW service
+create_ufw_service
+```
+
+## Detailed Steps
+### Configuring UFW
+1. **Initial Logging**: Logs the start of the UFW configuration process.
+2. **Enable UFW**: Executes `systemctl enable ufw` to ensure UFW starts at boot.
+3. **Force Enable UFW**: Runs `ufw --force enable` to enable UFW without requiring user interaction.
+4. **Set Default Policies**: Configures UFW with default policies to deny all incoming traffic and allow all outgoing traffic:
+   ```bash
+   ufw default deny incoming
+   ufw default allow outgoing
+   ```
+5. **Allow SSH**: Configures UFW to allow SSH connections:
+   ```bash
+   ufw allow ssh
+   ```
+6. **Enable Logging**: Enables UFW logging:
+   ```bash
+   ufw logging on
+   ```
+7. **Logging Success**: Logs a message indicating the successful configuration of UFW.
+
+### Creating and Enabling UFW Service
+1. **Initial Logging**: Logs the start of the process to create and enable the UFW service.
+2. **Create Script**: Creates a script at `/usr/local/bin/ufw.sh` to enable and start UFW, ensuring it remains active:
+   ```bash
+   #!/bin/bash
+   ufw enable
+   ufw status
+   while true; do sleep 3600; done
+   ```
+3. **Make Script Executable**: Sets the script as executable:
+   ```bash
+   chmod +x /usr/local/bin/ufw.sh
+   ```
+4. **Create Service File**: Creates a systemd service file at `/etc/systemd/system/ufw.service`:
+   ```ini
+   [Unit]
+   Description=UFW Firewall
+   After=network.target
+
+   [Service]
+   ExecStart=/usr/local/bin/ufw.sh
+   Restart=always
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+5. **Reload Systemd**: Reloads the systemd daemon to recognize the new service:
+   ```bash
+   systemctl daemon-reload
+   ```
+6. **Enable Service**: Enables the UFW service to start at boot:
+   ```bash
+   systemctl enable ufw.service
+   ```
+7. **Start Service**: Starts the UFW service:
+   ```bash
+   systemctl start ufw.service
+   ```
+8. **Logging Success**: Logs a message indicating the successful creation and enabling of the UFW service.
+
+## Troubleshooting
+### Common Issues
+1. **UFW Not Enabled**:
+   - Ensure UFW is correctly installed and the system has the necessary permissions.
+   - Verify the systemd service and script paths are correct.
+
+2. **Service Fails to Start**:
+   - Check the service status using `systemctl status ufw.service` for error messages.
+   - Ensure the script `/usr/local/bin/ufw.sh` is executable and correctly formatted.
+
+3. **Firewall Rules Not Applied**:
+   - Verify the UFW configuration and rules using `ufw status`.
+   - Ensure no conflicting firewall rules are present.
+
+## Best Practices
+- **Regularly Review Firewall Rules**: Periodically review and update the firewall rules to ensure they meet current security requirements.
+- **Monitor Logs**: Regularly review UFW logs to identify and address any potential security issues.
+- **Test Configuration**: Test the UFW configuration in a staging environment before applying it to production systems.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the UFW configuration and service setup.
 EOF
 }
 
@@ -1457,6 +1781,17 @@ create_fail2ban_readme() {
   cat << 'EOF' > "$KHELP_FAIL2BAN_DIR/README.md"
 # Fail2ban Configuration Documentation
 
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Configuring Fail2ban](#configuring-fail2ban)
+   - [Fail2ban Configuration](#fail2ban-configuration)
+   - [Enabling and Starting Fail2ban](#enabling-and-starting-fail2ban)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
+
 ## Overview
 This section documents the process of configuring Fail2ban, a tool used to protect servers from brute-force attacks by banning IP addresses that show malicious signs.
 
@@ -1465,7 +1800,7 @@ This section documents the process of configuring Fail2ban, a tool used to prote
 ### Configuring Fail2ban
 1. **Logging**: Logs the start of the Fail2ban configuration process with an informational log level.
 2. **Retry Mechanism**: Attempts to install Fail2ban up to three times in case of failures.
-3. **Installation**: Uses `apt install -y fail2ban` to install Fail2ban.
+3. **Installation**: Uses `sudo apt install -y fail2ban` to install Fail2ban.
 4. **Logging Success**: Logs a message indicating the successful installation of Fail2ban.
 5. **Logging Failure**: Logs an error message if the installation fails after the maximum attempts and exits with an error code.
 
@@ -1476,13 +1811,82 @@ This section documents the process of configuring Fail2ban, a tool used to prote
    - `findtime`: Time window for detecting failures.
    - `maxretry`: Maximum number of retries before banning.
    - `[sshd]` and `[sshd-ddos]`: Enables protection for SSH and SSHD-DDoS.
+2. **Logging Configuration**: Logs a message indicating the creation and configuration of the `/etc/fail2ban/jail.local` file.
 
 ### Enabling and Starting Fail2ban
-1. **Enable Fail2ban**: Uses `systemctl enable fail2ban` to enable Fail2ban to start at boot.
-2. **Start Fail2ban**: Uses `systemctl start fail2ban` to start Fail2ban.
-3. **Check Status**: Checks if Fail2ban is active using `systemctl is-active --quiet fail2ban`.
+1. **Enable Fail2ban**: Uses `sudo systemctl enable fail2ban` to enable Fail2ban to start at boot.
+2. **Start Fail2ban**: Uses `sudo systemctl start fail2ban` to start Fail2ban.
+3. **Check Status**: Checks if Fail2ban is active using `sudo systemctl is-active --quiet fail2ban`.
 4. **Logging Success**: Logs a message indicating the successful configuration and start of Fail2ban.
 5. **Logging Failure**: Logs an error message if Fail2ban fails to start and exits with an error code.
+
+## Example Usage
+```bash
+# Configure and start Fail2ban
+configure_fail2ban
+```
+
+## Detailed Steps
+### Configuring Fail2ban
+1. **Initial Logging**: Logs the start of the Fail2ban configuration process.
+2. **Retry Mechanism**: Attempts to install Fail2ban up to three times using:
+   ```bash
+   sudo apt install -y fail2ban
+   ```
+3. **Logging Success/Failure**: Logs a success message if installation is successful, otherwise logs an error message after the maximum attempts.
+
+### Fail2ban Configuration
+1. **Create Configuration File**: Creates the `/etc/fail2ban/jail.local` configuration file with the following settings:
+   ```ini
+   [DEFAULT]
+   ignoreip = 127.0.0.1/8
+   bantime  = 600
+   findtime  = 600
+   maxretry = 3
+
+   [sshd]
+   enabled = true
+
+   [sshd-ddos]
+   enabled = true
+   ```
+2. **Logging Configuration**: Logs a message indicating the creation and configuration of the `jail.local` file.
+
+### Enabling and Starting Fail2ban
+1. **Enable Fail2ban**: Executes:
+   ```bash
+   sudo systemctl enable fail2ban
+   ```
+2. **Start Fail2ban**: Executes:
+   ```bash
+   sudo systemctl start fail2ban
+   ```
+3. **Check Status**: Verifies if Fail2ban is active:
+   ```bash
+   sudo systemctl is-active --quiet fail2ban
+   ```
+4. **Logging Success/Failure**: Logs a success message if Fail2ban is active, otherwise logs an error message if it fails to start.
+
+## Troubleshooting
+### Common Issues
+1. **Installation Failures**:
+   - Ensure the system has a stable internet connection.
+   - Verify the package manager's repository URLs are accessible.
+
+2. **Configuration Issues**:
+   - Verify the permissions and formatting of the `/etc/fail2ban/jail.local` file.
+
+3. **Service Failures**:
+   - Check the status of the Fail2ban service using `systemctl status fail2ban` for error messages.
+   - Ensure no conflicting services are running.
+
+## Best Practices
+- **Regularly Review Bans**: Periodically review the list of banned IP addresses to ensure no false positives.
+- **Monitor Logs**: Regularly review Fail2ban logs to identify and address any potential security issues.
+- **Test Configuration**: Test the Fail2ban configuration in a staging environment before applying it to production systems.
+- **Update Fail2ban**: Keep Fail2ban up-to-date to benefit from the latest security features and updates.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the Fail2ban configuration.
 EOF
 }
 
@@ -1492,8 +1896,20 @@ create_iptables_readme() {
   cat << 'EOF' > "$KHELP_IPTABLES_DIR/README.md"
 # iptables Configuration Documentation
 
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Ensuring iptables Directory](#ensuring-iptables-directory)
+   - [Configuring iptables](#configuring-iptables)
+   - [Debugging iptables Setup](#debugging-iptables-setup)
+   - [Creating and Enabling iptables Service](#creating-and-enabling-iptables-service)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
+
 ## Overview
-This section documents the process of configuring iptables, a utility for configuring Linux kernel firewall, and setting up a systemd service to ensure the iptables rules are applied on startup.
+This section documents the process of configuring iptables, a utility for configuring the Linux kernel firewall, and setting up a systemd service to ensure the iptables rules are applied on startup.
 
 ## Function Explanation
 
@@ -1506,7 +1922,7 @@ This section documents the process of configuring iptables, a utility for config
 3. **Set Default Policies**: Sets the default policies to drop all incoming and forwarded traffic, and to accept all outgoing traffic.
 4. **Allow Loopback and Established Connections**: Configures rules to allow loopback traffic and established or related connections.
 5. **Allow SSH and ICMP**: Configures rules to allow SSH connections on port 22 and ICMP (ping) traffic.
-6. **Save Rules**: Saves the iptables rules to `/etc/iptables/rules.v4`.
+6. **Save Rules**: Saves the iptables rules to `/etc/iptables/rules.v4` using `iptables-save`.
 7. **Logging Success**: Logs a message indicating the successful configuration of iptables.
 8. **Logging Failure**: Logs an error message if the rules fail to save and exits with an error code.
 
@@ -1519,11 +1935,123 @@ This section documents the process of configuring iptables, a utility for config
 2. **Create Script**: Creates a script `/usr/local/bin/iptables.sh` to restore iptables rules from `/etc/iptables/rules.v4`.
 3. **Make Script Executable**: Sets the script as executable.
 4. **Create Service File**: Creates a systemd service file `/etc/systemd/system/iptables.service` to run the iptables restoration script on startup.
-5. **Make Service File Executable**: Sets the service file as executable.
-6. **Reload Systemd**: Reloads the systemd daemon to recognize the new service.
-7. **Enable and Start Service**: Enables and starts the iptables service.
-8. **Logging Success**: Logs a message indicating the successful creation and enabling of the iptables service.
-9. **Logging Failure**: Logs an error message if the service fails to enable or start and exits with an error code.
+5. **Reload Systemd**: Reloads the systemd daemon to recognize the new service.
+6. **Enable and Start Service**: Enables and starts the iptables service.
+7. **Logging Success**: Logs a message indicating the successful creation and enabling of the iptables service.
+8. **Logging Failure**: Logs an error message if the service fails to enable or start and exits with an error code.
+
+## Example Usage
+```bash
+# Ensure iptables directory exists
+ensure_iptables_directory
+
+# Configure iptables
+configure_iptables
+
+# Create and enable iptables service
+create_iptables_service
+```
+
+## Detailed Steps
+### Ensuring iptables Directory
+1. **Directory Creation**: Ensures the `/etc/iptables` directory exists using:
+   ```bash
+   mkdir -p /etc/iptables
+   ```
+
+### Configuring iptables
+1. **Initial Logging**: Logs the start of the iptables configuration process.
+2. **Flush Rules**: Executes:
+   ```bash
+   iptables -F
+   iptables -X
+   ```
+3. **Set Default Policies**: Configures default policies to drop all incoming and forwarded traffic, and accept all outgoing traffic:
+   ```bash
+   iptables -P INPUT DROP
+   iptables -P FORWARD DROP
+   iptables -P OUTPUT ACCEPT
+   ```
+4. **Allow Loopback and Established Connections**: Adds rules to allow loopback traffic and established or related connections:
+   ```bash
+   iptables -A INPUT -i lo -j ACCEPT
+   iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+   ```
+5. **Allow SSH and ICMP**: Adds rules to allow SSH on port 22 and ICMP traffic:
+   ```bash
+   iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+   iptables -A INPUT -p icmp -j ACCEPT
+   ```
+6. **Save Rules**: Saves the iptables rules to `/etc/iptables/rules.v4` using:
+   ```bash
+   iptables-save > /etc/iptables/rules.v4
+   ```
+7. **Logging Success/Failure**: Logs a success message if rules are saved, otherwise logs an error message.
+
+### Debugging iptables Setup
+1. **Initial Logging**: Logs the current iptables rules for debugging purposes.
+2. **List Rules**: Executes:
+   ```bash
+   iptables -L -v
+   ```
+   and appends the output to `/var/log/iptables_script.log`.
+
+### Creating and Enabling iptables Service
+1. **Initial Logging**: Logs the start of the process to create and enable the iptables service.
+2. **Create Script**: Creates a script at `/usr/local/bin/iptables.sh` to restore iptables rules:
+   ```bash
+   #!/bin/bash
+   iptables-restore < /etc/iptables/rules.v4
+   ```
+3. **Make Script Executable**: Sets the script as executable:
+   ```bash
+   chmod +x /usr/local/bin/iptables.sh
+   ```
+4. **Create Service File**: Creates a systemd service file at `/etc/systemd/system/iptables.service`:
+   ```ini
+   [Unit]
+   Description=Restore iptables firewall rules
+   After=network.target
+
+   [Service]
+   ExecStart=/usr/local/bin/iptables.sh
+   Type=oneshot
+   RemainAfterExit=yes
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+5. **Reload Systemd**: Reloads the systemd daemon:
+   ```bash
+   systemctl daemon-reload
+   ```
+6. **Enable and Start Service**: Enables and starts the iptables service:
+   ```bash
+   systemctl enable iptables.service
+   systemctl start iptables.service
+   ```
+7. **Logging Success/Failure**: Logs a success message if the service is enabled and started, otherwise logs an error message.
+
+## Troubleshooting
+### Common Issues
+1. **iptables Rules Not Applied**:
+   - Ensure the iptables rules are correctly saved in `/etc/iptables/rules.v4`.
+   - Verify the script `/usr/local/bin/iptables.sh` is executable and correctly formatted.
+
+2. **Service Fails to Start**:
+   - Check the service status using `systemctl status iptables.service` for error messages.
+   - Ensure the service file `/etc/systemd/system/iptables.service` is correctly formatted.
+
+3. **Directory Issues**:
+   - Verify the existence and permissions of the `/etc/iptables` directory.
+
+## Best Practices
+- **Regularly Review Firewall Rules**: Periodically review and update the firewall rules to ensure they meet current security requirements.
+- **Monitor Logs**: Regularly review iptables logs to identify and address any potential security issues.
+- **Test Configuration**: Test the iptables configuration in a staging environment before applying it to production systems.
+- **Backup Rules**: Consider creating backups of the iptables rules before making changes.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the iptables configuration and service setup.
 EOF
 }
 
@@ -1533,6 +2061,15 @@ create_tor_readme() {
   cat << 'EOF' > "$KHELP_TOR_DIR/README.md"
 # Tor Configuration Documentation
 
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Configuring and Enabling Tor](#configuring-and-enabling-tor)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
+
 ## Overview
 This section documents the process of configuring and enabling Tor, a software that enables anonymous communication, with a retry mechanism to handle potential installation issues.
 
@@ -1541,12 +2078,51 @@ This section documents the process of configuring and enabling Tor, a software t
 ### Configuring and Enabling Tor
 1. **Logging**: Logs the start of the Tor configuration process with an informational log level.
 2. **Retry Mechanism**: Attempts to install Tor up to three times in case of failures.
-3. **Installation**: Uses `apt install -y tor` to install Tor.
+3. **Installation**: Uses `sudo apt install -y tor` to install Tor.
 4. **Logging Success**: Logs a message indicating the successful installation of Tor.
 5. **Logging Failure**: Logs an error message if the installation fails after the maximum attempts and exits with an error code.
-6. **Enable and Start Tor Service**: Uses `systemctl enable tor` and `systemctl start tor` to enable and start the Tor service.
+6. **Enable and Start Tor Service**: Uses `sudo systemctl enable tor` and `sudo systemctl start tor` to enable and start the Tor service.
 7. **Logging Service Success**: Logs a message indicating the successful configuration and enabling of the Tor service.
 8. **Logging Service Failure**: Logs an error message if the Tor service fails to enable or start and exits with an error code.
+
+## Example Usage
+```bash
+# Configure and enable Tor
+configure_and_enable_tor
+```
+
+## Detailed Steps
+### Configuring and Enabling Tor
+1. **Initial Logging**: Logs the start of the Tor configuration process.
+2. **Retry Mechanism**: Attempts to install Tor up to three times using:
+   ```bash
+   sudo apt install -y tor
+   ```
+3. **Logging Success/Failure**: Logs a success message if installation is successful, otherwise logs an error message after the maximum attempts.
+4. **Enable and Start Tor Service**: Executes:
+   ```bash
+   sudo systemctl enable tor
+   sudo systemctl start tor
+   ```
+5. **Logging Service Success/Failure**: Logs a success message if the Tor service is enabled and started, otherwise logs an error message.
+
+## Troubleshooting
+### Common Issues
+1. **Installation Failures**:
+   - Ensure the system has a stable internet connection.
+   - Verify the package manager's repository URLs are accessible.
+
+2. **Service Failures**:
+   - Check the service status using `systemctl status tor` for error messages.
+   - Ensure no conflicting services are running.
+
+## Best Practices
+- **Regularly Review Tor Configuration**: Periodically review and update the Tor configuration to ensure it meets current security requirements.
+- **Monitor Logs**: Regularly review Tor logs to identify and address any potential security issues.
+- **Test Configuration**: Test the Tor configuration in a staging environment before applying it to production systems.
+- **Update Tor**: Keep Tor up-to-date to benefit from the latest security features and updates.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the Tor configuration.
 EOF
 }
 
@@ -1555,6 +2131,18 @@ create_default_terminal_readme() {
   mkdir -p "$KHELP_DEFAULT_TERMINAL_DIR"
   cat << 'EOF' > "$KHELP_DEFAULT_TERMINAL_DIR/README.md"
 # Setting Terminator as Default Terminal Documentation
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Setting Terminator as Default Terminal for GNOME](#setting-terminator-as-default-terminal-for-gnome)
+   - [Setting Terminator as Default Terminal for KDE Plasma](#setting-terminator-as-default-terminal-for-kde-plasma)
+   - [Setting Terminator as Default Terminal for XFCE](#setting-terminator-as-default-terminal-for-xfce)
+   - [Checking and Setting Default Terminal](#checking-and-setting-default-terminal)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
 
 ## Overview
 This section documents the process of setting Terminator as the default terminal emulator for various desktop environments, including GNOME, KDE Plasma, and XFCE. The script includes functions to configure the default terminal and a function to check the current default terminal and update it if necessary.
@@ -1584,6 +2172,74 @@ This section documents the process of setting Terminator as the default terminal
 2. **Check Current Terminal**: Checks the current default terminal for the detected desktop environment using appropriate commands (`gsettings`, `kreadconfig5`, or `xfconf-query`).
 3. **Set Default Terminal**: If the current terminal is not Terminator, it calls the respective function to set Terminator as the default terminal.
 4. **Unsupported Desktop Environment**: Logs an error message and exits if the desktop environment is unsupported.
+
+## Example Usage
+```bash
+# Check and set Terminator as the default terminal
+check_and_set_default_terminal
+```
+
+## Detailed Steps
+### Setting Terminator as Default Terminal for GNOME
+1. **Initial Logging**: Logs the start of the process:
+   ```bash
+   log $LOG_LEVEL_INFO "Setting Terminator as the default terminal for GNOME..."
+   ```
+2. **Set Default Terminal**: Executes:
+   ```bash
+   gsettings set org.gnome.desktop.default-applications.terminal exec terminator
+   gsettings set org.gnome.desktop.default-applications.terminal exec-arg "-x"
+   ```
+3. **Logging Success/Failure**: Logs a success message if the commands are successful, otherwise logs an error message.
+
+### Setting Terminator as Default Terminal for KDE Plasma
+1. **Initial Logging**: Logs the start of the process:
+   ```bash
+   log $LOG_LEVEL_INFO "Setting Terminator as the default terminal for KDE Plasma..."
+   ```
+2. **Set Default Terminal**: Executes:
+   ```bash
+   kwriteconfig5 --file ~/.config/kdeglobals --group General --key TerminalApplication terminator
+   ```
+3. **Logging Success/Failure**: Logs a success message if the command is successful, otherwise logs an error message.
+
+### Setting Terminator as Default Terminal for XFCE
+1. **Initial Logging**: Logs the start of the process:
+   ```bash
+   log $LOG_LEVEL_INFO "Setting Terminator as the default terminal for XFCE..."
+   ```
+2. **Set Default Terminal**: Executes:
+   ```bash
+   xfconf-query -c xfce4-session -p /sessions/default/terminal -s terminator
+   ```
+3. **Logging Success/Failure**: Logs a success message if the command is successful, otherwise logs an error message.
+
+### Checking and Setting Default Terminal
+1. **Initial Logging**: Logs the current default terminal.
+2. **Check Current Terminal**: Detects the desktop environment and checks the current default terminal using:
+   - `gsettings` for GNOME
+   - `kreadconfig5` for KDE Plasma
+   - `xfconf-query` for XFCE
+3. **Set Default Terminal**: If the current terminal is not Terminator, calls the respective function to set Terminator as the default terminal.
+4. **Unsupported Desktop Environment**: Logs an error message and exits if the desktop environment is unsupported.
+
+## Troubleshooting
+### Common Issues
+1. **Command Not Found**:
+   - Ensure the desktop environment's configuration tool (`gsettings`, `kwriteconfig5`, or `xfconf-query`) is installed and available in the PATH.
+
+2. **Permission Issues**:
+   - Ensure the script has the necessary permissions to modify desktop environment settings.
+
+3. **Unsupported Desktop Environment**:
+   - Verify that the desktop environment is supported and that the appropriate commands are used.
+
+## Best Practices
+- **Test Configuration**: Test the configuration process in a staging environment before applying it to production systems.
+- **Monitor Logs**: Regularly review logs to identify and address any potential issues.
+- **Keep Terminator Updated**: Ensure Terminator is up-to-date to benefit from the latest features and bug fixes.
+
+Feel free to reach out if you encounter any issues or have any questions regarding setting Terminator as the default terminal.
 EOF
 }
 
@@ -1592,6 +2248,16 @@ create_startup_verification_readme() {
   mkdir -p "$KHELP_STARTUP_VERIFICATION_DIR"
   cat << 'EOF' > "$KHELP_STARTUP_VERIFICATION_DIR/README.md"
 # Startup Script and Desktop Entry Documentation for Verification
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Function Explanation](#function-explanation)
+   - [Creating the Startup Script](#creating-the-startup-script)
+   - [Creating the Desktop Entry](#creating-the-desktop-entry)
+3. [Example Usage](#example-usage)
+4. [Detailed Steps](#detailed-steps)
+5. [Troubleshooting](#troubleshooting)
+6. [Best Practices](#best-practices)
 
 ## Overview
 This section documents the process of creating a startup script and a desktop entry to run the script at startup. The script ensures that specific services are active before executing additional commands.
@@ -1614,6 +2280,95 @@ This section documents the process of creating a startup script and a desktop en
    - **Autostart**: Enables the desktop entry to run at startup.
    - **Name and Comment**: Provides a name and comment for the desktop entry.
 3. **Make Desktop Entry Executable**: Sets the desktop entry as executable.
+
+## Example Usage
+```bash
+# Create and configure the startup script
+create_startup_script
+
+# Create and configure the desktop entry
+create_desktop_entry
+```
+
+## Detailed Steps
+### Creating the Startup Script
+1. **Initial Logging**: Logs the start of the process:
+   ```bash
+   log $LOG_LEVEL_INFO "Creating the startup script..."
+   ```
+2. **Script Creation**: Creates a script at `STARTUP_SCRIPT_PATH` with the following content:
+   ```bash
+   #!/bin/bash
+
+   wait_for_service() {
+       local service="$1"
+       local attempts=0
+       local max_attempts=3
+       while [ $attempts -lt $max_attempts ]; do
+           systemctl is-active --quiet "$service" && return 0
+           attempts=$((attempts + 1))
+           sleep 5
+       done
+       return 1
+   }
+
+   log $LOG_LEVEL_INFO "Waiting for UFW service..."
+   wait_for_service "ufw" || { log $LOG_LEVEL_ERROR "UFW service is not active. Exiting."; exit 1; }
+
+   log $LOG_LEVEL_INFO "Waiting for Tor service..."
+   wait_for_service "tor" || { log $LOG_LEVEL_ERROR "Tor service is not active. Exiting."; exit 1; }
+
+   log $LOG_LEVEL_INFO "Showing system information and status of services..."
+   uname -a
+   systemctl status ufw
+   systemctl status tor
+   ```
+3. **Make Script Executable**: Sets the script as executable:
+   ```bash
+   chmod +x "$STARTUP_SCRIPT_PATH"
+   ```
+
+### Creating the Desktop Entry
+1. **Initial Logging**: Logs the start of the process:
+   ```bash
+   log $LOG_LEVEL_INFO "Creating the desktop entry..."
+   ```
+2. **Desktop Entry Creation**: Creates a desktop entry at `DESKTOP_ENTRY_PATH` with the following content:
+   ```ini
+   [Desktop Entry]
+   Type=Application
+   Exec=terminator -e "$STARTUP_SCRIPT_PATH"
+   Hidden=false
+   NoDisplay=false
+   X-GNOME-Autostart-enabled=true
+   Name[en_US]=Startup Script
+   Comment[en_US]=Runs the startup script to check services and show system information
+   ```
+3. **Make Desktop Entry Executable**: Sets the desktop entry as executable:
+   ```bash
+   chmod +x "$DESKTOP_ENTRY_PATH"
+   ```
+
+## Troubleshooting
+### Common Issues
+1. **Script Not Executing**:
+   - Ensure the script path is correct and the script is executable.
+   - Check for any syntax errors in the script.
+
+2. **Services Not Active**:
+   - Verify that the `ufw` and `tor` services are installed and enabled.
+   - Check the status of the services using `systemctl status ufw` and `systemctl status tor`.
+
+3. **Desktop Entry Not Running**:
+   - Ensure the desktop entry path is correct and the entry is executable.
+   - Verify that the desktop environment supports autostart entries.
+
+## Best Practices
+- **Test Script and Entry**: Test the startup script and desktop entry in a staging environment before applying them to production systems.
+- **Monitor Logs**: Regularly review logs to identify and address any potential issues.
+- **Keep Services Updated**: Ensure the services (e.g., `ufw` and `tor`) are up-to-date to benefit from the latest features and security updates.
+
+Feel free to reach out if you encounter any issues or have any questions regarding the startup script and desktop entry creation.
 EOF
 }
 
@@ -1732,7 +2487,7 @@ Logs messages with a specified log level and rotates the log file if it exceeds 
   - `message`: The log message.
   - `log_file`: The log file path.
 
-### fetch_random_name
+### fetch_random_name()
 Fetches a random name from the Random User Generator API.
 
 - **Returns:** A randomly fetched name.
@@ -1784,18 +2539,69 @@ create_snort_readme() {
   cat << EOF > "$SNORT_DOC_FILE"
 # Snort Configuration Documentation
 
-## Overview
-Snort is an open-source Intrusion Detection and Prevention System (IDPS) developed by Cisco. It is used to monitor network traffic in real-time, 
-analyzing packets for signs of malicious activity, policy violations, or other threats. Snort can operate in three main modes:
+## Table of Contents
+1. [Overview](#overview)
+2. [Modes of Operation](#modes-of-operation)
+3. [Configuration Steps](#configuration-steps)
+4. [Environment Variables](#environment-variables)
+5. [Conclusion](#conclusion)
 
+## Overview
+Snort is an open-source Intrusion Detection and Prevention System (IDPS) developed by Cisco. 
+It is used to monitor network traffic in real-time, analyzing packets for signs of malicious activity, policy violations, or other threats. 
+Snort can operate in three main modes:
+
+## Modes of Operation
 1. **Sniffer Mode**: Captures and displays network packets in real-time.
 2. **Packet Logger Mode**: Logs packets to disk for later analysis.
 3. **Network Intrusion Detection System (NIDS) Mode**: Analyzes network traffic against a set of rules to detect suspicious activity.
 
+## Configuration Steps
+1. **Installation**: Install Snort using the package manager or by compiling from source.
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y snort
+   ```
+2. **Configuration File**: Edit the Snort configuration file located at `/etc/snort/snort.conf` to set up network variables, 
+     rules paths, and output plugins.
+   - Set network variables (e.g., HOME_NET, EXTERNAL_NET).
+   - Define the rule paths and include the necessary rule files.
+   - Configure output plugins for logging and alerting.
+
+3. **Rules Management**: Download and manage Snort rules from sources like the Snort community rules, Emerging Threats, or other rule providers.
+   ```bash
+   wget https://www.snort.org/rules/community -O /etc/snort/rules/community.rules
+   ```
+   - Ensure the downloaded rules are referenced in the Snort configuration file.
+
+4. **Testing Configuration**: Test the Snort configuration to ensure there are no errors.
+   ```bash
+   sudo snort -T -c /etc/snort/snort.conf
+   ```
+
+5. **Running Snort**: Start Snort in the desired mode.
+   - Sniffer Mode:
+     ```bash
+     sudo snort -v
+     ```
+   - Packet Logger Mode:
+     ```bash
+     sudo snort -dev -l /var/log/snort
+     ```
+   - NIDS Mode:
+     ```bash
+     sudo snort -c /etc/snort/snort.conf -i eth0
+     ```
+
+## Environment Variables
+- **HOME_NET**: Specifies the internal network range that Snort will monitor.
+- **EXTERNAL_NET**: Defines the external network range (usually set to any).
+- **RULE_PATH**: Path to the directory containing Snort rules.
+
 ## Conclusion
 This documentation provides an overview of the Snort configuration steps and the associated environment variables. 
-By following these steps, you can ensure that Snort is properly integrated into your network security setup, providing real-time intrusion detection alongside UFW, 
-iptables, and Fail2ban.
+By following these steps, you can ensure that Snort is properly integrated into your network security setup, 
+providing real-time intrusion detection alongside UFW, iptables, and Fail2ban.
 EOF
 }
 
