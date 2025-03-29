@@ -243,27 +243,236 @@ export PRIMARY_INTERFACE
 # Main script execution
 log $LOG_LEVEL_INFO "Starting khelp setup..." "$UPDATE_LOG_FILE"
 
-# Define functions for independent tasks
-install_packages() {
-    log $LOG_LEVEL_INFO "Installing tools and packages." "$UPDATE_LOG_FILE"
+# Functions to install individual packages
+install_curl() {
+    log $LOG_LEVEL_INFO "Installing curl..." "$UPDATE_LOG_FILE"
     local attempts=0
     local max_attempts=3
-    local packages="ufw tor curl jq iptables fail2ban sslh terminator proxychains snort"
 
     while [ $attempts -lt $max_attempts ]; do
-        if sudo apt install -y $packages; then
-            log $LOG_LEVEL_INFO "Installed all useful helper tools." "$UPDATE_LOG_FILE"
+        apt install -y curl
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "Curl installed successfully." "$UPDATE_LOG_FILE"
             return 0
         else
-            log $LOG_LEVEL_ERROR "Package installation failed. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
             attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install curl. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
             sleep $((attempts * 5))
         fi
     done
 
-    log $LOG_LEVEL_ERROR "Package installation failed after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
-    exit 1
+    log $LOG_LEVEL_ERROR "Failed to install curl after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
 }
+
+install_tor() {
+    log $LOG_LEVEL_INFO "Installing tor..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y tor
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "Tor installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install tor. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install tor after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+install_ufw() {
+    log $LOG_LEVEL_INFO "Installing ufw..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y ufw
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "UFW installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install UFW. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install UFW after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+install_jq() {
+    log $LOG_LEVEL_INFO "Installing jq..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y jq
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "jq installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install jq. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install jq after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+install_iptables() {
+    log $LOG_LEVEL_INFO "Installing iptables..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y iptables
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "iptables installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install iptables. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install iptables after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+install_fail2ban() {
+    log $LOG_LEVEL_INFO "Installing fail2ban..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y fail2ban
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "fail2ban installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install fail2ban. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install fail2ban after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+install_sslh() {
+    log $LOG_LEVEL_INFO "Installing sslh..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y sslh
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "sslh installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install sslh. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install sslh after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+install_terminator() {
+    log $LOG_LEVEL_INFO "Installing terminator..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y terminator
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "terminator installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install terminator. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install terminator after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+install_proxychains() {
+    log $LOG_LEVEL_INFO "Installing proxychains..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y proxychains
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "proxychains installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install proxychains. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install proxychains after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+install_snort() {
+    log $LOG_LEVEL_INFO "Installing snort..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y snort
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "snort installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install snort. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install snort after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+# Main script execution
+log $LOG_LEVEL_INFO "Starting khelp setup..." "$UPDATE_LOG_FILE"
+
+# Execute independent package installation tasks in parallel
+install_curl &
+install_tor &
+install_ufw &
+install_jq &
+install_iptables &
+install_fail2ban &
+install_sslh &
+install_terminator &
+install_proxychains &
+install_snort &
+
+# Wait for all background tasks to complete
+wait
+
+log $LOG_LEVEL_INFO "All package installations completed successfully." "$UPDATE_LOG_FILE"
 
 # Create a backup directory with a timestamp
 BACKUP_DIR="/backup/configs_$(date +'%Y%m%d%H%M%S')"
@@ -356,27 +565,11 @@ configure_tor() {
 configure_proxychains() {
     log $LOG_LEVEL_INFO "Checking if ProxyChains is installed..." "$UPDATE_LOG_FILE"
     if ! command -v proxychains &> /dev/null; then
-        log $LOG_LEVEL_INFO "ProxyChains is not installed. Installing ProxyChains..." "$UPDATE_LOG_FILE"
-        local attempts=0
-        local max_attempts=3
-
-        while [ $attempts -lt $max_attempts ]; do
-            if apt install -y proxychains; then
-                log $LOG_LEVEL_INFO "ProxyChains installed successfully." "$UPDATE_LOG_FILE"
-                break
-            else
-                log $LOG_LEVEL_ERROR "Failed to install ProxyChains. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
-                attempts=$((attempts + 1))
-                sleep $((attempts * 5))
-            fi
-
-            if [ $attempts -eq $max_attempts ]; then
-                log $LOG_LEVEL_ERROR "Failed to install ProxyChains after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
-                exit 1
-            fi
-        done
+        log $LOG_LEVEL_ERROR "ProxyChains is not installed. Please run install_proxychains first." "$UPDATE_LOG_FILE"
+        return 1
     else
         log $LOG_LEVEL_INFO "ProxyChains is already installed." "$UPDATE_LOG_FILE"
+        # Add your configuration commands for ProxyChains here
     fi
 
     # Check if the proxychains.conf file exists
@@ -461,7 +654,6 @@ EOF
 }
 
 # Execute independent tasks in parallel
-install_packages &
 configure_ufw &
 configure_fail2ban &
 configure_iptables &
