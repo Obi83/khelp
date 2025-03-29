@@ -136,13 +136,13 @@ validate_url() {
 
 # Example usage of the log function for different tasks
 
-# Task 1: Hogen
-log $LOG_LEVEL_INFO "Starting Hogen task" "$HOGEN_LOG_FILE"
-log $LOG_LEVEL_INFO "Hogen task completed successfully" "$HOGEN_LOG_FILE"
-
-# Task 2: Proxy
+# Task 1: Proxy
 log $LOG_LEVEL_INFO "Starting Proxy task" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "Proxy task completed successfully" "$UPDATE_LOG_FILE"
+
+# Task 2: Hogen
+log $LOG_LEVEL_INFO "Starting Hogen task" "$HOGEN_LOG_FILE"
+log $LOG_LEVEL_INFO "Hogen task completed successfully" "$HOGEN_LOG_FILE"
 
 # Task 3: MSPoo
 log $LOG_LEVEL_INFO "Starting MSPoo task" "$MSPOO_LOG_FILE"
@@ -518,18 +518,32 @@ fetch_random_name() {
     echo $name
 }
 
+log() {
+    local message="$1"
+    local log_file="/var/log/hogen.log"
+    local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+
+    # Ensure the log file exists
+    touch $log_file
+
+    # Check if the message is already logged to avoid duplication
+    if ! grep -q "$message" $log_file; then
+        echo "$timestamp $message" >> $log_file
+    fi
+}
+
 newhn=$(fetch_random_name)
 if [ $? -ne 0 ]; then
-    echo "Failed to fetch random name." >> /var/log/hogen.log
+    log "Failed to fetch random name."
     exit 1
 fi
 
-echo "Fetched random name: $newhn" >> /var/log/hogen.log
+log "Fetched random name: $newhn"
 
 if hostnamectl set-hostname "$newhn"; then
-    echo "Hostname set to $newhn" >> /var/log/hogen.log
+    log "Hostname set to $newhn"
 else
-    echo "Failed to set hostname to $newhn" >> /var/log/hogen.log
+    log "Failed to set hostname to $newhn"
     exit 1
 fi
 
@@ -539,9 +553,9 @@ update_hosts_file() {
     if ! grep -q "$entry" /etc/hosts; then
         echo "$entry" >> /etc/hosts
         if [ $? -eq 0 ]; then
-            echo "Added $entry to /etc/hosts" >> /var/log/hogen.log
+            log "Added $entry to /etc/hosts"
         else
-            echo "Failed to add $entry to /etc/hosts" >> /var/log/hogen.log
+            log "Failed to add $entry to /etc/hosts"
             return 1
         fi
     fi
@@ -554,7 +568,7 @@ update_hosts_file "127.0.0.1    $newhn"
 current_hostname=$(hostname)
 update_hosts_file "127.0.0.1    $current_hostname"
 
-echo "Hostname set to $newhn and /etc/hosts updated" >> /var/log/hogen.log
+log "Hostname set to $newhn and /etc/hosts updated"
 EOF
     chmod +x "$HOGEN_SCRIPT_PATH"
     log $LOG_LEVEL_INFO "Hostname generator script created successfully." "$HOGEN_LOG_FILE"
