@@ -686,12 +686,15 @@ configure_snort() {
     log $LOG_LEVEL_INFO "Creating snort rules..." "$UPDATE_LOG_FILE"
     cat << EOF > $SNORT_RULES_DIR/local.rules
 # Custom rules for detecting specific types of traffic and threats
-alert tcp \$EXTERNAL_NET any -> \$HOME_NET 22 (msg:"SSH connection attempt"; sid:1000001; rev:1;)
-alert tcp \$EXTERNAL_NET any -> \$HOME_NET 80 (msg:"HTTP connection attempt"; sid:1000002; rev:1;)
-alert tcp \$HOME_NET 80 -> \$EXTERNAL_NET any (msg:"HTTP response"; sid:1000003; rev:1;)
-alert icmp \$EXTERNAL_NET any -> \$HOME_NET any (msg:"ICMP packet"; sid:1000004; rev:1;)
+    alert tcp \$EXTERNAL_NET any -> \$HOME_NET 22 (msg:"SSH connection attempt"; sid:1000001; rev:1;)
+    alert tcp \$EXTERNAL_NET any -> \$HOME_NET 80 (msg:"HTTP connection attempt"; sid:1000002; rev:1;)
+    alert tcp \$HOME_NET 80 -> \$EXTERNAL_NET any (msg:"HTTP response"; sid:1000003; rev:1;)
+    alert icmp \$EXTERNAL_NET any -> \$HOME_NET any (msg:"ICMP packet"; sid:1000004; rev:1;)
 EOF
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
+
+    chown root:root /etc/snort/snort.conf
+    chmod 644 /etc/snort/snort.conf
 }
 
 # Execute independent tasks in parallel
@@ -962,47 +965,47 @@ create_snort_script() {
     log $LOG_LEVEL_INFO "Creating snort script..." "$UPDATE_LOG_FILE"
     cat << EOF > "$SNORT_CONF"
 # Define network variables
-var HOME_NET $ALLOWED_IP_RANGE
-var EXTERNAL_NET any
+    var HOME_NET 192.168.1.0/24
+    var EXTERNAL_NET any
 
-# Preprocessor configurations
-preprocessor stream5_global: track_tcp yes, track_udp yes
-preprocessor stream5_tcp: policy windows, detect_anomalies, require_3whs 180, overlap_limit 10, small_segments 3 bytes 150, timeout 180
-preprocessor stream5_udp: timeout 180
-preprocessor stream5_icmp: timeout 180
+    # Preprocessor configurations
+    preprocessor stream5_global: track_tcp yes, track_udp yes
+    preprocessor stream5_tcp: policy windows, detect_anomalies, require_3whs 180, overlap_limit 10, small_segments 3 bytes 150, timeout 180
+    preprocessor stream5_udp: timeout 180
+    preprocessor stream5_icmp: timeout 180
 
-preprocessor http_inspect: global iis_unicode_map unicode.map 1252
-preprocessor http_inspect_server: server default profile all ports { 80 8080 8180 } oversize_dir_length 500
+    preprocessor http_inspect: global iis_unicode_map unicode.map 1252
+    preprocessor http_inspect_server: server default profile all ports { 80 8080 8180 } oversize_dir_length 500
 
-preprocessor frag3_global: max_frags 65536
-preprocessor frag3_engine: policy windows detect_anomalies overlap_limit 10
+    preprocessor frag3_global: max_frags 65536
+    preprocessor frag3_engine: policy windows detect_anomalies overlap_limit 10
 
-preprocessor stream5_ssh: max_sessions 256
+    preprocessor stream5_ssh: max_sessions 256
 
-preprocessor dcerpc2: memcap 102400, events [co]
+    preprocessor dcerpc2: memcap 102400, events [co]
 
-preprocessor dns: ports { 53 } enable_rdata_overflow no enable_rdata_txt_overflow no enable_rdata_type_overflow no
+    preprocessor dns: ports { 53 } enable_rdata_overflow no enable_rdata_txt_overflow no enable_rdata_type_overflow no
 
-preprocessor ssl: noinspect_encrypted
+    preprocessor ssl: noinspect_encrypted
 
-# Include rule sets
-include \$RULE_PATH/local.rules
-include \$RULE_PATH/community.rules
+    # Include rule sets
+    include \$RULE_PATH/local.rules
+    include \$RULE_PATH/community.rules
 
-# Output modules
-output alert_fast: stdout
-output log_tcpdump: $SNORT_LOG_DIR/snort.log
+    # Output modules
+    output alert_fast: stdout
+    output log_tcpdump: $SNORT_LOG_DIR/snort.log
 
-# Path to rule files
-var RULE_PATH $SNORT_RULES_DIR
+    # Path to rule files
+    var RULE_PATH $SNORT_RULES_DIR
 
-# Path to dynamic preprocessor libraries
-dynamicpreprocessor directory /usr/local/lib/snort_dynamicpreprocessor/
-dynamicengine /usr/local/lib/snort_dynamicengine/libsf_engine.so
-dynamicdetection directory /usr/local/lib/snort_dynamicrules/
+    # Path to dynamic preprocessor libraries
+    dynamicpreprocessor directory /usr/local/lib/snort_dynamicpreprocessor/
+    dynamicengine /usr/local/lib/snort_dynamicengine/libsf_engine.so
+    dynamicdetection directory /usr/local/lib/snort_dynamicrules/
 
-# Customize and add your rules
-include \$RULE_PATH/snort.rules
+    # Customize and add your rules
+    include \$RULE_PATH/snort.rules
 EOF
     chmod +x "$SNORT_LOG_DIR"
     log $LOG_LEVEL_INFO "snort script created successfully." "$UPDATE_LOG_FILE"
