@@ -121,7 +121,6 @@ log() {
 
     # Format and write the log entry
     echo "$timestamp [$log_level_name] [$script_name] [$user@$hostname] - $message" | tee -a "$log_file"
-    fi
 }
 
 # Improved URL validation function
