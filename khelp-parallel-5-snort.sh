@@ -840,9 +840,6 @@ wait
 
 log $LOG_LEVEL_INFO "All script creation tasks completed successfully." "$UPDATE_LOG_FILE"
 
-# Main script execution
-log $LOG_LEVEL_INFO "Starting khelp service setup..." "$UPDATE_LOG_FILE"
-
 # Function to create the UFW systemd service
 create_ufw_service() {
     log $LOG_LEVEL_INFO "Creating and enabling UFW service..." "$UPDATE_LOG_FILE"
