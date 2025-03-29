@@ -119,8 +119,11 @@ log() {
     local user=$(whoami)
     local hostname=$(hostname)
 
-    # Format and write the log entry
-    echo "$timestamp [$log_level_name] [$script_name] [$user@$hostname] - $message" | tee -a "$log_file"
+    # Check if the message is already logged to avoid duplication
+    if ! grep -q "$timestamp [$log_level_name] [$script_name] [$user@$hostname] - $message" "$log_file"; then
+        # Format and write the log entry
+        echo "$timestamp [$log_level_name] [$script_name] [$user@$hostname] - $message" | tee -a "$log_file"
+    fi
 }
 
 # Improved URL validation function
@@ -248,7 +251,7 @@ install_packages() {
     log $LOG_LEVEL_INFO "Installing tools and packages." "$UPDATE_LOG_FILE"
     local attempts=0
     local max_attempts=3
-    local packages="ufw tor curl jq iptables fail2ban sslh terminator proxychains snort"
+    local packages="ufw tor curl jq iptables fail2ban sslh terminator proxychains snort code"
 
     while [ $attempts -lt $max_attempts ]; do
         if sudo apt install -y $packages; then
