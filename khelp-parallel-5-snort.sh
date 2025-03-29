@@ -119,10 +119,8 @@ log() {
     local user=$(whoami)
     local hostname=$(hostname)
 
-    # Check if the message is already logged to avoid duplication
-    if ! grep -q "$timestamp [$log_level_name] [$script_name] [$user@$hostname] - $message" "$log_file"; then
-        # Format and write the log entry
-        echo "$timestamp [$log_level_name] [$script_name] [$user@$hostname] - $message" | tee -a "$log_file"
+    # Format and write the log entry
+    echo "$timestamp [$log_level_name] [$script_name] [$user@$hostname] - $message" | tee -a "$log_file"
     fi
 }
 
@@ -251,7 +249,7 @@ install_packages() {
     log $LOG_LEVEL_INFO "Installing tools and packages." "$UPDATE_LOG_FILE"
     local attempts=0
     local max_attempts=3
-    local packages="ufw tor curl jq iptables fail2ban sslh terminator proxychains snort code"
+    local packages="ufw tor curl jq iptables fail2ban sslh terminator proxychains snort"
 
     while [ $attempts -lt $max_attempts ]; do
         if sudo apt install -y $packages; then
@@ -267,6 +265,28 @@ install_packages() {
     log $LOG_LEVEL_ERROR "Package installation failed after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
     exit 1
 }
+
+# Function to install code-oss
+install_code_oss() {
+    # Add the Microsoft GPG key
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+    sudo install -o root -g root -m 644 packages.microsoft.gpg /usr/share/keyrings/
+    rm -f packages.microsoft.gpg
+
+    # Add the code-oss repository
+    sudo sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/packages.microsoft.gpg] http://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/code-oss.list'
+
+    # Update the package list
+    sudo apt update
+
+    # Install code-oss
+    sudo apt install -y code-oss
+
+    echo "code-oss installation completed."
+}
+
+# Call the function to install code-oss
+install_code_oss
 
 # Create a backup directory with a timestamp
 BACKUP_DIR="/backup/configs_$(date +'%Y%m%d%H%M%S')"
@@ -462,6 +482,7 @@ EOF
 
 # Execute independent tasks in parallel
 install_packages &
+install_code_oss &
 configure_ufw &
 configure_fail2ban &
 configure_iptables &
