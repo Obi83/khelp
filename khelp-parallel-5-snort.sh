@@ -254,6 +254,31 @@ install_packages() {
     exit 1
 }
 
+# Create a backup directory with a timestamp
+BACKUP_DIR="/backup/configs_$(date +'%Y%m%d%H%M%S')"
+mkdir -p "$BACKUP_DIR"
+
+# Function to backup a configuration file
+backup_config() {
+    local config_file="$1"
+    local backup_file="$BACKUP_DIR/$(basename $config_file)"
+    if [ -f "$config_file" ]; then
+        cp "$config_file" "$backup_file"
+        log "INFO" "Backed up $config_file to $backup_file"
+    else
+        log "WARNING" "Configuration file $config_file not found, skipping backup"
+    fi
+}
+
+# Backup configurations
+log "INFO" "Backing up configuration files..."
+backup_config "/etc/proxychains.conf"
+backup_config "/etc/ufw/ufw.conf"
+backup_config "/etc/iptables/rules.v4"
+backup_config "/etc/snort/snort.conf"
+backup_config "/etc/fail2ban/jail.local"
+backup_config "/etc/sslh/sslh.cfg"
+
 configure_ufw() {
     log $LOG_LEVEL_INFO "Configuring UFW firewall..." "$UPDATE_LOG_FILE"
     systemctl enable ufw
@@ -461,7 +486,7 @@ EOF
     log $LOG_LEVEL_INFO "iptables script created successfully." "$UPDATE_LOG_FILE"
 }
 
-# Function to create the hostname generator script
+# Function to create the hogen script
 create_hogen_script() {
     log $LOG_LEVEL_INFO "Creating hostname generator script..." "$HOGEN_LOG_FILE"
     cat << 'EOF' > "$HOGEN_SCRIPT_PATH"
@@ -473,15 +498,15 @@ fetch_random_name() {
     local response=$(curl -s $api_url)
     
     if [ -z "$response" ]; then
-        log $LOG_LEVEL_ERROR "Failed to fetch data from the API." "$HOGEN_LOG_FILE"
+        echo "Failed to fetch data from the API." >> /var/log/hogen.log
         exit 1
     fi
 
     local first_name=$(echo $response | jq -r '.results[0].name.first')
     local last_name=$(echo $response | jq -r '.results[0].name.last')
     
-    if [ -z "$first_name" ] || [ -z "$last_name\" ]; then
-        log $LOG_LEVEL_ERROR "Failed to extract names from the API response." "$HOGEN_LOG_FILE"
+    if [ -z "$first_name" ] || [ -z "$last_name" ]; then
+        echo "Failed to extract names from the API response." >> /var/log/hogen.log
         exit 1
     fi
 
@@ -495,16 +520,16 @@ fetch_random_name() {
 
 newhn=$(fetch_random_name)
 if [ $? -ne 0 ]; then
-    log $LOG_LEVEL_ERROR "Failed to fetch random name." "$HOGEN_LOG_FILE"
+    echo "Failed to fetch random name." >> /var/log/hogen.log
     exit 1
 fi
 
-log $LOG_LEVEL_INFO "Fetched random name: $newhn" "$HOGEN_LOG_FILE"
+echo "Fetched random name: $newhn" >> /var/log/hogen.log
 
 if hostnamectl set-hostname "$newhn"; then
-    log $LOG_LEVEL_INFO "Hostname set to $newhn" "$HOGEN_LOG_FILE"
+    echo "Hostname set to $newhn" >> /var/log/hogen.log
 else
-    log $LOG_LEVEL_ERROR "Failed to set hostname to $newhn" "$HOGEN_LOG_FILE"
+    echo "Failed to set hostname to $newhn" >> /var/log/hogen.log
     exit 1
 fi
 
@@ -514,9 +539,9 @@ update_hosts_file() {
     if ! grep -q "$entry" /etc/hosts; then
         echo "$entry" >> /etc/hosts
         if [ $? -eq 0 ]; then
-            log $LOG_LEVEL_INFO "Added $entry to /etc/hosts" "$HOGEN_LOG_FILE"
+            echo "Added $entry to /etc/hosts" >> /var/log/hogen.log
         else
-            log $LOG_LEVEL_ERROR "Failed to add $entry to /etc/hosts" "$HOGEN_LOG_FILE"
+            echo "Failed to add $entry to /etc/hosts" >> /var/log/hogen.log
             return 1
         fi
     fi
@@ -529,8 +554,7 @@ update_hosts_file "127.0.0.1    $newhn"
 current_hostname=$(hostname)
 update_hosts_file "127.0.0.1    $current_hostname"
 
-log $LOG_LEVEL_INFO "Hostname set to $newhn and /etc/hosts updated" "$HOGEN_LOG_FILE"
-echo "Hostname set to $newhn and /etc/hosts updated"
+echo "Hostname set to $newhn and /etc/hosts updated" >> /var/log/hogen.log
 EOF
     chmod +x "$HOGEN_SCRIPT_PATH"
     log $LOG_LEVEL_INFO "Hostname generator script created successfully." "$HOGEN_LOG_FILE"
@@ -832,6 +856,7 @@ create_hogen_service() {
 [Unit]
 Description=HOGEN Hostname Generator
 Before=display-manager.service
+After=network-online.target
 
 [Service]
 ExecStart=$HOGEN_SCRIPT_PATH
