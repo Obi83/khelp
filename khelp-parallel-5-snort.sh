@@ -205,6 +205,11 @@ detect_ip_range() {
 # Detect local network IP range
 detect_ip_range
 
+# Function to determine the primary network interface
+get_primary_interface() {
+    ip route | grep default | awk '{print $5}'
+}
+
 # Update the system
 update_system() {
     log $LOG_LEVEL_INFO "Updating and upgrading system" "$UPDATE_LOG_FILE"
@@ -228,6 +233,12 @@ update_system() {
 
 # Example usage of the updated function
 update_system
+
+# Determine the primary network interface
+PRIMARY_INTERFACE=$(get_primary_interface)
+
+# Export the primary interface
+export PRIMARY_INTERFACE
 
 # Main script execution
 log $LOG_LEVEL_INFO "Starting khelp setup..." "$UPDATE_LOG_FILE"
@@ -492,13 +503,29 @@ create_hogen_script() {
     cat << 'EOF' > "$HOGEN_SCRIPT_PATH"
 #!/bin/bash
 
+# Lock file location
+LOCKFILE="/var/run/hogen.lock"
+
+# Function to log messages
+log() {
+    local message="$1"
+    local log_file="/var/log/hogen.log"
+    local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+
+    # Ensure the log file exists
+    touch $log_file
+
+    # Append the log message with a timestamp
+    echo "$timestamp $message" >> $log_file
+}
+
 # Function to fetch a random name from the Random User Generator API
 fetch_random_name() {
     local api_url="https://randomuser.me/api/"
     local response=$(curl -s $api_url)
     
     if [ -z "$response" ]; then
-        echo "Failed to fetch data from the API." >> /var/log/hogen.log
+        log "Failed to fetch data from the API."
         exit 1
     fi
 
@@ -506,7 +533,7 @@ fetch_random_name() {
     local last_name=$(echo $response | jq -r '.results[0].name.last')
     
     if [ -z "$first_name" ] || [ -z "$last_name" ]; then
-        echo "Failed to extract names from the API response." >> /var/log/hogen.log
+        log "Failed to extract names from the API response."
         exit 1
     fi
 
@@ -518,23 +545,20 @@ fetch_random_name() {
     echo $name
 }
 
-log() {
-    local message="$1"
-    local log_file="/var/log/hogen.log"
-    local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+# Check if another instance of the script is running
+if [ -e $LOCKFILE ]; then
+    log "Another instance of the script is already running. Exiting."
+    exit 1
+fi
 
-    # Ensure the log file exists
-    touch $log_file
+# Create the lock file
+touch $LOCKFILE
 
-    # Check if the message is already logged to avoid duplication
-    if ! grep -q "$message" $log_file; then
-        echo "$timestamp $message" >> $log_file
-    fi
-}
-
+# Fetch and set the new hostname
 newhn=$(fetch_random_name)
 if [ $? -ne 0 ]; then
     log "Failed to fetch random name."
+    rm -f $LOCKFILE
     exit 1
 fi
 
@@ -544,6 +568,7 @@ if hostnamectl set-hostname "$newhn"; then
     log "Hostname set to $newhn"
 else
     log "Failed to set hostname to $newhn"
+    rm -f $LOCKFILE
     exit 1
 fi
 
@@ -569,6 +594,9 @@ current_hostname=$(hostname)
 update_hosts_file "127.0.0.1    $current_hostname"
 
 log "Hostname set to $newhn and /etc/hosts updated"
+
+# Remove the lock file
+rm -f $LOCKFILE
 EOF
     chmod +x "$HOGEN_SCRIPT_PATH"
     log $LOG_LEVEL_INFO "Hostname generator script created successfully." "$HOGEN_LOG_FILE"
@@ -873,7 +901,7 @@ Before=display-manager.service
 After=network-online.target
 
 [Service]
-ExecStart=$HOGEN_SCRIPT_PATH
+ExecStart=/usr/local/bin/hogen.sh
 Restart=on-failure
 RestartSec=3
 
@@ -964,7 +992,7 @@ Description=Snort Network Intrusion Detection System
 After=network.target
 
 [Service]
-ExecStart=/usr/sbin/snort -c $SNORT_CONF -i eth0
+ExecStart=/usr/sbin/snort -c $SNORT_CONF -i $PRIMARY_INTERFACE
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=always
 
