@@ -443,9 +443,11 @@ EOF
 configure_snort() {
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
     
-    # Create necessary directories
+    # Create necessary directories with correct permissions
     mkdir -p $SNORT_RULES_DIR
     mkdir -p $SNORT_LOG_DIR
+    chown snort:snort $SNORT_LOG_DIR
+    chmod 750 $SNORT_LOG_DIR
 
     log $LOG_LEVEL_INFO "Creating snort rules..." "$UPDATE_LOG_FILE"
     cat << EOF > $SNORT_RULES_DIR/local.rules
@@ -455,6 +457,7 @@ alert tcp \$EXTERNAL_NET any -> \$HOME_NET 80 (msg:"HTTP connection attempt"; si
 alert tcp \$HOME_NET 80 -> \$EXTERNAL_NET any (msg:"HTTP response"; sid:1000003; rev:1;)
 alert icmp \$EXTERNAL_NET any -> \$HOME_NET any (msg:"ICMP packet"; sid:1000004; rev:1;)
 EOF
+    log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
 }
 
 # Execute independent tasks in parallel
@@ -824,7 +827,10 @@ dynamicdetection directory /usr/local/lib/snort_dynamicrules/
 # Customize and add your rules
 include \$RULE_PATH/snort.rules
 EOF
+    chmod +x "$SNORT_LOG_DIR"
+    log $LOG_LEVEL_INFO "snort script created successfully." "$UPDATE_LOG_FILE"
 }
+
 
 # Execute script creation tasks in parallel
 create_ufw_script &
@@ -1017,9 +1023,6 @@ create_snort_service &
 wait
 
 log $LOG_LEVEL_INFO "All systemd service creation tasks completed successfully." "$UPDATE_LOG_FILE"
-
-# Main script execution
-log $LOG_LEVEL_INFO "Starting khelp documentation setup..." "$UPDATE_LOG_FILE"
 
 # Function to create README.md for Logging Function
 create_logging_readme() {
