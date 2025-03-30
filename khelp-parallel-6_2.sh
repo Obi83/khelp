@@ -253,6 +253,22 @@ log() {
     echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] - $message" | tee -a "$log_file"
 }
 
+#!/bin/bash
+
+# Check if the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run this script as root."
+    exit 1
+fi
+
+# Function to log messages
+log() {
+    local level="$1"
+    local message="$2"
+    local log_file="$3"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] - $message" | tee -a "$log_file"
+}
+
 # Function to install apt-fast and handle errors
 install_apt_fast() {
     log "INFO" "Installing apt-fast..." "/var/log/update.log"
@@ -269,7 +285,7 @@ install_apt_fast() {
             continue
         fi
 
-        log "INFO" "Installing software-properties-common..." "/var/log/update.log"
+        log "INFO" "Installing software-properties-common and dependencies..." "/var/log/update.log"
         apt-get install -y software-properties-common python3-software-properties
         if [ $? -ne 0 ]; then
             log "ERROR" "Failed to install software-properties-common." "/var/log/update.log"
