@@ -51,6 +51,7 @@ export UPDATE_LOG_FILE="/var/log/khelp/khelp.log"
 export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp/khelp_hogen.log"}
 export MSPOO_LOG_FILE=${MSPOO_LOG_FILE:-"/var/log/khelp/khelp_mspoo.log"}
 export SNORT_LOG_DIR="/var/log/khelp/snort"
+export HOME_NET="$ALLOWED_IP_RANGE"
 
 # Directories
 export KHELP_UPDATE_DIR="/usr/local/share/khelp/khelp_update"
@@ -84,13 +85,13 @@ export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
 export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
 
 # Service paths
-export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/khelp/update_proxies.service"
-export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/khelp/update_proxies.timer"
+export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/update_proxies.service"
+export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/update_proxies.timer"
 export UFW_SERVICE_PATH="/etc/systemd/system/khelp/ufw.service"
-export IPTABLES_SERVICE_PATH="/etc/systemd/system/khelp/iptables.service"
-export HOGEN_SERVICE_PATH=${HOGEN_SERVICE_PATH:-"/etc/systemd/system/khelp/hogen.service"}
-export MSPOO_SERVICE_PATH=${MSPOO_SERVICE_PATH:-"/etc/systemd/system/khelp/mspoo.service"}
-export SNORT_SERVICE="/etc/systemd/system/khelp/snort.service"
+export IPTABLES_SERVICE_PATH="/etc/systemd/system/iptables.service"
+export HOGEN_SERVICE_PATH=${HOGEN_SERVICE_PATH:-"/etc/systemd/system/hogen.service"}
+export MSPOO_SERVICE_PATH=${MSPOO_SERVICE_PATH:-"/etc/systemd/systemmspoo.service"}
+export SNORT_SERVICE="/etc/systemd/system/snort.service"
 
 # Documentation files
 export HOGEN_DOC_FILE="$HOGEN_DOC_DIR/README.md"
@@ -173,6 +174,7 @@ log $LOG_LEVEL_INFO "USER_HOME=$USER_HOME" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "HOGEN_LOG_FILE=$HOGEN_LOG_FILE" "$HOGEN_LOG_FILE"
 log $LOG_LEVEL_INFO "MSPOO_LOG_FILE=$MSPOO_LOG_FILE" "$MSPOO_LOG_FILE"
+log $LOG_LEVEL_INFO "HOME_NET=$HOME_NET" "$UPDATE_LOG_FILE"
 
 # Directories
 log $LOG_LEVEL_INFO "KHELP_UPDATE_DIR=$KHELP_UPDATE_DIR" "$UPDATE_LOG_FILE"
@@ -222,20 +224,41 @@ log $LOG_LEVEL_INFO "CRONTAB_FILE=$CRONTAB_FILE" "$UPDATE_LOG_FILE"
 
 log $LOG_LEVEL_INFO "Starting Setting Variables task done." "$UPDATE_LOG_FILE"
 
+
 # Function to detect the local network IP range
 detect_ip_range() {
     LOCAL_IP=$(hostname -I | awk '{print $1}')
     IP_PREFIX=$(echo $LOCAL_IP | cut -d. -f1-3)
-    ALLOWED_IP_RANGE="$IP_PREFIX.0/24"
+    ALLOWED_IP_RANGE="${IP_PREFIX}.0/24"
 }
-
-# Detect local network IP range
-detect_ip_range
 
 # Function to determine the primary network interface
 get_primary_interface() {
     ip route | grep default | awk '{print $5}'
 }
+
+# Detect local network IP range
+detect_ip_range
+
+# Set the HOME_NET environment variable
+export HOME_NET="$ALLOWED_IP_RANGE"
+
+# Log the HOME_NET environment variable
+LOG_LEVEL_INFO="INFO"
+UPDATE_LOG_FILE="/var/log/update.log"
+log $LOG_LEVEL_INFO "HOME_NET=$HOME_NET" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "USER_HOME=$USER_HOME" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
+
+# Example of using the get_primary_interface function
+PRIMARY_INTERFACE=$(get_primary_interface)
+log $LOG_LEVEL_INFO "Primary network interface: $PRIMARY_INTERFACE" "$UPDATE_LOG_FILE"
+
+
+# Set the HOME_NET environment variable
+export HOME_NET="$ALLOWED_IP_RANGE"
+# Set the HOME_NET environment log
+log $HOME_NET "ALLOW_IP_RANGE=$ALLOWED_IP_RANGE" "$UPDATE_LOG_FILE"
 
 # Function to update the system
 update_system() {
@@ -1097,8 +1120,8 @@ create_iptables_service() {
     cat << EOF > "$IPTABLES_SERVICE_PATH"
 [Unit]
 Description=iptables service for startups
-After=multi-user.target
-Wants=multi-user.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 ExecStart=/usr/local/bin/khelp/iptables.sh
@@ -1120,8 +1143,8 @@ create_hogen_service() {
     cat << EOF > "$HOGEN_SERVICE_PATH"
 [Unit]
 Description=HOGEN Hostname Generator
-After=multi-user.target
-Wants=multi-user.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 ExecStart=/usr/local/bin/khelp/hogen.sh
@@ -1131,7 +1154,7 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
-    chmod +x "$HOGEN_SERVICE_PATH"
+    chmod +x /usr/local/bin/khelp/hogen.sh
     systemctl daemon-reload
     systemctl enable hogen.service
     systemctl start hogen.service
@@ -1143,8 +1166,8 @@ create_mspoo_service() {
     cat << EOF > "$MSPOO_SERVICE_PATH"
 [Unit]
 Description=MSPOO MACSpoofing Service
-After=multi-user.target
-Wants=multi-user.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot
@@ -1212,8 +1235,9 @@ Description=Snort Network Intrusion Detection System
 After=network.target
 
 [Service]
-ExecStart=/usr/sbin/snort -c "$SNORT_CONF" -i "$PRIMARY_INTERFACE"
-ExecReload=/bin/kill -HUP \$MAINPID
+ExecStartPre=/path/to/network_utils.sh
+ExecStart=/usr/sbin/snort -c /etc/snort/snort.conf -i $(get_primary_interface)
+ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 
 [Install]
