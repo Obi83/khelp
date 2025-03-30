@@ -244,9 +244,10 @@ install_apt_fast() {
     local max_attempts=3
 
     while [ $attempts -lt $max_attempts ]; do
-        sudo add-apt-repository -y ppa:apt-fast/stable
-        sudo apt-get update
-        sudo apt-get install -y apt-fast aria2
+        sapt update -y
+        add-apt-repository -y ppa:apt-fast/stable
+        apt-get update
+        apt-get install -y apt-fast aria2
         if [ $? -eq 0 ]; then
             log $LOG_LEVEL_INFO "apt-fast installed successfully." "$UPDATE_LOG_FILE"
             return 0
@@ -259,10 +260,7 @@ install_apt_fast() {
 
     log $LOG_LEVEL_ERROR "Failed to install apt-fast after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
     return 1
-}
-
-# Call the function to install apt-fast
-install_apt_fast
+} 
 
 # Update the system
 update_system() {
@@ -294,7 +292,8 @@ update_system() {
 log $LOG_LEVEL_INFO "Starting Update/Upgrading System task" "$UPDATE_LOG_FILE"
 
 # Example usage of the updated function
-update_system # Assuming update_system is a function defined elsewhere
+install_apt_fast &
+update_system & # Assuming update_system is a function defined elsewhere
 
 log $LOG_LEVEL_INFO "Update/Upgrading task completed successfully" "$UPDATE_LOG_FILE"
 
