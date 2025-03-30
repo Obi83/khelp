@@ -244,7 +244,7 @@ install_apt_fast() {
     local max_attempts=3
 
     while [ $attempts -lt $max_attempts ]; do
-        sapt update -y
+        apt update -y
         add-apt-repository -y ppa:apt-fast/stable
         apt-get update
         apt-get install -y apt-fast aria2
@@ -261,6 +261,8 @@ install_apt_fast() {
     log $LOG_LEVEL_ERROR "Failed to install apt-fast after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
     return 1
 } 
+
+install_apt_fast 
 
 # Update the system
 update_system() {
@@ -292,8 +294,7 @@ update_system() {
 log $LOG_LEVEL_INFO "Starting Update/Upgrading System task" "$UPDATE_LOG_FILE"
 
 # Example usage of the updated function
-install_apt_fast &
-update_system & # Assuming update_system is a function defined elsewhere
+update_system # Assuming update_system is a function defined elsewhere
 
 log $LOG_LEVEL_INFO "Update/Upgrading task completed successfully" "$UPDATE_LOG_FILE"
 
@@ -710,18 +711,33 @@ configure_snort() {
     chown snort:snort $SNORT_LOG_DIR
     chmod 750 $SNORT_LOG_DIR
 
+    # Ensure the snort configuration file exists
+    if [ ! -f /etc/snort/snort.conf ]; then
+        log $LOG_LEVEL_ERROR "Snort configuration file /etc/snort/snort.conf not found." "$UPDATE_LOG_FILE"
+        return 1
+    fi
+
+    # Test the Snort configuration
+    snort -T -c $SNORT_CONF -i $PRIMARY_INTERFACE
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Snort configuration test failed." "$UPDATE_LOG_FILE"
+        return 1
+    fi
+
+    # Configure Snort rules
     log $LOG_LEVEL_INFO "Creating snort rules..." "$UPDATE_LOG_FILE"
     cat << EOF > $SNORT_RULES_DIR/local.rules
-# Custom rules for detecting specific types of traffic and threats
-    alert tcp \$EXTERNAL_NET any -> \$HOME_NET 22 (msg:"SSH connection attempt"; sid:1000001; rev:1;)
-    alert tcp \$EXTERNAL_NET any -> \$HOME_NET 80 (msg:"HTTP connection attempt"; sid:1000002; rev:1;)
-    alert tcp \$HOME_NET 80 -> \$EXTERNAL_NET any (msg:"HTTP response"; sid:1000003; rev:1;)
-    alert icmp \$EXTERNAL_NET any -> \$HOME_NET any (msg:"ICMP packet"; sid:1000004; rev:1;)
+alert tcp \$EXTERNAL_NET any -> \$HOME_NET 22 (msg:"SSH connection attempt"; sid:1000001; rev:1;)
+alert tcp \$EXTERNAL_NET any -> \$HOME_NET 80 (msg:"HTTP connection attempt"; sid:1000002; rev:1;)
+alert tcp \$HOME_NET 80 -> \$EXTERNAL_NET any (msg:"HTTP response"; sid:1000003; rev:1;)
+alert icmp \$EXTERNAL_NET any -> \$HOME_NET any (msg:"ICMP packet"; sid:1000004; rev:1;)
 EOF
-    log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
 
-    chown root:root /etc/snort/snort.conf
-    chmod 644 /etc/snort/snort.conf
+    log $LOG_LEVEL_INFO "Snort rules created successfully." "$UPDATE_LOG_FILE"
+    chown snort:snort $SNORT_RULES_DIR/local.rules
+    chmod 644 $SNORT_RULES_DIR/local.rules
+
+    log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
 }
 
 # Task 3: Setting Config-Files
@@ -1112,7 +1128,7 @@ EOF
 # Function to create the iptables systemd service
 create_iptables_service() {
     log $LOG_LEVEL_INFO "Creating and enabling iptables service..." "$UPDATE_LOG_FILE"
-    cat << EOF > "$IPTABLES_SERVICE_PATH"
+    cat << EOF > /usr/local/bin/khelp/iptables.sh
 [Unit]
 Description=iptables service for startups
 After=network.target
@@ -1125,7 +1141,7 @@ RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 EOF
-    chmod +x "$IPTABLES_SERVICE_PATH"
+    chmod +x /etc/systemd/system/khelp/iptables.service
     systemctl daemon-reload
     systemctl enable iptables.service
     systemctl start iptables.service
@@ -1135,21 +1151,21 @@ EOF
 # Function to create the hostname generator systemd service
 create_hogen_service() {
     log $LOG_LEVEL_INFO "Creating and enabling hostname generator service..." "$HOGEN_LOG_FILE"
-    cat << EOF > "$HOGEN_SERVICE_PATH"
+    cat << EOF > /etc/systemd/system/khelp/hogen.service
 [Unit]
 Description=HOGEN Hostname Generator
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=$HOGEN_SCRIPT_PATH
+ExecStart=/usr/local/bin/khelp/hogen.sh
 Restart=on-failure
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOF
-    chmod +x "$HOGEN_SERVICE_PATH"
+    chmod +x /etc/systemd/system/khelp/hogen.service
     systemctl daemon-reload
     systemctl enable hogen.service
     systemctl start hogen.service
@@ -1159,7 +1175,7 @@ EOF
 # Function to create the MAC spoofing systemd service
 create_mspoo_service() {
     log $LOG_LEVEL_INFO "Creating and enabling MAC spoofing service..." "$MSPOO_LOG_FILE"
-    cat << EOF > "$MSPOO_SERVICE_PATH"
+    cat << EOF > /etc/systemd/system/khelp/mspoo.service
 [Unit]
 Description=MSPOO MACSpoofing Service
 After=network-online.target
@@ -1167,14 +1183,14 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=$MSPOO_SCRIPT_PATH
+ExecStart=/usr/local/bin/khelp/mspoo.sh
 Restart=on-failure
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOF
-    chmod +x "$MSPOO_SERVICE_PATH"
+    chmod +x /etc/systemd/system/khelp/mspoo.service
     systemctl daemon-reload
     systemctl enable mspoo.service
     systemctl start mspoo.service
@@ -1184,20 +1200,20 @@ EOF
 # Function to create the ProxyChains update systemd service
 create_update_proxies_service() {
     log $LOG_LEVEL_INFO "Creating systemd service to run the proxy update script on startup..." "$UPDATE_LOG_FILE"
-    cat << EOF > /etc/systemd/system/update_proxies.service
+    cat << EOF > /etc/systemd/system/khelp/update_proxies.service
 [Unit]
 Description=Update Proxy List on Startup
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/update_proxies.sh
+ExecStart=/usr/local/bin/khelp/update_proxies.sh
 Type=oneshot
 RemainAfterExit=true
 
 [Install]
 WantedBy=multi-user.target
 EOF
-    chmod +x /etc/systemd/system/update_proxies.service
+    chmod +x /etc/systemd/system/khelp/update_proxies.service
     systemctl daemon-reload
     systemctl enable update_proxies.service
     systemctl start update_proxies.service
@@ -1207,7 +1223,7 @@ EOF
 # Function to create the ProxyChains update systemd timer
 create_update_proxies_timer() {
     log $LOG_LEVEL_INFO "Creating systemd timer to run the proxy update script every 30 minutes..." "$UPDATE_LOG_FILE"
-    cat << EOF > /etc/systemd/system/update_proxies.timer
+    cat << EOF > /etc/systemd/system/khelp/update_proxies.timer
 [Unit]
 Description=Run update_proxies.sh every 30 minutes
 
@@ -1218,7 +1234,7 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 EOF
-    chmod +x /etc/systemd/system/update_proxies.timer
+    chmod +x /etc/systemd/system/khelp/update_proxies.timer
     systemctl daemon-reload
     systemctl enable update_proxies.timer
     systemctl start update_proxies.timer
@@ -1227,6 +1243,7 @@ EOF
 
 # Create a systemd service file for Snort
 create_snort_service(){
+    log $LOG_LEVEL_INFO "Creating and enabling Snort service..." "$UPDATE_LOG_FILE"
     cat << EOF > $SNORT_SERVICE
 [Unit]
 Description=Snort Network Intrusion Detection System
@@ -1241,10 +1258,17 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
+    # Set the correct permissions for the service file
+    chmod 644 $SNORT_SERVICE
+
     # Enable and start the Snort service
     systemctl daemon-reload
     systemctl enable snort
     systemctl start snort
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to enable/start snort service." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
     log $LOG_LEVEL_INFO "Snort configured and started successfully." "$UPDATE_LOG_FILE"
 }
 
