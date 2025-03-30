@@ -1157,7 +1157,6 @@ EOF
     chmod +x /usr/local/bin/khelp/hogen.sh
     systemctl daemon-reload
     systemctl enable hogen.service
-    systemctl start hogen.service
     log $LOG_LEVEL_INFO "Hostname generator service created and enabled successfully." "$HOGEN_LOG_FILE"
 }
 
@@ -1181,7 +1180,6 @@ EOF
     chmod +x "$MSPOO_SERVICE_PATH"
     systemctl daemon-reload
     systemctl enable mspoo.service
-    systemctl start mspoo.service
     log $LOG_LEVEL_INFO "MAC spoofing service created and enabled successfully." "$MSPOO_LOG_FILE"
 }
 
