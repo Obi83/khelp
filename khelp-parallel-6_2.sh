@@ -237,132 +237,14 @@ get_primary_interface() {
     ip route | grep default | awk '{print $5}'
 }
 
-#!/bin/bash
-
-# Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root."
-    exit 1
-fi
-
-# Function to log messages
-log() {
-    local level="$1"
-    local message="$2"
-    local log_file="$3"
-    echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] - $message" | tee -a "$log_file"
-}
-
-#!/bin/bash
-
-# Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root."
-    exit 1
-fi
-
-# Function to log messages
-log() {
-    local level="$1"
-    local message="$2"
-    local log_file="$3"
-    echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] - $message" | tee -a "$log_file"
-}
-
-#!/bin/bash
-
-# Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root."
-    exit 1
-fi
-
-# Function to log messages
-log() {
-    local level="$1"
-    local message="$2"
-    local log_file="$3"
-    echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] - $message" | tee -a "$log_file"
-}
-
-# Function to install apt-fast and handle errors
-install_apt_fast() {
-    log "INFO" "Installing apt-fast..." "/var/log/update.log"
-    local attempts=0
-    local max_attempts=3
-
-    while [ $attempts -lt $max_attempts ]; do
-        log "INFO" "Updating package lists..." "/var/log/update.log"
-        apt-get update -y
-        if [ $? -ne 0 ]; then
-            log "ERROR" "Failed to update package lists." "/var/log/update.log"
-            attempts=$((attempts + 1))
-            sleep $((attempts * 5))
-            continue
-        fi
-
-        log "INFO" "Installing software-properties-common and dependencies..." "/var/log/update.log"
-        apt-get install -y software-properties-common python3-software-properties
-        if [ $? -ne 0 ]; then
-            log "ERROR" "Failed to install software-properties-common." "/var/log/update.log"
-            attempts=$((attempts + 1))
-            sleep $((attempts * 5))
-            continue
-        fi
-
-        log "INFO" "Checking if add-apt-repository command is available..." "/var/log/update.log"
-        if ! command -v add-apt-repository &> /dev/null; then
-            log "ERROR" "add-apt-repository command not found." "/var/log/update.log"
-            exit 1
-        fi
-
-        log "INFO" "Adding apt-fast PPA repository..." "/var/log/update.log"
-        add-apt-repository -y ppa:apt-fast/stable
-        if [ $? -ne 0 ]; then
-            log "ERROR" "Failed to add apt-fast PPA repository." "/var/log/update.log"
-            attempts=$((attempts + 1))
-            sleep $((attempts * 5))
-            continue
-        fi
-
-        log "INFO" "Updating package lists after adding PPA..." "/var/log/update.log"
-        apt-get update -y
-        if [ $? -ne 0 ]; then
-            log "ERROR" "Failed to update package lists after adding PPA." "/var/log/update.log"
-            attempts=$((attempts + 1))
-            sleep $((attempts * 5))
-            continue
-        fi
-
-        log "INFO" "Installing apt-fast and aria2..." "/var/log/update.log"
-        apt-get install -y apt-fast aria2
-        if [ $? -eq 0 ]; then
-            log "INFO" "apt-fast installed successfully." "/var/log/update.log"
-            return 0
-        else
-            log "ERROR" "Failed to install apt-fast and aria2." "/var/log/update.log"
-            attempts=$((attempts + 1))
-            sleep $((attempts * 5))
-        fi
-    done
-
-    log "ERROR" "Failed to install apt-fast after $max_attempts attempts. Please check your network connection and try again." "/var/log/update.log"
-    return 1
-}
-
 # Function to update the system
 update_system() {
     log $LOG_LEVEL_INFO "Updating and upgrading system" "$UPDATE_LOG_FILE"
     local attempts=0
     local max_attempts=3
-    local update_cmd="apt-get update && apt-get full-upgrade -y && apt-get autoremove -y && apt-get autoclean"
-
-    if is_apt_fast_installed; then
-        update_cmd="apt-fast update && apt-fast full-upgrade -y && apt-fast autoremove -y && apt-fast autoclean"
-    fi
 
     while [ $attempts -lt $max_attempts ]; do
-        if $update_cmd; then
+        if apt update && apt full-upgrade -y && apt autoremove -y && apt autoclean; then
             log $LOG_LEVEL_INFO "System update and upgrade completed." "$UPDATE_LOG_FILE"
             return 0
         else
@@ -379,14 +261,7 @@ update_system() {
 # Task 1: Updating System
 log $LOG_LEVEL_INFO "Starting Update/Upgrading System task" "$UPDATE_LOG_FILE"
 
-# Ensure apt-fast is installed before updating the system
-install_apt_fast
-if [ $? -eq 0 ]; then
-    update_system
-else
-    log $LOG_LEVEL_ERROR "Failed to install apt-fast. System update aborted." "$UPDATE_LOG_FILE"
-    exit 1
-fi
+update_system
 
 log $LOG_LEVEL_INFO "Update/Upgrading task completed successfully" "$UPDATE_LOG_FILE"
 
