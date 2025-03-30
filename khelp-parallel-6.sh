@@ -29,6 +29,23 @@ fi
 # Task 0: Setting Variables
 log $LOG_LEVEL_INFO "Starting Setting Variables task" "$UPDATE_LOG_FILE"
 
+# Creating Directories
+mkdir -p /var/log/khelp
+mkdir -p /usr/local/share/khelp/khelp_update
+mkdir -p /usr/local/share/khelp/khelp_installer
+mkdir -p /usr/local/share/khelp/khelp_proxychains
+mkdir -p /usr/local/share/khelp/khelp_ufw
+mkdir -p /usr/local/share/khelp/khelp_fail2ban
+mkdir -p /usr/local/share/khelp/khelp_iptables
+mkdir -p /usr/local/share/khelp/khelp_tor
+mkdir -p /usr/local/share/khelp/khelp_terminator
+mkdir -p /usr/local/share/khelp/khelp_verify
+mkdir -p /usr/local/share/khelp/khelp_hogen
+mkdir -p /usr/local/share/khelp/khelp_mspoof
+mkdir -p /usr/local/share/khelp/khelp_snort
+mkdir -p /usr/local/bin/khelp
+mkdir -p /etc/systemd/system/khelp
+
 # Log files
 export UPDATE_LOG_FILE="/var/log/khelp/khelp.log"
 export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp/khelp_hogen.log"}
