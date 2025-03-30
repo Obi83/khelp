@@ -237,62 +237,62 @@ get_primary_interface() {
     ip route | grep default | awk '{print $5}'
 }
 
-# Function to install apt-fast and change it
+# Function to install apt-fast and handle errors
 install_apt_fast() {
-    log $LOG_LEVEL_INFO "Installing apt-fast..." "$UPDATE_LOG_FILE"
+    log "INFO" "Installing apt-fast..." "/var/log/update.log"
     local attempts=0
     local max_attempts=3
 
     while [ $attempts -lt $max_attempts ]; do
-        log $LOG_LEVEL_INFO "Updating package lists..." "$UPDATE_LOG_FILE"
-        apt update -y
-        if [ $? -ne 0 ]; then
-            log $LOG_LEVEL_ERROR "Failed to update package lists." "$UPDATE_LOG_FILE"
-            attempts=$((attempts + 1))
-            sleep $((attempts * 5))
-            continue
-        fi
-
-        log $LOG_LEVEL_INFO "Installing software-properties-common..." "$UPDATE_LOG_FILE"
-        apt-get install -y software-properties-common
-        if [ $? -ne 0 ]; then
-            log $LOG_LEVEL_ERROR "Failed to install software-properties-common." "$UPDATE_LOG_FILE"
-            attempts=$((attempts + 1))
-            sleep $((attempts * 5))
-            continue
-        fi
-
-        log $LOG_LEVEL_INFO "Adding apt-fast PPA repository..." "$UPDATE_LOG_FILE"
-        add-apt-repository -y ppa:apt-fast/stable
-        if [ $? -ne 0 ]; then
-            log $LOG_LEVEL_ERROR "Failed to add apt-fast PPA repository." "$UPDATE_LOG_FILE"
-            attempts=$((attempts + 1))
-            sleep $((attempts * 5))
-            continue
-        fi
-
-        log $LOG_LEVEL_INFO "Updating package lists after adding PPA..." "$UPDATE_LOG_FILE"
+        log "INFO" "Updating package lists..." "/var/log/update.log"
         apt-get update -y
         if [ $? -ne 0 ]; then
-            log $LOG_LEVEL_ERROR "Failed to update package lists after adding PPA." "$UPDATE_LOG_FILE"
+            log "ERROR" "Failed to update package lists." "/var/log/update.log"
             attempts=$((attempts + 1))
             sleep $((attempts * 5))
             continue
         fi
 
-        log $LOG_LEVEL_INFO "Installing apt-fast and aria2..." "$UPDATE_LOG_FILE"
+        log "INFO" "Installing software-properties-common..." "/var/log/update.log"
+        apt-get install -y software-properties-common python3-software-properties
+        if [ $? -ne 0 ]; then
+            log "ERROR" "Failed to install software-properties-common." "/var/log/update.log"
+            attempts=$((attempts + 1))
+            sleep $((attempts * 5))
+            continue
+        fi
+
+        log "INFO" "Adding apt-fast PPA repository..." "/var/log/update.log"
+        add-apt-repository -y ppa:apt-fast/stable
+        if [ $? -ne 0 ]; then
+            log "ERROR" "Failed to add apt-fast PPA repository." "/var/log/update.log"
+            attempts=$((attempts + 1))
+            sleep $((attempts * 5))
+            continue
+        fi
+
+        log "INFO" "Updating package lists after adding PPA..." "/var/log/update.log"
+        apt-get update -y
+        if [ $? -ne 0 ]; then
+            log "ERROR" "Failed to update package lists after adding PPA." "/var/log/update.log"
+            attempts=$((attempts + 1))
+            sleep $((attempts * 5))
+            continue
+        fi
+
+        log "INFO" "Installing apt-fast and aria2..." "/var/log/update.log"
         apt-get install -y apt-fast aria2
         if [ $? -eq 0 ]; then
-            log $LOG_LEVEL_INFO "apt-fast installed successfully." "$UPDATE_LOG_FILE"
+            log "INFO" "apt-fast installed successfully." "/var/log/update.log"
             return 0
         else
-            log $LOG_LEVEL_ERROR "Failed to install apt-fast and aria2." "$UPDATE_LOG_FILE"
+            log "ERROR" "Failed to install apt-fast and aria2." "/var/log/update.log"
             attempts=$((attempts + 1))
             sleep $((attempts * 5))
         fi
     done
 
-    log $LOG_LEVEL_ERROR "Failed to install apt-fast after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    log "ERROR" "Failed to install apt-fast after $max_attempts attempts. Please check your network connection and try again." "/var/log/update.log"
     return 1
 }
 
