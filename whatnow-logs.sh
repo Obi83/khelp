@@ -27,7 +27,6 @@ else
 fi
 
 # Environment variables for paths and configurations
-
 #Log Files
 export UPDATE_LOG_FILE="/var/log/khelp.log"
 export PROXY_UPDATE_LOG_FILE="/var/log/khelp_proxy.log"
@@ -163,7 +162,6 @@ validate_url() {
 }
 
 # Example usage of the log function for different tasks
-
 # Task 1: Proxy
 log $LOG_LEVEL_INFO "Starting Proxy task" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "Proxy task completed successfully" "$UPDATE_LOG_FILE"
@@ -176,116 +174,12 @@ log $LOG_LEVEL_INFO "Hogen task completed successfully" "$HOGEN_LOG_FILE"
 log $LOG_LEVEL_INFO "Starting MSPoo task" "$MSPOO_LOG_FILE"
 log $LOG_LEVEL_INFO "MSPoo task completed successfully" "$MSPOO_LOG_FILE"
 
-# Debugging: Print environment variables
-#!/bin/bash
-
-# Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root."
-    exit 1
-fi
-
-# Define the display_logo function
-display_logo() {                                                                                                      
-echo " _    _          _       "   
-echo "| | _| |__   ___| |_ __  "  
-echo "| |/ / '_ \ / _ \ | '_ \ " 
-echo "|   <| | | |  __/ | |_) |"
-echo "|_|\_\_| |_|\___|_| .__/ "
-echo "                  |_|    "
-}
-
-# Call the display_logo function
-display_logo
-
-# Set USER_HOME based on whether the script is run with sudo or not
-if [ -n "$SUDO_USER" ]; then
-    export USER_HOME=$(eval echo ~${SUDO_USER})
-else
-    export USER_HOME=$HOME
-fi
-
-# Environment variables for paths and configurations
-
-# Log Files
-export UPDATE_LOG_FILE="/var/log/khelp.log"
-export PROXY_UPDATE_LOG_FILE="/var/log/khelp_proxy.log"
-export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp_hogen.log"}
-export MSPOO_LOG_FILE=${MSPOO_LOG_FILE:-"/var/log/khelp_mspoo.log"}
-export SNORT_LOG_DIR="/var/log/snort"
-
-# Directories
-export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
-export KHELP_INSTALLER_DIR="/usr/local/share/khelp_installer"
-export KHELP_PROXYCHAINS_DIR="/usr/local/share/khelp_proxychains"
-export KHELP_UFW_DIR="/usr/local/share/khelp_ufw"
-export KHELP_FAIL2BAN_DIR="/usr/local/share/khelp_fail2ban"
-export KHELP_IPTABLES_DIR="/usr/local/share/khelp_iptables"
-export KHELP_TOR_DIR="/usr/local/share/khelp_tor"
-export KHELP_TERMINATOR_DIR="/usr/local/share/khelp_terminator"
-export KHELP_VERIFY_DIR="/usr/local/share/khelp_verify"
-export HOGEN_DOC_DIR=${HOGEN_DOC_DIR:-"/usr/local/share/khelp_hogen"}
-export MSPOO_DOC_DIR=${MSPOO_DOC_DIR:-"/usr/local/share/khelp_mspoof"}
-export SNORT_DOC_DIR=${SNORT_DOC_DIR:-"/usr/local/share/khelp_snort"}
-export KHELP_LOGGING_DIR="/usr/local/share/khelp_logging"
-export KHELP_DEFAULT_TERMINAL_DIR="/usr/local/share/khelp_default_terminal"
-export KHELP_STARTUP_VERIFICATION_DIR="/usr/local/share/khelp_startup_verification"
-
-# Configuration files
-export PROXYCHAINS_CONF="/etc/proxychains.conf"
-export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
-export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
-export SNORT_CONF="/etc/snort/snort.conf"
-export SNORT_RULES_DIR="/etc/snort/rules"
-export CRONTAB_FILE="/etc/crontab"
-
-# Script paths
-export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
-export UFW_SCRIPT="/usr/local/bin/ufw.sh"
-export IPTABLES_SCRIPT="/usr/local/bin/iptables.sh"
-export HOGEN_SCRIPT_PATH=${HOGEN_SCRIPT_PATH:-"/usr/local/bin/hogen.sh"}
-export MSPOO_SCRIPT_PATH=${MSPOO_SCRIPT_PATH:-"/usr/local/bin/mspoo.sh"}
-export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
-export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
-
-# Service paths
-export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/update_proxies.service"
-export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/update_proxies.timer"
-export UFW_SERVICE_PATH="/etc/systemd/system/ufw.service"
-export IPTABLES_SERVICE_PATH="/etc/systemd/system/iptables.service"
-export HOGEN_SERVICE_PATH=${HOGEN_SERVICE_PATH:-"/etc/systemd/system/hogen.service"}
-export MSPOO_SERVICE_PATH=${MSPOO_SERVICE_PATH:-"/etc/systemd/system/mspoo.service"}
-export SNORT_SERVICE="/etc/systemd/system/snort.service"
-
-# Documentation files
-export HOGEN_DOC_FILE="$HOGEN_DOC_DIR/README.md"
-export MSPOO_DOC_FILE="$MSPOO_DOC_DIR/README.md"
-export SNORT_DOC_FILE="$SNORT_DOC_DIR/README.md"
-export KHELP_LOGGING_DOC_FILE="$KHELP_LOGGING_DIR/README.md"
-export KHELP_DEFAULT_TERMINAL_DOC_FILE="$KHELP_DEFAULT_TERMINAL_DIR/README.md"
-export KHELP_STARTUP_VERIFICATION_DOC_FILE="$KHELP_STARTUP_VERIFICATION_DIR/README.md"
-export UFW_DOC_FILE="$KHELP_UFW_DIR/README.md"
-export FAIL2BAN_DOC_FILE="$KHELP_FAIL2BAN_DIR/README.md"
-export IPTABLES_DOC_FILE="$KHELP_IPTABLES_DIR/README.md"
-export TOR_DOC_FILE="$KHELP_TOR_DIR/README.md"
-export KHELP_INSTALLER_DOC_FILE="$KHELP_INSTALLER_DIR/README.md"
-export KHELP_UPDATE_DOC_FILE="$KHELP_UPDATE_DIR/README.md"
-export TERMINATOR_DOC_FILE="$KHELP_TERMINATOR_DIR/README.md"
-
-# Proxy API URLs
-export PROXY_API_URL1="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
-export PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
-export PROXY_API_URL3="https://spys.me/socks.txt"
-export PROXY_API_URL4="https://www.proxy-list.download/api/v1/get?type=socks5"
-export PROXY_API_URL5="https://proxylist.geonode.com/api/proxy-list?limit=100&page=1&sort_by=lastChecked&sort_type=desc&protocols=socks5"
-export PROXY_API_URL6="https://www.freeproxy.world/api/proxy?protocol=socks5&limit=100"
-export PROXY_API_URL7="https://www.free-proxy-list.net/socks5.txt"
-export PROXY_API_URL8="https://www.proxynova.com/proxy-server-list/"
-export PROXY_API_URL9="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
-export PROXY_API_URL10="https://hidemy.name/en/proxy-list/?type=5&anon=234"
+# Example usage of the log function
+log $LOG_LEVEL_INFO "This is an informational message." "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_ERROR "This is an error message." "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_WARNING "This is a warning message." "$UPDATE_LOG_FILE"
 
 # Debugging: Print environment variables
-
 # Log Files
 log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_UPDATE_LOG_FILE=$PROXY_UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
@@ -362,11 +256,6 @@ log $LOG_LEVEL_INFO "PROXY_API_URL7=$PROXY_API_URL7" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL8=$PROXY_API_URL8" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL9=$PROXY_API_URL9" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL10=$PROXY_API_URL10" "$UPDATE_LOG_FILE"
-
-# Example usage of the log function
-log $LOG_LEVEL_INFO "This is an informational message." "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_ERROR "This is an error message." "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_WARNING "This is a warning message." "$UPDATE_LOG_FILE"
 
 # Function to detect the local network IP range
 detect_ip_range() {
@@ -850,8 +739,6 @@ EOF
 
 }
 
-
-
 # Execute independent tasks in parallel
 configure_ufw &
 configure_fail2ban &
@@ -1221,7 +1108,6 @@ EOF
     log $LOG_LEVEL_INFO "snort script created successfully." "$UPDATE_LOG_FILE"
 }
 
-
 # Execute script creation tasks in parallel
 create_ufw_script &
 create_iptables_script &
@@ -1411,7 +1297,7 @@ wait
 
 log $LOG_LEVEL_INFO "All systemd service creation tasks completed successfully." "$UPDATE_LOG_FILE"
 
-# Function to create README.md for Logging Function
+# Function to create README.md
 create_logging_readme() {
   mkdir -p "$KHELP_LOGGING_DIR"
   cat << 'EOF' > "$KHELP_LOGGING_DIR/README.md"
@@ -1489,7 +1375,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for Update Service
 create_update_readme() {
   mkdir -p "$KHELP_UPDATE_DIR"
   cat << 'EOF' > "$KHELP_UPDATE_DIR/README.md"
@@ -1561,7 +1446,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for Install Packages
 create_installer_readme() {
   mkdir -p "$KHELP_INSTALLER_DIR"
   cat << 'EOF' > "$KHELP_INSTALLER_DIR/README.md"
@@ -1657,7 +1541,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for Proxychains Configuration
 create_proxychains_readme() {
   mkdir -p "$KHELP_PROXYCHAINS_DIR"
   cat << 'EOF' > "$KHELP_PROXYCHAINS_DIR/README.md"
@@ -1838,7 +1721,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for UFW Configuration
 create_ufw_readme() {
   mkdir -p "$KHELP_UFW_DIR"
   cat << 'EOF' > "$KHELP_UFW_DIR/README.md"
@@ -1970,7 +1852,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for Fail2Ban Configuration
 create_fail2ban_readme() {
   mkdir -p "$KHELP_FAIL2BAN_DIR"
   cat << 'EOF' > "$KHELP_FAIL2BAN_DIR/README.md"
@@ -2085,7 +1966,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for Iptables Configuration
 create_iptables_readme() {
   mkdir -p "$KHELP_IPTABLES_DIR"
   cat << 'EOF' > "$KHELP_IPTABLES_DIR/README.md"
@@ -2250,7 +2130,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for Tor Configuration
 create_tor_readme() {
   mkdir -p "$KHELP_TOR_DIR"
   cat << 'EOF' > "$KHELP_TOR_DIR/README.md"
@@ -2321,7 +2200,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for Default Terminal Configuration
 create_default_terminal_readme() {
   mkdir -p "$KHELP_DEFAULT_TERMINAL_DIR"
   cat << 'EOF' > "$KHELP_DEFAULT_TERMINAL_DIR/README.md"
@@ -2438,7 +2316,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for Startup Verification
 create_startup_verification_readme() {
   mkdir -p "$KHELP_STARTUP_VERIFICATION_DIR"
   cat << 'EOF' > "$KHELP_STARTUP_VERIFICATION_DIR/README.md"
@@ -2567,7 +2444,6 @@ Feel free to reach out if you encounter any issues or have any questions regardi
 EOF
 }
 
-# Function to create README.md for MSPOO
 create_mspoo_readme() {
   mkdir -p "$MSPOO_DOC_DIR"
   cat << 'EOF' > "$MSPOO_DOC_FILE"
@@ -2662,7 +2538,6 @@ Logs are saved to /var/log/khelp_mspoo.log. The log file is rotated if it exceed
 EOF
 }
 
-# Function to create README.md for HOGEN
 create_hogen_readme() {
   mkdir -p "$HOGEN_DOC_DIR"
   cat << 'EOF' > "$HOGEN_DOC_FILE"
@@ -2728,7 +2603,6 @@ Logs are saved to /var/log/khelp_hogen.log. The log file is rotated if it exceed
 EOF
 }
 
-# Function to create README.md for Snort
 create_snort_readme() {
   mkdir -p "$SNORT_DOC_DIR"
   cat << EOF > "$SNORT_DOC_FILE"
