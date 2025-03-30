@@ -269,6 +269,22 @@ log() {
     echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] - $message" | tee -a "$log_file"
 }
 
+#!/bin/bash
+
+# Check if the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run this script as root."
+    exit 1
+fi
+
+# Function to log messages
+log() {
+    local level="$1"
+    local message="$2"
+    local log_file="$3"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] - $message" | tee -a "$log_file"
+}
+
 # Function to install apt-fast and handle errors
 install_apt_fast() {
     log "INFO" "Installing apt-fast..." "/var/log/update.log"
@@ -292,6 +308,12 @@ install_apt_fast() {
             attempts=$((attempts + 1))
             sleep $((attempts * 5))
             continue
+        fi
+
+        log "INFO" "Checking if add-apt-repository command is available..." "/var/log/update.log"
+        if ! command -v add-apt-repository &> /dev/null; then
+            log "ERROR" "add-apt-repository command not found." "/var/log/update.log"
+            exit 1
         fi
 
         log "INFO" "Adding apt-fast PPA repository..." "/var/log/update.log"
