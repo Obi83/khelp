@@ -245,6 +245,7 @@ install_apt_fast() {
 
     while [ $attempts -lt $max_attempts ]; do
         apt update -y
+        apt-get install -y software-properties-common
         add-apt-repository -y ppa:apt-fast/stable
         apt-get update
         apt-get install -y apt-fast aria2
