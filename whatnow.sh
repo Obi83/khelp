@@ -27,10 +27,60 @@ else
 fi
 
 # Environment variables for paths and configurations
+
+#Log Files
 export UPDATE_LOG_FILE="/var/log/khelp.log"
+export PROXY_UPDATE_LOG_FILE="/var/log/khelp_proxy.log"
+export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp_hogen.log"}
+export MSPOO_LOG_FILE=${MSPOO_LOG_FILE:-"/var/log/khelp_mspoo.log"}
+export SNORT_LOG_DIR="/var/log/snort"
+
+# Directories
 export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
 export KHELP_INSTALLER_DIR="/usr/local/share/khelp_installer"
+export KHELP_PROXYCHAINS_DIR="/usr/local/share/khelp_proxychains"
+export KHELP_UFW_DIR="/usr/local/share/khelp_ufw"
+export KHELP_FAIL2BAN_DIR="/usr/local/share/khelp_fail2ban"
+export KHELP_IPTABLES_DIR="/usr/local/share/khelp_iptables"
+export KHELP_TOR_DIR="/usr/local/share/khelp_tor"
+export KHELP_TERMINATOR_DIR="/usr/local/share/khelp_terminator"
+export KHELP_VERIFY_DIR="/usr/local/share/khelp_verify"
+export HOGEN_DOC_DIR=${HOGEN_DOC_DIR:-"/usr/local/share/khelp_hogen"}
+export MSPOO_DOC_DIR=${MSPOO_DOC_DIR:-"/usr/local/share/khelp_mspoof"}
+export SNORT_DOC_DIR=${SNORT_DOC_DIR:-"/usr/local/share/khelp_snort"}
+
+# Configuration files
 export PROXYCHAINS_CONF="/etc/proxychains.conf"
+export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
+export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
+export SNORT_CONF="/etc/snort/snort.conf"
+export SNORT_RULES_DIR="/etc/snort/rules"
+export CRONTAB_FILE="/etc/crontab"
+
+# Script paths
+export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
+export UFW_SCRIPT="/usr/local/bin/ufw.sh"
+export IPTABLES_SCRIPT="/usr/local/bin/iptables.sh"
+export HOGEN_SCRIPT_PATH=${HOGEN_SCRIPT_PATH:-"/usr/local/bin/hogen.sh"}
+export MSPOO_SCRIPT_PATH=${MSPOO_SCRIPT_PATH:-"/usr/local/bin/mspoo.sh"}
+export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
+export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
+
+# Service paths
+export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/update_proxies.service"
+export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/update_proxies.timer"
+export UFW_SERVICE_PATH="/etc/systemd/system/ufw.service"
+export IPTABLES_SERVICE_PATH="/etc/systemd/system/iptables.service"
+export HOGEN_SERVICE_PATH=${HOGEN_SERVICE_PATH:-"/etc/systemd/system/hogen.service"}
+export MSPOO_SERVICE_PATH=${MSPOO_SERVICE_PATH:-"/etc/systemd/system/mspoo.service"}
+export SNORT_SERVICE="/etc/systemd/system/snort.service"
+
+# Documentation files
+export HOGEN_DOC_FILE="$HOGEN_DOC_DIR/README.md"
+export MSPOO_DOC_FILE="$MSPOO_DOC_DIR/README.md"
+export SNORT_DOC_FILE="$SNORT_DOC_DIR/README.md"
+
+# Proxy API URLs
 export PROXY_API_URL1="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
 export PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
 export PROXY_API_URL3="https://spys.me/socks.txt"
@@ -41,41 +91,6 @@ export PROXY_API_URL7="https://www.free-proxy-list.net/socks5.txt"
 export PROXY_API_URL8="https://www.proxynova.com/proxy-server-list/"
 export PROXY_API_URL9="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
 export PROXY_API_URL10="https://hidemy.name/en/proxy-list/?type=5&anon=234"
-export KHELP_PROXYCHAINS_DIR="/usr/local/share/khelp_proxychains"
-export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
-export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/update_proxies.service"
-export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/update_proxies.timer"
-export CRONTAB_FILE="/etc/crontab"
-export KHELP_UFW_DIR="/usr/local/share/khelp_ufw"
-export UFW_SCRIPT="/usr/local/bin/ufw.sh"
-export UFW_SERVICE="/etc/systemd/system/ufw.service"
-export KHELP_FAIL2BAN_DIR="/usr/local/share/khelp_fail2ban"
-export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
-export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
-export IPTABLES_SCRIPT="/usr/local/bin/iptables.sh"
-export IPTABLES_SERVICE="/etc/systemd/system/iptables.service"
-export KHELP_IPTABLES_DIR="/usr/local/share/khelp_iptables"
-export KHELP_TOR_DIR="/usr/local/share/khelp_tor"
-export KHELP_TERMINATOR_DIR="/usr/local/share/khelp_terminator"
-export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
-export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
-export KHELP_VERIFY_DIR="/usr/local/share/khelp_verify"
-export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp_hogen.log"}
-export HOGEN_SCRIPT_PATH=${HOGEN_SCRIPT_PATH:-"/usr/local/bin/hogen.sh"}
-export HOGEN_SERVICE_PATH=${HOGEN_SERVICE_PATH:-"/etc/systemd/system/hogen.service"}
-export HOGEN_DOC_DIR=${HOGEN_DOC_DIR:-"/usr/local/share/khelp_hogen"}
-export HOGEN_DOC_FILE="$HOGEN_DOC_DIR/README.md"
-export MSPOO_LOG_FILE=${MSPOO_LOG_FILE:-"/var/log/khelp_mspoo.log"}
-export MSPOO_SCRIPT_PATH=${MSPOO_SCRIPT_PATH:-"/usr/local/bin/mspoo.sh"}
-export MSPOO_SERVICE_PATH=${MSPOO_SERVICE_PATH:-"/etc/systemd/system/mspoo.service"}
-export MSPOO_DOC_DIR=${MSPOO_DOC_DIR:-"/usr/local/share/khelp_mspoof"}
-export MSPOO_DOC_FILE="$MSPOO_DOC_DIR/README.md"
-export SNORT_CONF="/etc/snort/snort.conf"
-export SNORT_RULES_DIR="/etc/snort/rules"
-export SNORT_LOG_DIR="/var/log/snort"
-export SNORT_SERVICE="/etc/systemd/system/snort.service"
-export SNORT_DOC_DIR=${SNORT_DOC_DIR:-"/usr/local/share/khelp_snort"}
-export SNORT_DOC_FILE="$SNORT_DOC_DIR/README.md"
 
 # Define log levels
 LOG_LEVEL_DEBUG=0
@@ -181,7 +196,7 @@ log $LOG_LEVEL_INFO "KHELP_IPTABLES_DIR=$KHELP_IPTABLES_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_TOR_DIR=$KHELP_TOR_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_TERMINATOR_DIR=$KHELP_TERMINATOR_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH" "$UPDATE_LOG_FILE" 
 log $LOG_LEVEL_INFO "KHELP_VERIFY_DIR=$KHELP_VERIFY_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "HOGEN_LOG_FILE=$HOGEN_LOG_FILE" "$HOGEN_LOG_FILE"
 log $LOG_LEVEL_INFO "MSPOO_LOG_FILE=$MSPOO_LOG_FILE" "$MSPOO_LOG_FILE"
@@ -484,14 +499,14 @@ backup_config() {
     local backup_file="$BACKUP_DIR/$(basename $config_file)"
     if [ -f "$config_file" ]; then
         cp "$config_file" "$backup_file"
-        log "INFO" "Backed up $config_file to $backup_file"
+        log $LOG_LEVEL_INFO "Backed up $config_file to $backup_file" "$UPDATE_LOG_FILE"
     else
-        log "WARNING" "Configuration file $config_file not found, skipping backup"
+        log $LOG_LEVEL_WARNING "Configuration file $config_file not found, skipping backup" "$UPDATE_LOG_FILE"
     fi
 }
 
 # Backup configurations
-log "INFO" "Backing up configuration files..."
+log $LOG_LEVEL_INFO "Backing up configuration files..." "$UPDATE_LOG_FILE"
 backup_config "/etc/proxychains.conf"
 backup_config "/etc/ufw/ufw.conf"
 backup_config "/etc/iptables/rules.v4"
@@ -499,6 +514,7 @@ backup_config "/etc/snort/snort.conf"
 backup_config "/etc/fail2ban/jail.local"
 backup_config "/etc/sslh/sslh.cfg"
 
+# Function to update or create config files
 configure_ufw() {
     log $LOG_LEVEL_INFO "Configuring UFW firewall..." "$UPDATE_LOG_FILE"
     systemctl enable ufw
@@ -666,7 +682,7 @@ wait
 
 log $LOG_LEVEL_INFO "All independent tasks completed successfully." "$UPDATE_LOG_FILE"
 
-# Function to create the UFW script
+# Function to create all scripts
 create_ufw_script() {
     log $LOG_LEVEL_INFO "Creating UFW script..." "$UPDATE_LOG_FILE"
     cat << 'EOF' > /usr/local/bin/ufw.sh
@@ -681,7 +697,6 @@ EOF
     log $LOG_LEVEL_INFO "UFW script created successfully." "$UPDATE_LOG_FILE"
 }
 
-# Function to create the iptables script
 create_iptables_script() {
     log $LOG_LEVEL_INFO "Creating iptables script..." "$UPDATE_LOG_FILE"
     cat << 'EOF' > /usr/local/bin/iptables.sh
@@ -692,7 +707,6 @@ EOF
     log $LOG_LEVEL_INFO "iptables script created successfully." "$UPDATE_LOG_FILE"
 }
 
-# Function to create the hogen script
 create_hogen_script() {
     log $LOG_LEVEL_INFO "Creating hostname generator script..." "$HOGEN_LOG_FILE"
     cat << 'EOF' > "$HOGEN_SCRIPT_PATH"
@@ -797,7 +811,6 @@ EOF
     log $LOG_LEVEL_INFO "Hostname generator script created successfully." "$HOGEN_LOG_FILE"
 }
 
-# Function to create the MAC spoofing script
 create_mspoo_script() {
     log $LOG_LEVEL_INFO "Creating MAC spoofing script..." "$MSPOO_LOG_FILE"
     cat << 'EOF' > "$MSPOO_SCRIPT_PATH"
@@ -912,7 +925,6 @@ EOF
     log $LOG_LEVEL_INFO "MAC spoofing script created successfully." "$MSPOO_LOG_FILE"
 }
 
-# Create the startup script
 create_startup_script() {
     log $LOG_LEVEL_INFO "Creating the startup script..." "$UPDATE_LOG_FILE"
     cat << 'EOF' > "$STARTUP_SCRIPT_PATH"
@@ -952,7 +964,6 @@ EOF
     log $LOG_LEVEL_INFO "Startup script created successfully." "$UPDATE_LOG_FILE"
 }
 
-# Create the desktop entry
 create_desktop_entry() {
     log $LOG_LEVEL_INFO "Creating the desktop entry..." "$UPDATE_LOG_FILE"
     mkdir -p "$USER_HOME/.config/autostart"
@@ -972,7 +983,6 @@ EOF
     log $LOG_LEVEL_INFO "Desktop entry created successfully." "$UPDATE_LOG_FILE"
 }
 
-# Create a sample Snort configuration file
 create_snort_script() {
     log $LOG_LEVEL_INFO "Creating snort script..." "$UPDATE_LOG_FILE"
     cat << EOF > "$SNORT_CONF"
@@ -1020,6 +1030,11 @@ dynamicdetection directory /usr/local/lib/snort_dynamicrules/
 include \$RULE_PATH/snort.rules
 EOF
     chmod +x "$SNORT_LOG_DIR"
+    # Ensure the Snort configuration file is readable by Snort
+    chmod 644 "$SNORT_CONF"
+    # Ensure the Snort log directory is writable by Snort
+    chmod 755 "$SNORT_LOG_DIR"
+
     log $LOG_LEVEL_INFO "snort script created successfully." "$UPDATE_LOG_FILE"
 }
 
@@ -1038,7 +1053,7 @@ wait
 
 log $LOG_LEVEL_INFO "All script creation tasks completed successfully." "$UPDATE_LOG_FILE"
 
-# Function to create the UFW systemd service
+# Function to create systemd service
 create_ufw_service() {
     log $LOG_LEVEL_INFO "Creating and enabling UFW service..." "$UPDATE_LOG_FILE"
     cat << EOF > /etc/systemd/system/ufw.service
@@ -1063,7 +1078,6 @@ EOF
     log $LOG_LEVEL_INFO "UFW service created and enabled." "$UPDATE_LOG_FILE"
 }
 
-# Function to create the iptables systemd service
 create_iptables_service() {
     log $LOG_LEVEL_INFO "Creating and enabling iptables service..." "$UPDATE_LOG_FILE"
     cat << EOF > /etc/systemd/system/iptables.service
@@ -1086,7 +1100,6 @@ EOF
     log $LOG_LEVEL_INFO "iptables service created and enabled." "$UPDATE_LOG_FILE"
 }
 
-# Function to create the hostname generator systemd service
 create_hogen_service() {
     log $LOG_LEVEL_INFO "Creating and enabling hostname generator service..." "$HOGEN_LOG_FILE"
     cat << EOF > "$HOGEN_SERVICE_PATH"
@@ -1110,7 +1123,6 @@ EOF
     log $LOG_LEVEL_INFO "Hostname generator service created and enabled successfully." "$HOGEN_LOG_FILE"
 }
 
-# Function to create the MAC spoofing systemd service
 create_mspoo_service() {
     log $LOG_LEVEL_INFO "Creating and enabling MAC spoofing service..." "$MSPOO_LOG_FILE"
     cat << EOF > "$MSPOO_SERVICE_PATH"
@@ -1135,7 +1147,6 @@ EOF
     log $LOG_LEVEL_INFO "MAC spoofing service created and enabled successfully." "$MSPOO_LOG_FILE"
 }
 
-# Function to create the ProxyChains update systemd service
 create_update_proxies_service() {
     log $LOG_LEVEL_INFO "Creating systemd service to run the proxy update script on startup..." "$UPDATE_LOG_FILE"
     cat << EOF > /etc/systemd/system/update_proxies.service
@@ -1158,9 +1169,8 @@ EOF
     log $LOG_LEVEL_INFO "Systemd service created and enabled." "$UPDATE_LOG_FILE"
 }
 
-# Function to create the ProxyChains update systemd timer
 create_update_proxies_timer() {
-    log $LOG_LEVEL_INFO "Creating systemd timer to run the proxy update script every 30 minutes..." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Creating systemd timer to run the proxy update script every 30 minutes..." "$PROXY_UPDATE_LOG_FILE"
     cat << EOF > /etc/systemd/system/update_proxies.timer
 [Unit]
 Description=Run update_proxies.sh every 30 minutes
@@ -1176,10 +1186,9 @@ EOF
     systemctl daemon-reload
     systemctl enable update_proxies.timer
     systemctl start update_proxies.timer
-    log $LOG_LEVEL_INFO "Systemd timer created and started." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Systemd timer created and started." "$PROXY_UPDATE_LOG_FILE"
 }
 
-# Create a systemd service file for Snort
 create_snort_service(){
     cat << EOF > $SNORT_SERVICE
 [Unit]
@@ -1194,6 +1203,9 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 EOF
+
+    # Ensure the Snort service file has the correct permissions
+    chmod 644 "$SNORT_SERVICE"
 
     # Enable and start the Snort service
     systemctl daemon-reload
