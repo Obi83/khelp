@@ -65,6 +65,9 @@ rm -rf /usr/local/share/khelp_verify
 rm -rf /usr/local/share/khelp_hogen
 rm -rf /usr/local/share/khelp_mspoof
 rm -rf /usr/local/share/khelp_snort
+rm -rf /usr/local/share/khelp_logging
+rm -rf /usr/local/share/khelp_default_terminal
+rm -rf /usr/local/share/khelp_startup_verification
 rm -f /usr/local/bin/ufw.sh
 rm -f /usr/local/bin/iptables.sh
 rm -f /usr/local/bin/hogen.sh
@@ -85,6 +88,10 @@ rm -f /var/log/khelp_mspoo.log
 # Remove desktop entry
 log "INFO" "Removing desktop entry..."
 rm -f "$USER_HOME/.config/autostart/startup_terminal.desktop"
+
+# Remove startup script
+log "INFO" "Removing startup script..."
+rm -f "$USER_HOME/startup_script.sh"
 
 # Uninstall packages
 log "INFO" "Uninstalling packages..."
