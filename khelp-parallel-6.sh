@@ -245,7 +245,7 @@ install_apt_fast() {
 
     while [ $attempts -lt $max_attempts ]; do
         log $LOG_LEVEL_INFO "Updating package lists..." "$UPDATE_LOG_FILE"
-        apt-get update -y
+        apt update -y
         if [ $? -ne 0 ]; then
             log $LOG_LEVEL_ERROR "Failed to update package lists." "$UPDATE_LOG_FILE"
             attempts=$((attempts + 1))
