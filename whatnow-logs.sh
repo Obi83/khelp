@@ -824,8 +824,33 @@ alert tcp \$EXTERNAL_NET any -> \$HOME_NET 80 (msg:"HTTP connection attempt"; si
 alert tcp \$HOME_NET 80 -> \$EXTERNAL_NET any (msg:"HTTP response"; sid:1000003; rev:1;)
 alert icmp \$EXTERNAL_NET any -> \$HOME_NET any (msg:"ICMP packet"; sid:1000004; rev:1;)
 EOF
+
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
+    
+    # Fix Permissions for snort.conf
+    log $LOG_LEVEL_INFO "Setting permissions for snort.conf..." "$UPDATE_LOG_FILE"
+    chown snort:snort $SNORT_CONF
+    chmod 644 $SNORT_CONF
+
+    # Correct the Syntax Error in snort.conf
+    log $LOG_LEVEL_INFO "Validating snort.conf syntax..." "$UPDATE_LOG_FILE"
+    grep -q "var HOME_NET" $SNORT_CONF
+    if [ $? -ne 0 ]; then
+    log $LOG_LEVEL_ERROR "Missing HOME_NET variable in snort.conf" "$UPDATE_LOG_FILE"
+    echo "var HOME_NET any" >> $SNORT_CONF
+    fi
+
+    grep -q "var EXTERNAL_NET" $SNORT_CONF
+    if [ $? -ne 0 ]; then
+    log $LOG_LEVEL_ERROR "Missing EXTERNAL_NET variable in snort.conf" "$UPDATE_LOG_FILE"
+    echo "var EXTERNAL_NET any" >> $SNORT_CONF
+    fi
+
+    log $LOG_LEVEL_INFO "Snort configuration file validated and updated." "$UPDATE_LOG_FILE"
+
 }
+
+
 
 # Execute independent tasks in parallel
 configure_ufw &
@@ -1347,7 +1372,7 @@ EOF
     log $LOG_LEVEL_INFO "Systemd timer created and started." "$PROXY_UPDATE_LOG_FILE"
 }
 
-create_snort_service(){
+create_snort_service() {
     cat << EOF > $SNORT_SERVICE
 [Unit]
 Description=Snort Network Intrusion Detection System
@@ -1369,7 +1394,7 @@ EOF
     systemctl daemon-reload
     systemctl enable snort
     systemctl start snort
-    log $LOG_LEVEL_INFO "Snort configured and started successfully." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Snort service configured and started successfully." "$UPDATE_LOG_FILE"
 }
 
 # Execute systemd service creation tasks in parallel
