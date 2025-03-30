@@ -26,6 +26,9 @@ else
     export USER_HOME=$HOME
 fi
 
+# Task 0: Setting Variables
+log $LOG_LEVEL_INFO "Starting Setting Variables task" "$UPDATE_LOG_FILE"
+
 # Log files
 export UPDATE_LOG_FILE="/var/log/khelp/khelp.log"
 export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp/khelp_hogen.log"}
@@ -146,20 +149,6 @@ validate_url() {
     fi
 }
 
-# Example usage of the log function for different tasks
-
-# Task 1: Proxy
-log $LOG_LEVEL_INFO "Starting Proxy task" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "Proxy task completed successfully" "$UPDATE_LOG_FILE"
-
-# Task 2: Hogen
-log $LOG_LEVEL_INFO "Starting Hogen task" "$HOGEN_LOG_FILE"
-log $LOG_LEVEL_INFO "Hogen task completed successfully" "$HOGEN_LOG_FILE"
-
-# Task 3: MSPoo
-log $LOG_LEVEL_INFO "Starting MSPoo task" "$MSPOO_LOG_FILE"
-log $LOG_LEVEL_INFO "MSPoo task completed successfully" "$MSPOO_LOG_FILE"
-
 # Debugging: Print environment variables
 
 # User and Log Files
@@ -214,10 +203,7 @@ log $LOG_LEVEL_INFO "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH" "$UPDATE_LOG_FILE
 log $LOG_LEVEL_INFO "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "CRONTAB_FILE=$CRONTAB_FILE" "$UPDATE_LOG_FILE"
 
-# Example usage of the log function
-log $LOG_LEVEL_INFO "This is an informational message." "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_ERROR "This is an error message." "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_WARNING "This is a warning message." "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "Starting Setting Variables task done." "$UPDATE_LOG_FILE"
 
 # Function to detect the local network IP range
 detect_ip_range() {
@@ -234,14 +220,46 @@ get_primary_interface() {
     ip route | grep default | awk '{print $5}'
 }
 
+# Function to install apt-fast and change it
+install_apt_fast() {
+    log $LOG_LEVEL_INFO "Installing apt-fast..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        sudo add-apt-repository -y ppa:apt-fast/stable
+        sudo apt-get update
+        sudo apt-get install -y apt-fast aria2
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "apt-fast installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install apt-fast. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install apt-fast after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
+# Call the function to install apt-fast
+install_apt_fast
+
 # Update the system
 update_system() {
     log $LOG_LEVEL_INFO "Updating and upgrading system" "$UPDATE_LOG_FILE"
     local attempts=0
     local max_attempts=3
+    local update_cmd="apt-get update && apt-get full-upgrade -y && apt-get autoremove -y && apt-get autoclean"
+
+    if is_apt_fast_installed; then
+        update_cmd="apt-fast update && apt-fast full-upgrade -y && apt-fast autoremove -y && apt-fast autoclean"
+    fi
 
     while [ $attempts -lt $max_attempts ]; do
-        if apt update && apt full-upgrade -y && apt autoremove -y && apt autoclean; then
+        if $update_cmd; then
             log $LOG_LEVEL_INFO "System update and upgrade completed." "$UPDATE_LOG_FILE"
             return 0
         else
@@ -255,8 +273,13 @@ update_system() {
     exit 1
 }
 
+# Task 1: Updating System
+log $LOG_LEVEL_INFO "Starting Update/Upgrading System task" "$UPDATE_LOG_FILE"
+
 # Example usage of the updated function
-update_system
+update_system # Assuming update_system is a function defined elsewhere
+
+log $LOG_LEVEL_INFO "Update/Upgrading task completed successfully" "$UPDATE_LOG_FILE"
 
 # Determine the primary network interface
 PRIMARY_INTERFACE=$(get_primary_interface)
@@ -481,6 +504,9 @@ install_snort() {
 # Main script execution
 log $LOG_LEVEL_INFO "Starting khelp setup..." "$UPDATE_LOG_FILE"
 
+# Task 2: Installing Helper Tools
+log $LOG_LEVEL_INFO "package installation tasks in parallel." "$UPDATE_LOG_FILE"
+
 # Execute independent package installation tasks in parallel
 install_curl &
 install_tor &
@@ -496,7 +522,8 @@ install_snort &
 # Wait for all background tasks to complete
 wait
 
-log $LOG_LEVEL_INFO "All package installations completed successfully." "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "package installation tasks in parallel completed successfully" "$UPDATE_LOG_FILE"
+
 
 # Create a backup directory with a timestamp
 BACKUP_DIR="/backup/configs_$(date +'%Y%m%d%H%M%S')"
@@ -681,6 +708,9 @@ EOF
     chmod 644 /etc/snort/snort.conf
 }
 
+# Task 3: Setting Config-Files
+log $LOG_LEVEL_INFO "Starting Setup Config-Files task in parallel." "$UPDATE_LOG_FILE"
+
 # Execute independent tasks in parallel
 configure_ufw &
 configure_fail2ban &
@@ -692,7 +722,7 @@ configure_snort &
 # Wait for all background tasks to complete
 wait
 
-log $LOG_LEVEL_INFO "All independent tasks completed successfully." "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "Setup Config-Files task in parallel completed successfully" "$UPDATE_LOG_FILE"
 
 # Function to create the UFW script
 create_ufw_script() {
@@ -1021,6 +1051,8 @@ EOF
     log $LOG_LEVEL_INFO "snort script created successfully." "$UPDATE_LOG_FILE"
 }
 
+# Task 4: Creating Scripts
+log $LOG_LEVEL_INFO "Starting Script Creation task" "$UPDATE_LOG_FILE"
 
 # Execute script creation tasks in parallel
 create_ufw_script &
@@ -1034,7 +1066,7 @@ create_snort_script &
 # Wait for all background tasks to complete
 wait
 
-log $LOG_LEVEL_INFO "All script creation tasks completed successfully." "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "Script Creation task completed successfully" "$UPDATE_LOG_FILE"
 
 # Function to create the UFW systemd service
 create_ufw_service() {
@@ -1200,6 +1232,9 @@ EOF
     log $LOG_LEVEL_INFO "Snort configured and started successfully." "$UPDATE_LOG_FILE"
 }
 
+# Task 5: Creating Services
+log $LOG_LEVEL_INFO "systemd service creation tasks in parallel." "$UPDATE_LOG_FILE"
+
 # Execute systemd service creation tasks in parallel
 create_ufw_service &
 create_iptables_service &
@@ -1212,7 +1247,7 @@ create_snort_service &
 # Wait for all background tasks to complete
 wait
 
-log $LOG_LEVEL_INFO "All systemd service creation tasks completed successfully." "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "systemd service creation tasks in parallel  completed successfully." "$UPDATE_LOG_FILE"
 
 # Function to create README.md for Logging Function
 create_logging_readme() {
@@ -2602,6 +2637,9 @@ By following these steps, you can ensure that Snort is properly integrated into 
 providing real-time intrusion detection alongside UFW, iptables, and Fail2ban.
 EOF
 }
+
+# Task 6: Creating Documentation
+log $LOG_LEVEL_INFO "Start Creating Documentation task in parallel." "$UPDATE_LOG_FILE"
 
 # Run both functions in parallel
 create_default_terminal_readme &
