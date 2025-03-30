@@ -576,39 +576,39 @@ EOF
     log $LOG_LEVEL_INFO "Fail2ban configured and started successfully." "$UPDATE_LOG_FILE"
 }
 
-598| configure_iptables() {
-599|     log $LOG_LEVEL_INFO "Configuring iptables..." "$UPDATE_LOG_FILE"
-600|     iptables -F
-601|     log $LOG_LEVEL_INFO "Flushed all iptables rules." "$UPDATE_LOG_FILE"
-602|     iptables -X
-603|     log $LOG_LEVEL_INFO "Deleted all user-defined iptables chains." "$UPDATE_LOG_FILE"
-604|     iptables -P INPUT DROP
-605|     log $LOG_LEVEL_INFO "Set default policy for INPUT chain to DROP." "$UPDATE_LOG_FILE"
-606|     iptables -P FORWARD DROP
-607|     log $LOG_LEVEL_INFO "Set default policy for FORWARD chain to DROP." "$UPDATE_LOG_FILE"
-608|     iptables -P OUTPUT ACCEPT
-609|     log $LOG_LEVEL_INFO "Set default policy for OUTPUT chain to ACCEPT." "$UPDATE_LOG_FILE"
-610|     iptables -A INPUT -i lo -j ACCEPT
-611|     log $LOG_LEVEL_INFO "Allowed loopback traffic on INPUT chain." "$UPDATE_LOG_FILE"
-612|     iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-613|     log $LOG_LEVEL_INFO "Allowed established and related connections on INPUT chain." "$UPDATE_LOG_FILE"
-614|     iptables -A INPUT -p tcp -s $ALLOWED_IP_RANGE --dport 22 -j ACCEPT
-615|     log $LOG_LEVEL_INFO "Allowed SSH access from $ALLOWED_IP_RANGE on port 22." "$UPDATE_LOG_FILE"
-616|     iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
-617|     iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 -j DROP
-618|     log $LOG_LEVEL_INFO "Rate-limited new SSH connections." "$UPDATE_LOG_FILE"
-619|     iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
-620|     log $LOG_LEVEL_INFO "Dropped invalid packets on INPUT chain." "$UPDATE_LOG_FILE"
-621|     iptables -A INPUT -p icmp -j ACCEPT
-622|     log $LOG_LEVEL_INFO "Allowed ICMP (ping) traffic on INPUT chain." "$UPDATE_LOG_FILE"
-623|     iptables -N LOGGING
-624|     iptables -A INPUT -j LOGGING
-625|     iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
-626|     iptables -A LOGGING -j DROP
-627|     log $LOG_LEVEL_INFO "Configured logging for iptables." "$UPDATE_LOG_FILE"
-628|     iptables-save > /etc/iptables/rules.v4
-629|     log $LOG_LEVEL_INFO "iptables rules configured successfully." "$UPDATE_LOG_FILE"
-630| }
+configure_iptables() {
+    log $LOG_LEVEL_INFO "Configuring iptables..." "$UPDATE_LOG_FILE"
+    iptables -F
+    log $LOG_LEVEL_INFO "Flushed all iptables rules." "$UPDATE_LOG_FILE"
+    iptables -X
+    log $LOG_LEVEL_INFO "Deleted all user-defined iptables chains." "$UPDATE_LOG_FILE"
+    iptables -P INPUT DROP
+    log $LOG_LEVEL_INFO "Set default policy for INPUT chain to DROP." "$UPDATE_LOG_FILE"
+    iptables -P FORWARD DROP
+    log $LOG_LEVEL_INFO "Set default policy for FORWARD chain to DROP." "$UPDATE_LOG_FILE"
+    iptables -P OUTPUT ACCEPT
+    log $LOG_LEVEL_INFO "Set default policy for OUTPUT chain to ACCEPT." "$UPDATE_LOG_FILE"
+    iptables -A INPUT -i lo -j ACCEPT
+    log $LOG_LEVEL_INFO "Allowed loopback traffic on INPUT chain." "$UPDATE_LOG_FILE"
+    iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    log $LOG_LEVEL_INFO "Allowed established and related connections on INPUT chain." "$UPDATE_LOG_FILE"
+    iptables -A INPUT -p tcp -s $ALLOWED_IP_RANGE --dport 22 -j ACCEPT
+    log $LOG_LEVEL_INFO "Allowed SSH access from $ALLOWED_IP_RANGE on port 22." "$UPDATE_LOG_FILE"
+    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 -j DROP
+    log $LOG_LEVEL_INFO "Rate-limited new SSH connections." "$UPDATE_LOG_FILE"
+    iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
+    log $LOG_LEVEL_INFO "Dropped invalid packets on INPUT chain." "$UPDATE_LOG_FILE"
+    iptables -A INPUT -p icmp -j ACCEPT
+    log $LOG_LEVEL_INFO "Allowed ICMP (ping) traffic on INPUT chain." "$UPDATE_LOG_FILE"
+    iptables -N LOGGING
+    iptables -A INPUT -j LOGGING
+    iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
+    iptables -A LOGGING -j DROP
+    log $LOG_LEVEL_INFO "Configured logging for iptables." "$UPDATE_LOG_FILE"
+    iptables-save > /etc/iptables/rules.v4
+    log $LOG_LEVEL_INFO "iptables rules configured successfully." "$UPDATE_LOG_FILE"
+}
 
 configure_tor() {
     log $LOG_LEVEL_INFO "Configuring and enabling Tor..." "$UPDATE_LOG_FILE"
