@@ -608,6 +608,26 @@ configure_iptables() {
     iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
     iptables -A LOGGING -j DROP
     log $LOG_LEVEL_INFO "Configured logging for iptables." "$IPTABLES_LOG_FILE"
+    
+    # Ensure the rules file exists and has default content if not
+    if [ ! -f /etc/iptables/rules.v4 ]; then
+        log $LOG_LEVEL_INFO "Creating default iptables rules file..." "$IPTABLES_LOG_FILE"
+        mkdir -p /etc/iptables
+        cat << EOF > /etc/iptables/rules.v4
+# Default iptables rules
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p tcp --dport 22 -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+COMMIT
+EOF
+        log $LOG_LEVEL_INFO "Created default iptables rules file." "$IPTABLES_LOG_FILE"
+    fi
+    
     iptables-save > /etc/iptables/rules.v4
     log $LOG_LEVEL_INFO "iptables rules configured successfully." "$IPTABLES_LOG_FILE"
 }
