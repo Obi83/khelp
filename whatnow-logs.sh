@@ -32,7 +32,6 @@ export UPDATE_LOG_FILE="/var/log/khelp.log"
 export PROXY_UPDATE_LOG_FILE="/var/log/khelp_proxy.log"
 export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp_hogen.log"}
 export MSPOO_LOG_FILE=${MSPOO_LOG_FILE:-"/var/log/khelp_mspoo.log"}
-export SNORT_LOG_DIR="/var/log/snort"
 
 # Directories
 export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
@@ -46,7 +45,6 @@ export KHELP_TERMINATOR_DIR="/usr/local/share/khelp_terminator"
 export KHELP_VERIFY_DIR="/usr/local/share/khelp_verify"
 export HOGEN_DOC_DIR=${HOGEN_DOC_DIR:-"/usr/local/share/khelp_hogen"}
 export MSPOO_DOC_DIR=${MSPOO_DOC_DIR:-"/usr/local/share/khelp_mspoof"}
-export SNORT_DOC_DIR=${SNORT_DOC_DIR:-"/usr/local/share/khelp_snort"}
 export KHELP_LOGGING_DIR="/usr/local/share/khelp_logging"
 export KHELP_DEFAULT_TERMINAL_DIR="/usr/local/share/khelp_default_terminal"
 export KHELP_STARTUP_VERIFICATION_DIR="/usr/local/share/khelp_startup_verification"
@@ -55,8 +53,6 @@ export KHELP_STARTUP_VERIFICATION_DIR="/usr/local/share/khelp_startup_verificati
 export PROXYCHAINS_CONF="/etc/proxychains.conf"
 export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
 export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
-export SNORT_CONF="/etc/snort/snort.conf"
-export SNORT_RULES_DIR="/etc/snort/rules"
 export CRONTAB_FILE="/etc/crontab"
 
 # Script paths
@@ -75,12 +71,10 @@ export UFW_SERVICE_PATH="/etc/systemd/system/ufw.service"
 export IPTABLES_SERVICE_PATH="/etc/systemd/system/iptables.service"
 export HOGEN_SERVICE_PATH=${HOGEN_SERVICE_PATH:-"/etc/systemd/system/hogen.service"}
 export MSPOO_SERVICE_PATH=${MSPOO_SERVICE_PATH:-"/etc/systemd/system/mspoo.service"}
-export SNORT_SERVICE="/etc/systemd/system/snort.service"
 
 # Documentation files
 export HOGEN_DOC_FILE="$HOGEN_DOC_DIR/README.md"
 export MSPOO_DOC_FILE="$MSPOO_DOC_DIR/README.md"
-export SNORT_DOC_FILE="$SNORT_DOC_DIR/README.md"
 export KHELP_LOGGING_DOC_FILE="$KHELP_LOGGING_DIR/README.md"
 export KHELP_DEFAULT_TERMINAL_DOC_FILE="$KHELP_DEFAULT_TERMINAL_DIR/README.md"
 export KHELP_STARTUP_VERIFICATION_DOC_FILE="$KHELP_STARTUP_VERIFICATION_DIR/README.md"
@@ -185,7 +179,6 @@ log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_UPDATE_LOG_FILE=$PROXY_UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "HOGEN_LOG_FILE=$HOGEN_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "MSPOO_LOG_FILE=$MSPOO_LOG_FILE" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "SNORT_LOG_DIR=$SNORT_LOG_DIR" "$UPDATE_LOG_FILE"
 
 # Directories
 log $LOG_LEVEL_INFO "KHELP_UPDATE_DIR=$KHELP_UPDATE_DIR" "$UPDATE_LOG_FILE"
@@ -199,7 +192,6 @@ log $LOG_LEVEL_INFO "KHELP_TERMINATOR_DIR=$KHELP_TERMINATOR_DIR" "$UPDATE_LOG_FI
 log $LOG_LEVEL_INFO "KHELP_VERIFY_DIR=$KHELP_VERIFY_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "HOGEN_DOC_DIR=$HOGEN_DOC_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "MSPOO_DOC_DIR=$MSPOO_DOC_DIR" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "SNORT_DOC_DIR=$SNORT_DOC_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_LOGGING_DIR=$KHELP_LOGGING_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_DEFAULT_TERMINAL_DIR=$KHELP_DEFAULT_TERMINAL_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_STARTUP_VERIFICATION_DIR=$KHELP_STARTUP_VERIFICATION_DIR" "$UPDATE_LOG_FILE"
@@ -208,8 +200,6 @@ log $LOG_LEVEL_INFO "KHELP_STARTUP_VERIFICATION_DIR=$KHELP_STARTUP_VERIFICATION_
 log $LOG_LEVEL_INFO "PROXYCHAINS_CONF=$PROXYCHAINS_CONF" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "FAIL2BAN_CONFIG=$FAIL2BAN_CONFIG" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "IPTABLES_RULES_FILE=$IPTABLES_RULES_FILE" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "SNORT_CONF=$SNORT_CONF" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "SNORT_RULES_DIR=$SNORT_RULES_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "CRONTAB_FILE=$CRONTAB_FILE" "$UPDATE_LOG_FILE"
 
 # Script paths
@@ -228,12 +218,10 @@ log $LOG_LEVEL_INFO "UFW_SERVICE_PATH=$UFW_SERVICE_PATH" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "IPTABLES_SERVICE_PATH=$IPTABLES_SERVICE_PATH" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "HOGEN_SERVICE_PATH=$HOGEN_SERVICE_PATH" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "MSPOO_SERVICE_PATH=$MSPOO_SERVICE_PATH" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "SNORT_SERVICE=$SNORT_SERVICE" "$UPDATE_LOG_FILE"
 
 # Documentation files
 log $LOG_LEVEL_INFO "HOGEN_DOC_FILE=$HOGEN_DOC_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "MSPOO_DOC_FILE=$MSPOO_DOC_FILE" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "SNORT_DOC_FILE=$SNORT_DOC_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_LOGGING_DOC_FILE=$KHELP_LOGGING_DOC_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_DEFAULT_TERMINAL_DOC_FILE=$KHELP_DEFAULT_TERMINAL_DOC_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_STARTUP_VERIFICATION_DOC_FILE=$KHELP_STARTUP_VERIFICATION_DOC_FILE" "$UPDATE_LOG_FILE"
@@ -495,27 +483,6 @@ install_proxychains() {
     return 1
 }
 
-install_snort() {
-    log $LOG_LEVEL_INFO "Installing snort..." "$UPDATE_LOG_FILE"
-    local attempts=0
-    local max_attempts=3
-
-    while [ $attempts -lt $max_attempts ]; do
-        apt install -y snort
-        if [ $? -eq 0 ]; then
-            log $LOG_LEVEL_INFO "snort installed successfully." "$UPDATE_LOG_FILE"
-            return 0
-        else
-            attempts=$((attempts + 1))
-            log $LOG_LEVEL_ERROR "Failed to install snort. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
-            sleep $((attempts * 5))
-        fi
-    done
-
-    log $LOG_LEVEL_ERROR "Failed to install snort after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
-    return 1
-}
-
 # Main script execution
 log $LOG_LEVEL_INFO "Starting khelp setup..." "$UPDATE_LOG_FILE"
 
@@ -529,7 +496,6 @@ install_fail2ban &
 install_sslh &
 install_terminator &
 install_proxychains &
-install_snort &
 
 # Wait for all background tasks to complete
 wait
@@ -557,7 +523,6 @@ log $LOG_LEVEL_INFO "Backing up configuration files..." "$UPDATE_LOG_FILE"
 backup_config "/etc/proxychains.conf"
 backup_config "/etc/ufw/ufw.conf"
 backup_config "/etc/iptables/rules.v4"
-backup_config "/etc/snort/snort.conf"
 backup_config "/etc/fail2ban/jail.local"
 backup_config "/etc/sslh/sslh.cfg"
 
@@ -590,32 +555,60 @@ enabled = true
 [sshd-ddos]
 enabled = true
 EOF
+
+    log $LOG_LEVEL_INFO "Creating/Updating sshd-ddos filter..." "$UPDATE_LOG_FILE"
+    cat << 'EOF' > /etc/fail2ban/filter.d/sshd-ddos.conf
+# Fail2Ban filter for sshd-ddos
+[Definition]
+
+_daemon = sshd
+
+failregex = ^%(__prefix_line)sReceived disconnect from <HOST>: 11:  \[preauth\]$
+            ^%(__prefix_line)sReceived disconnect from <HOST>: 11: Bye Bye \[preauth\]$
+            ^%(__prefix_line)sReceived disconnect from <HOST>: 3:  \[preauth\]$
+            ^%(__prefix_line)sReceived disconnect from <HOST>: 3: Bye Bye \[preauth\]$
+
+ignoreregex =
+EOF
+
     systemctl enable fail2ban
     systemctl start fail2ban
     log $LOG_LEVEL_INFO "Fail2ban configured and started successfully." "$UPDATE_LOG_FILE"
 }
 
-configure_iptables() {
-    log $LOG_LEVEL_INFO "Configuring iptables..." "$UPDATE_LOG_FILE"
-    iptables -F
-    iptables -X
-    iptables -P INPUT DROP
-    iptables -P FORWARD DROP
-    iptables -P OUTPUT ACCEPT
-    iptables -A INPUT -i lo -j ACCEPT
-    iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-    iptables -A INPUT -p tcp -s $ALLOWED_IP_RANGE --dport 22 -j ACCEPT  # Restrict SSH access
-    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
-    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 -j DROP  # Rate limit SSH
-    iptables -A INPUT -m conntrack --ctstate INVALID -j DROP  # Drop invalid packets
-    iptables -A INPUT -p icmp -j ACCEPT
-    iptables -N LOGGING
-    iptables -A INPUT -j LOGGING
-    iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
-    iptables -A LOGGING -j DROP
-    iptables-save > /etc/iptables/rules.v4
-    log $LOG_LEVEL_INFO "iptables rules configured successfully." "$UPDATE_LOG_FILE"
-}
+598| configure_iptables() {
+599|     log $LOG_LEVEL_INFO "Configuring iptables..." "$UPDATE_LOG_FILE"
+600|     iptables -F
+601|     log $LOG_LEVEL_INFO "Flushed all iptables rules." "$UPDATE_LOG_FILE"
+602|     iptables -X
+603|     log $LOG_LEVEL_INFO "Deleted all user-defined iptables chains." "$UPDATE_LOG_FILE"
+604|     iptables -P INPUT DROP
+605|     log $LOG_LEVEL_INFO "Set default policy for INPUT chain to DROP." "$UPDATE_LOG_FILE"
+606|     iptables -P FORWARD DROP
+607|     log $LOG_LEVEL_INFO "Set default policy for FORWARD chain to DROP." "$UPDATE_LOG_FILE"
+608|     iptables -P OUTPUT ACCEPT
+609|     log $LOG_LEVEL_INFO "Set default policy for OUTPUT chain to ACCEPT." "$UPDATE_LOG_FILE"
+610|     iptables -A INPUT -i lo -j ACCEPT
+611|     log $LOG_LEVEL_INFO "Allowed loopback traffic on INPUT chain." "$UPDATE_LOG_FILE"
+612|     iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+613|     log $LOG_LEVEL_INFO "Allowed established and related connections on INPUT chain." "$UPDATE_LOG_FILE"
+614|     iptables -A INPUT -p tcp -s $ALLOWED_IP_RANGE --dport 22 -j ACCEPT
+615|     log $LOG_LEVEL_INFO "Allowed SSH access from $ALLOWED_IP_RANGE on port 22." "$UPDATE_LOG_FILE"
+616|     iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+617|     iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 -j DROP
+618|     log $LOG_LEVEL_INFO "Rate-limited new SSH connections." "$UPDATE_LOG_FILE"
+619|     iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
+620|     log $LOG_LEVEL_INFO "Dropped invalid packets on INPUT chain." "$UPDATE_LOG_FILE"
+621|     iptables -A INPUT -p icmp -j ACCEPT
+622|     log $LOG_LEVEL_INFO "Allowed ICMP (ping) traffic on INPUT chain." "$UPDATE_LOG_FILE"
+623|     iptables -N LOGGING
+624|     iptables -A INPUT -j LOGGING
+625|     iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
+626|     iptables -A LOGGING -j DROP
+627|     log $LOG_LEVEL_INFO "Configured logging for iptables." "$UPDATE_LOG_FILE"
+628|     iptables-save > /etc/iptables/rules.v4
+629|     log $LOG_LEVEL_INFO "iptables rules configured successfully." "$UPDATE_LOG_FILE"
+630| }
 
 configure_tor() {
     log $LOG_LEVEL_INFO "Configuring and enabling Tor..." "$UPDATE_LOG_FILE"
@@ -696,56 +689,12 @@ EOF
     log $LOG_LEVEL_INFO "ProxyChains configured successfully." "$UPDATE_LOG_FILE"
 }
 
-configure_snort() {
-    log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
-    
-    # Create necessary directories with correct permissions
-    mkdir -p $SNORT_RULES_DIR
-    mkdir -p $SNORT_LOG_DIR
-    chown snort:snort $SNORT_LOG_DIR
-    chmod 750 $SNORT_LOG_DIR
-
-    log $LOG_LEVEL_INFO "Creating snort rules..." "$UPDATE_LOG_FILE"
-    cat << EOF > $SNORT_RULES_DIR/local.rules
-# Custom rules for detecting specific types of traffic and threats
-alert tcp \$EXTERNAL_NET any -> \$HOME_NET 22 (msg:"SSH connection attempt"; sid:1000001; rev:1;)
-alert tcp \$EXTERNAL_NET any -> \$HOME_NET 80 (msg:"HTTP connection attempt"; sid:1000002; rev:1;)
-alert tcp \$HOME_NET 80 -> \$EXTERNAL_NET any (msg:"HTTP response"; sid:1000003; rev:1;)
-alert icmp \$EXTERNAL_NET any -> \$HOME_NET any (msg:"ICMP packet"; sid:1000004; rev:1;)
-EOF
-
-    log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
-    
-    # Fix Permissions for snort.conf
-    log $LOG_LEVEL_INFO "Setting permissions for snort.conf..." "$UPDATE_LOG_FILE"
-    chown snort:snort $SNORT_CONF
-    chmod 644 $SNORT_CONF
-
-    # Correct the Syntax Error in snort.conf
-    log $LOG_LEVEL_INFO "Validating snort.conf syntax..." "$UPDATE_LOG_FILE"
-    grep -q "var HOME_NET" $SNORT_CONF
-    if [ $? -ne 0 ]; then
-    log $LOG_LEVEL_ERROR "Missing HOME_NET variable in snort.conf" "$UPDATE_LOG_FILE"
-    echo "var HOME_NET any" >> $SNORT_CONF
-    fi
-
-    grep -q "var EXTERNAL_NET" $SNORT_CONF
-    if [ $? -ne 0 ]; then
-    log $LOG_LEVEL_ERROR "Missing EXTERNAL_NET variable in snort.conf" "$UPDATE_LOG_FILE"
-    echo "var EXTERNAL_NET any" >> $SNORT_CONF
-    fi
-
-    log $LOG_LEVEL_INFO "Snort configuration file validated and updated." "$UPDATE_LOG_FILE"
-
-}
-
 # Execute independent tasks in parallel
 configure_ufw &
 configure_fail2ban &
 configure_iptables &
 configure_tor &
 configure_proxychains &
-configure_snort &
 
 # Wait for all background tasks to complete
 wait
@@ -1053,61 +1002,6 @@ EOF
     log $LOG_LEVEL_INFO "Desktop entry created successfully." "$UPDATE_LOG_FILE"
 }
 
-create_snort_script() {
-    log $LOG_LEVEL_INFO "Creating snort script..." "$UPDATE_LOG_FILE"
-    cat << EOF > "$SNORT_CONF"
-# Define network variables
-var HOME_NET $ALLOWED_IP_RANGE
-var EXTERNAL_NET any
-
-# Preprocessor configurations
-preprocessor stream5_global: track_tcp yes, track_udp yes
-preprocessor stream5_tcp: policy windows, detect_anomalies, require_3whs 180, overlap_limit 10, small_segments 3 bytes 150, timeout 180
-preprocessor stream5_udp: timeout 180
-preprocessor stream5_icmp: timeout 180
-
-preprocessor http_inspect: global iis_unicode_map unicode.map 1252
-preprocessor http_inspect_server: server default profile all ports { 80 8080 8180 } oversize_dir_length 500
-
-preprocessor frag3_global: max_frags 65536
-preprocessor frag3_engine: policy windows detect_anomalies overlap_limit 10
-
-preprocessor stream5_ssh: max_sessions 256
-
-preprocessor dcerpc2: memcap 102400, events [co]
-
-preprocessor dns: ports { 53 } enable_rdata_overflow no enable_rdata_txt_overflow no enable_rdata_type_overflow no
-
-preprocessor ssl: noinspect_encrypted
-
-# Include rule sets
-include \$RULE_PATH/local.rules
-include \$RULE_PATH/community.rules
-
-# Output modules
-output alert_fast: stdout
-output log_tcpdump: $SNORT_LOG_DIR/snort.log
-
-# Path to rule files
-var RULE_PATH $SNORT_RULES_DIR
-
-# Path to dynamic preprocessor libraries
-dynamicpreprocessor directory /usr/local/lib/snort_dynamicpreprocessor/
-dynamicengine /usr/local/lib/snort_dynamicengine/libsf_engine.so
-dynamicdetection directory /usr/local/lib/snort_dynamicrules/
-
-# Customize and add your rules
-include \$RULE_PATH/snort.rules
-EOF
-    chmod +x "$SNORT_LOG_DIR"
-    # Ensure the Snort configuration file is readable by Snort
-    chmod 644 "$SNORT_CONF"
-    # Ensure the Snort log directory is writable by Snort
-    chmod 755 "$SNORT_LOG_DIR"
-
-    log $LOG_LEVEL_INFO "snort script created successfully." "$UPDATE_LOG_FILE"
-}
-
 # Execute script creation tasks in parallel
 create_ufw_script &
 create_iptables_script &
@@ -1115,7 +1009,6 @@ create_hogen_script &
 create_mspoo_script &
 create_startup_script &
 create_desktop_entry &
-create_snort_script &
 
 # Wait for all background tasks to complete
 wait
@@ -1258,31 +1151,6 @@ EOF
     log $LOG_LEVEL_INFO "Systemd timer created and started." "$PROXY_UPDATE_LOG_FILE"
 }
 
-create_snort_service() {
-    cat << EOF > $SNORT_SERVICE
-[Unit]
-Description=Snort Network Intrusion Detection System
-After=network.target
-
-[Service]
-ExecStart=/usr/sbin/snort -c $SNORT_CONF -i $PRIMARY_INTERFACE
-ExecReload=/bin/kill -HUP \$MAINPID
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    # Ensure the Snort service file has the correct permissions
-    chmod 644 "$SNORT_SERVICE"
-
-    # Enable and start the Snort service
-    systemctl daemon-reload
-    systemctl enable snort
-    systemctl start snort
-    log $LOG_LEVEL_INFO "Snort service configured and started successfully." "$UPDATE_LOG_FILE"
-}
-
 # Execute systemd service creation tasks in parallel
 create_ufw_service &
 create_iptables_service &
@@ -1290,7 +1158,6 @@ create_hogen_service &
 create_mspoo_service &
 create_update_proxies_service &
 create_update_proxies_timer &
-create_snort_service &
 
 # Wait for all background tasks to complete
 wait
@@ -2603,77 +2470,6 @@ Logs are saved to /var/log/khelp_hogen.log. The log file is rotated if it exceed
 EOF
 }
 
-create_snort_readme() {
-  mkdir -p "$SNORT_DOC_DIR"
-  cat << EOF > "$SNORT_DOC_FILE"
-# Snort Configuration Documentation
-
-## Table of Contents
-1. [Overview](#overview)
-2. [Modes of Operation](#modes-of-operation)
-3. [Configuration Steps](#configuration-steps)
-4. [Environment Variables](#environment-variables)
-5. [Conclusion](#conclusion)
-
-## Overview
-Snort is an open-source Intrusion Detection and Prevention System (IDPS) developed by Cisco. 
-It is used to monitor network traffic in real-time, analyzing packets for signs of malicious activity, policy violations, or other threats. 
-Snort can operate in three main modes:
-
-## Modes of Operation
-1. **Sniffer Mode**: Captures and displays network packets in real-time.
-2. **Packet Logger Mode**: Logs packets to disk for later analysis.
-3. **Network Intrusion Detection System (NIDS) Mode**: Analyzes network traffic against a set of rules to detect suspicious activity.
-
-## Configuration Steps
-1. **Installation**: Install Snort using the package manager or by compiling from source.
-   ```bash
-   sudo apt-get update
-   sudo apt-get install -y snort
-   ```
-2. **Configuration File**: Edit the Snort configuration file located at `/etc/snort/snort.conf` to set up network variables, 
-     rules paths, and output plugins.
-   - Set network variables (e.g., HOME_NET, EXTERNAL_NET).
-   - Define the rule paths and include the necessary rule files.
-   - Configure output plugins for logging and alerting.
-
-3. **Rules Management**: Download and manage Snort rules from sources like the Snort community rules, Emerging Threats, or other rule providers.
-   ```bash
-   wget https://www.snort.org/rules/community -O /etc/snort/rules/community.rules
-   ```
-   - Ensure the downloaded rules are referenced in the Snort configuration file.
-
-4. **Testing Configuration**: Test the Snort configuration to ensure there are no errors.
-   ```bash
-   sudo snort -T -c /etc/snort/snort.conf
-   ```
-
-5. **Running Snort**: Start Snort in the desired mode.
-   - Sniffer Mode:
-     ```bash
-     sudo snort -v
-     ```
-   - Packet Logger Mode:
-     ```bash
-     sudo snort -dev -l /var/log/snort
-     ```
-   - NIDS Mode:
-     ```bash
-     sudo snort -c /etc/snort/snort.conf -i eth0
-     ```
-
-## Environment Variables
-- **HOME_NET**: Specifies the internal network range that Snort will monitor.
-- **EXTERNAL_NET**: Defines the external network range (usually set to any).
-- **RULE_PATH**: Path to the directory containing Snort rules.
-
-## Conclusion
-This documentation provides an overview of the Snort configuration steps and the associated environment variables. 
-By following these steps, you can ensure that Snort is properly integrated into your network security setup, 
-providing real-time intrusion detection alongside UFW, iptables, and Fail2ban.
-EOF
-}
-
 # Run both functions in parallel
 create_default_terminal_readme &
 create_startup_verification_readme &
@@ -2687,7 +2483,6 @@ create_iptables_readme &
 create_tor_readme &
 create_mspoo_readme &
 create_hogen_readme &
-create_snort_readme &
 
 # Wait for all background processes to finish
 wait
