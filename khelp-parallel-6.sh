@@ -26,11 +26,58 @@ else
     export USER_HOME=$HOME
 fi
 
-# Environment variables for paths and configurations
-export UPDATE_LOG_FILE="/var/log/khelp.log"
-export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
-export KHELP_INSTALLER_DIR="/usr/local/share/khelp_installer"
+# Log files
+export UPDATE_LOG_FILE="/var/log/khelp/khelp.log"
+export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp/khelp_hogen.log"}
+export MSPOO_LOG_FILE=${MSPOO_LOG_FILE:-"/var/log/khelp/khelp_mspoo.log"}
+export SNORT_LOG_DIR="/var/log/khelp/snort"
+
+# Directories
+export KHELP_UPDATE_DIR="/usr/local/share/khelp/khelp_update"
+export KHELP_INSTALLER_DIR="/usr/local/share/khelp/khelp_installer"
+export KHELP_PROXYCHAINS_DIR="/usr/local/share/khelp/khelp_proxychains"
+export KHELP_UFW_DIR="/usr/local/share/khelp/khelp_ufw"
+export KHELP_FAIL2BAN_DIR="/usr/local/share/khelp/khelp_fail2ban"
+export KHELP_IPTABLES_DIR="/usr/local/share/khelp/khelp_iptables"
+export KHELP_TOR_DIR="/usr/local/share/khelp/khelp_tor"
+export KHELP_TERMINATOR_DIR="/usr/local/share/khelp/khelp_terminator"
+export KHELP_VERIFY_DIR="/usr/local/share/khelp/khelp_verify"
+export HOGEN_DOC_DIR=${HOGEN_DOC_DIR:-"/usr/local/share/khelp/khelp_hogen"}
+export MSPOO_DOC_DIR=${MSPOO_DOC_DIR:-"/usr/local/share/khelp/khelp_mspoof"}
+export SNORT_DOC_DIR=${SNORT_DOC_DIR:-"/usr/local/share/khelp/khelp_snort"}
+
+# Configuration files
 export PROXYCHAINS_CONF="/etc/proxychains.conf"
+export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
+export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
+export SNORT_CONF="/etc/snort/snort.conf"
+export SNORT_RULES_DIR="/etc/snort/rules"
+export CRONTAB_FILE="/etc/crontab"
+
+# Script paths
+export UPDATE_PROXIES_SCRIPT="/usr/local/bin/khelp/update_proxies.sh"
+export UFW_SCRIPT_PATH="/usr/local/bin/khelp/ufw.sh"
+export IPTABLES_SCRIPT_PATH="/usr/local/bin/khelp/iptables.sh"
+export HOGEN_SCRIPT_PATH=${HOGEN_SCRIPT_PATH:-"/usr/local/bin/khelp/hogen.sh"}
+export MSPOO_SCRIPT_PATH=${MSPOO_SCRIPT_PATH:-"/usr/local/bin/khelp/mspoo.sh"}
+export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
+export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
+
+# Service paths
+export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/khelp/update_proxies.service"
+export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/khelp/update_proxies.timer"
+export UFW_SERVICE_PATH="/etc/systemd/system/khelp/ufw.service"
+export IPTABLES_SERVICE_PATH="/etc/systemd/system/khelp/iptables.service"
+export HOGEN_SERVICE_PATH=${HOGEN_SERVICE_PATH:-"/etc/systemd/system/khelp/hogen.service"}
+export MSPOO_SERVICE_PATH=${MSPOO_SERVICE_PATH:-"/etc/systemd/system/khelp/mspoo.service"}
+export SNORT_SERVICE="/etc/systemd/system/khelp/snort.service"
+
+# Documentation files
+export HOGEN_DOC_FILE="$HOGEN_DOC_DIR/README.md"
+export MSPOO_DOC_FILE="$MSPOO_DOC_DIR/README.md"
+export SNORT_DOC_FILE="$SNORT_DOC_DIR/README.md"
+
+# Proxy API URLs
 export PROXY_API_URL1="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
 export PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
 export PROXY_API_URL3="https://spys.me/socks.txt"
@@ -41,42 +88,6 @@ export PROXY_API_URL7="https://www.free-proxy-list.net/socks5.txt"
 export PROXY_API_URL8="https://www.proxynova.com/proxy-server-list/"
 export PROXY_API_URL9="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
 export PROXY_API_URL10="https://hidemy.name/en/proxy-list/?type=5&anon=234"
-export KHELP_PROXYCHAINS_DIR="/usr/local/share/khelp_proxychains"
-export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
-export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/update_proxies.service"
-export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/update_proxies.timer"
-export CRONTAB_FILE="/etc/crontab"
-export KHELP_UFW_DIR="/usr/local/share/khelp_ufw"
-export UFW_SCRIPT="/usr/local/bin/ufw.sh"
-export UFW_SERVICE="/etc/systemd/system/ufw.service"
-export KHELP_FAIL2BAN_DIR="/usr/local/share/khelp_fail2ban"
-export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
-export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
-export IPTABLES_SCRIPT="/usr/local/bin/iptables.sh"
-export IPTABLES_SERVICE="/etc/systemd/system/iptables.service"
-export KHELP_IPTABLES_DIR="/usr/local/share/khelp_iptables"
-export KHELP_TOR_DIR="/usr/local/share/khelp_tor"
-export KHELP_TERMINATOR_DIR="/usr/local/share/khelp_terminator"
-export STARTUP_SCRIPT_PATH="$USER_HOME/startup_script.sh"
-export DESKTOP_ENTRY_PATH="$USER_HOME/.config/autostart/startup_terminal.desktop"
-export KHELP_VERIFY_DIR="/usr/local/share/khelp_verify"
-export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp_hogen.log"}
-export HOGEN_SCRIPT_PATH=${HOGEN_SCRIPT_PATH:-"/usr/local/bin/hogen.sh"}
-export HOGEN_SERVICE_PATH=${HOGEN_SERVICE_PATH:-"/etc/systemd/system/hogen.service"}
-export HOGEN_DOC_DIR=${HOGEN_DOC_DIR:-"/usr/local/share/khelp_hogen"}
-export HOGEN_DOC_FILE="$HOGEN_DOC_DIR/README.md"
-export MSPOO_LOG_FILE=${MSPOO_LOG_FILE:-"/var/log/khelp_mspoo.log"}
-export MSPOO_SCRIPT_PATH=${MSPOO_SCRIPT_PATH:-"/usr/local/bin/mspoo.sh"}
-export MSPOO_SERVICE_PATH=${MSPOO_SERVICE_PATH:-"/etc/systemd/system/mspoo.service"}
-export MSPOO_DOC_DIR=${MSPOO_DOC_DIR:-"/usr/local/share/khelp_mspoof"}
-export MSPOO_DOC_FILE="$MSPOO_DOC_DIR/README.md"
-export SNORT_CONF="/etc/snort/snort.conf"
-export SNORT_RULES_DIR="/etc/snort/rules"
-export SNORT_LOG_DIR="/var/log/snort"
-export SNORT_SERVICE="/etc/systemd/system/snort.service"
-export SNORT_DOC_DIR=${SNORT_DOC_DIR:-"/usr/local/share/khelp_snort"}
-export SNORT_DOC_FILE="$SNORT_DOC_DIR/README.md"
-export NEXT_NAME_FILE="/etc/next_hostname"
 
 # Define log levels
 LOG_LEVEL_DEBUG=0
@@ -135,45 +146,6 @@ validate_url() {
     fi
 }
 
-# Funktion zur Namensgenerierung
-fetch_random_name() {
-    local api_url="https://randomuser.me/api/"
-    local response=$(curl -s $api_url)
-    
-    if [ -z "$response" ]; then
-        log $LOG_LEVEL_ERROR "Failed to fetch data from the API." "$HOGEN_LOG_FILE"
-        exit 1
-    fi
-
-    local first_name=$(echo $response | jq -r '.results[0].name.first')
-    local last_name=$(echo $response | jq -r '.results[0].name.last')
-    
-    if [ -z "$first_name" ] || [ -z "$last_name" ]; then
-        log $LOG_LEVEL_ERROR "Failed to extract names from the API response." "$HOGEN_LOG_FILE"
-        exit 1
-    fi
-
-    first_name=$(echo $first_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
-    last_name=$(echo $last_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
-    local name="${first_name}${last_name}"
-    
-    echo $name
-}
-
-# Funktion zur Aktualisierung der /etc/hosts Datei
-update_hosts_file() {
-    local entry="$1"
-    if ! grep -q "$entry" /etc/hosts; then
-        echo "$entry" >> /etc/hosts
-        if [ $? -eq 0 ]; then
-            log $LOG_LEVEL_INFO "Added $entry to /etc/hosts" "$HOGEN_LOG_FILE"
-        else
-            log $LOG_LEVEL_ERROR "Failed to add $entry to /etc/hosts" "$HOGEN_LOG_FILE"
-            return 1
-        fi
-    fi
-}
-
 # Example usage of the log function for different tasks
 
 # Task 1: Proxy
@@ -189,10 +161,25 @@ log $LOG_LEVEL_INFO "Starting MSPoo task" "$MSPOO_LOG_FILE"
 log $LOG_LEVEL_INFO "MSPoo task completed successfully" "$MSPOO_LOG_FILE"
 
 # Debugging: Print environment variables
+
+# User and Log Files
 log $LOG_LEVEL_INFO "USER_HOME=$USER_HOME" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "HOGEN_LOG_FILE=$HOGEN_LOG_FILE" "$HOGEN_LOG_FILE"
+log $LOG_LEVEL_INFO "MSPOO_LOG_FILE=$MSPOO_LOG_FILE" "$MSPOO_LOG_FILE"
+
+# Directories
 log $LOG_LEVEL_INFO "KHELP_UPDATE_DIR=$KHELP_UPDATE_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_INSTALLER_DIR=$KHELP_INSTALLER_DIR" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "KHELP_PROXYCHAINS_DIR=$KHELP_PROXYCHAINS_DIR" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "KHELP_UFW_DIR=$KHELP_UFW_DIR" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "KHELP_FAIL2BAN_DIR=$KHELP_FAIL2BAN_DIR" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "KHELP_IPTABLES_DIR=$KHELP_IPTABLES_DIR" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "KHELP_TOR_DIR=$KHELP_TOR_DIR" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "KHELP_TERMINATOR_DIR=$KHELP_TERMINATOR_DIR" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "KHELP_VERIFY_DIR=$KHELP_VERIFY_DIR" "$UPDATE_LOG_FILE"
+
+# Proxy Configuration
 log $LOG_LEVEL_INFO "PROXYCHAINS_CONF=$PROXYCHAINS_CONF" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL1=$PROXY_API_URL1" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL2=$PROXY_API_URL2" "$UPDATE_LOG_FILE"
@@ -204,32 +191,28 @@ log $LOG_LEVEL_INFO "PROXY_API_URL7=$PROXY_API_URL7" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL8=$PROXY_API_URL8" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL9=$PROXY_API_URL9" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL10=$PROXY_API_URL10" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "KHELP_PROXYCHAINS_DIR=$KHELP_PROXYCHAINS_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "UPDATE_PROXIES_SCRIPT=$UPDATE_PROXIES_SCRIPT" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "SYSTEMD_UPDATE_PROXIES_SERVICE=$SYSTEMD_UPDATE_PROXIES_SERVICE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "SYSTEMD_UPDATE_PROXIES_TIMER=$SYSTEMD_UPDATE_PROXIES_TIMER" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "CRONTAB_FILE=$CRONTAB_FILE" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "KHELP_UFW_DIR=$KHELP_UFW_DIR" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "UFW_SCRIPT=$UFW_SCRIPT" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "UFW_SERVICE=$UFW_SERVICE" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "KHELP_FAIL2BAN_DIR=$KHELP_FAIL2BAN_DIR" "$UPDATE_LOG_FILE"
+
+# Firewall and Security Configuration
+log $LOG_LEVEL_INFO "UFW_SCRIPT_PATH=$UFW_SCRIPT_PATH" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "UFW_SERVICE_PATH=$UFW_SERVICE_PATH" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "FAIL2BAN_CONFIG=$FAIL2BAN_CONFIG" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "IPTABLES_RULES_FILE=$IPTABLES_RULES_FILE" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "IPTABLES_SCRIPT=$IPTABLES_SCRIPT" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "IPTABLES_SERVICE=$IPTABLES_SERVICE" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "KHELP_IPTABLES_DIR=$KHELP_IPTABLES_DIR" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "KHELP_TOR_DIR=$KHELP_TOR_DIR" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "KHELP_TERMINATOR_DIR=$KHELP_TERMINATOR_DIR" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "KHELP_VERIFY_DIR=$KHELP_VERIFY_DIR" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "HOGEN_LOG_FILE=$HOGEN_LOG_FILE" "$HOGEN_LOG_FILE"
-log $LOG_LEVEL_INFO "MSPOO_LOG_FILE=$MSPOO_LOG_FILE" "$MSPOO_LOG_FILE"
+log $LOG_LEVEL_INFO "IPTABLES_SCRIPT_PATH=$IPTABLES_SCRIPT_PATH" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "IPTABLES_SERVICE_PATH=$IPTABLES_SERVICE_PATH" "$UPDATE_LOG_FILE"
+
+# Snort Configuration
 log $LOG_LEVEL_INFO "SNORT_CONF=$SNORT_CONF" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "SNORT_RULES_DIR=$SNORT_RULES_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "SNORT_LOG_DIR=$SNORT_LOG_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "SNORT_SERVICE=$SNORT_SERVICE" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "NEXT_NAME_FILE=$NEXT_NAME_FILE" "$HOGEN_LOG_FILE"
+
+# Miscellaneous
+log $LOG_LEVEL_INFO "STARTUP_SCRIPT_PATH=$STARTUP_SCRIPT_PATH" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "DESKTOP_ENTRY_PATH=$DESKTOP_ENTRY_PATH" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "CRONTAB_FILE=$CRONTAB_FILE" "$UPDATE_LOG_FILE"
 
 # Example usage of the log function
 log $LOG_LEVEL_INFO "This is an informational message." "$UPDATE_LOG_FILE"
@@ -540,6 +523,7 @@ backup_config "/etc/snort/snort.conf"
 backup_config "/etc/fail2ban/jail.local"
 backup_config "/etc/sslh/sslh.cfg"
 
+# Function to setup configuration files
 configure_ufw() {
     log $LOG_LEVEL_INFO "Configuring UFW firewall..." "$UPDATE_LOG_FILE"
     systemctl enable ufw
@@ -591,7 +575,7 @@ configure_iptables() {
     iptables -A INPUT -j LOGGING
     iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
     iptables -A LOGGING -j DROP
-    iptables-save > /etc/iptables/rules.v4
+    iptables-save > "$IPTABLES_RULES_PATH"
     log $LOG_LEVEL_INFO "iptables rules configured successfully." "$UPDATE_LOG_FILE"
 }
 
@@ -713,7 +697,7 @@ log $LOG_LEVEL_INFO "All independent tasks completed successfully." "$UPDATE_LOG
 # Function to create the UFW script
 create_ufw_script() {
     log $LOG_LEVEL_INFO "Creating UFW script..." "$UPDATE_LOG_FILE"
-    cat << 'EOF' > /usr/local/bin/ufw.sh
+    cat << 'EOF' > "$UFW_SCRIPT_PATH"
 #!/bin/bash
 systemctl enable ufw
 systemctl start ufw
@@ -721,18 +705,18 @@ ufw --force enable
 # Keep the script running to prevent the service from deactivating
 while true; do sleep 60; done
 EOF
-    chmod +x /usr/local/bin/ufw.sh
+    chmod +x "$UFW_SCRIPT_PATH"
     log $LOG_LEVEL_INFO "UFW script created successfully." "$UPDATE_LOG_FILE"
 }
 
 # Function to create the iptables script
 create_iptables_script() {
     log $LOG_LEVEL_INFO "Creating iptables script..." "$UPDATE_LOG_FILE"
-    cat << 'EOF' > /usr/local/bin/iptables.sh
+    cat << 'EOF' > "$IPTABLES_SCRIPT_PATH"
 #!/bin/bash
 iptables-restore < /etc/iptables/rules.v4
 EOF
-    chmod +x /usr/local/bin/iptables.sh
+    chmod +x "$IPTABLES_SCRIPT_PATH"
     log $LOG_LEVEL_INFO "iptables script created successfully." "$UPDATE_LOG_FILE"
 }
 
@@ -742,44 +726,70 @@ create_hogen_script() {
     cat << 'EOF' > "$HOGEN_SCRIPT_PATH"
 #!/bin/bash
 
-# Source the main script to get the functions and variables
-source /path/to/main_script.sh
+# Function to fetch a random name from the Random User Generator API
+fetch_random_name() {
+    local api_url="https://randomuser.me/api/"
+    local response=$(curl -s $api_url)
+    
+    if [ -z "$response" ]; then
+        log $LOG_LEVEL_ERROR "Failed to fetch data from the API." "$HOGEN_LOG_FILE"
+        exit 1
+    fi
 
-# Setzen der Umgebungsvariable für die Datei, die den nächsten Hostnamen speichert
-log "NEXT_NAME_FILE=$NEXT_NAME_FILE" "$HOGEN_LOG_FILE"
+    local first_name=$(echo $response | jq -r '.results[0].name.first')
+    local last_name=$(echo $response | jq -r '.results[0].name.last')
+    
+    if [ -z "$first_name" ] || [ -z "$last_name" ]; then
+        log $LOG_LEVEL_ERROR "Failed to extract names from the API response." "$HOGEN_LOG_FILE"
+        exit 1
+    fi
 
-# Abrufen und Setzen des aktuellen Hostnamens
-if [ ! -f "$NEXT_NAME_FILE" ]; then
-    # Beim ersten Start gibt es keine gespeicherte Datei, daher zwei Namen abrufen
-    current_name=$(fetch_random_name)
-    next_name=$(fetch_random_name)
-    echo "$next_name" > "$NEXT_NAME_FILE"
-else
-    # Beim Neustart den gespeicherten Namen als aktuellen Namen setzen
-    current_name=$(cat "$NEXT_NAME_FILE")
-    next_name=$(fetch_random_name)
-    echo "$next_name" > "$NEXT_NAME_FILE"
+    # Capitalize the first letter of the first name and last name
+    first_name=$(echo $first_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+    last_name=$(echo $last_name | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+    local name="${first_name}${last_name}"
+    
+    echo $name
+}
+
+newhn=$(fetch_random_name)
+if [ $? -ne 0 ]; then
+    log $LOG_LEVEL_ERROR "Failed to fetch random name." "$HOGEN_LOG_FILE"
+    exit 1
 fi
 
-log "Fetched current name: $current_name" "$HOGEN_LOG_FILE"
-log "Fetched next name: $next_name" "$HOGEN_LOG_FILE"
+log $LOG_LEVEL_INFO "Fetched random name: $newhn" "$HOGEN_LOG_FILE"
 
-# Setzen des aktuellen Hostnamens
-if hostnamectl set-hostname "$current_name"; then
-    log "Hostname set to $current_name" "$HOGEN_LOG_FILE"
+if hostnamectl set-hostname "$newhn"; then
+    log $LOG_LEVEL_INFO "Hostname set to $newhn" "$HOGEN_LOG_FILE"
 else
-    log "Failed to set hostname to $current_name" "$HOGEN_LOG_FILE"
-    exit
+    log $LOG_LEVEL_ERROR "Failed to set hostname to $newhn" "$HOGEN_LOG_FILE"
+    exit 1
 fi
 
-# Aktualisieren der /etc/hosts Datei
+# Ensure /etc/hosts has the correct entries
+update_hosts_file() {
+    local entry="$1"
+    if ! grep -q "$entry" /etc/hosts; then
+        echo "$entry" >> /etc/hosts
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "Added $entry to /etc/hosts" "$HOGEN_LOG_FILE"
+        else
+            log $LOG_LEVEL_ERROR "Failed to add $entry to /etc/hosts" "$HOGEN_LOG_FILE"
+            return 1
+        fi
+    fi
+}
+
 update_hosts_file "127.0.0.1    localhost"
-update_hosts_file "127.0.0.1    $current_name"
+update_hosts_file "127.0.0.1    $newhn"
+
+# Ensure the current hostname is also mapped correctly
 current_hostname=$(hostname)
 update_hosts_file "127.0.0.1    $current_hostname"
 
-log "Hostname set to $current_name and /etc/hosts updated" "$HOGEN_LOG_FILE"
-echo "Hostname set to $current_name and /etc/hosts updated"
+log $LOG_LEVEL_INFO "Hostname set to $newhn and /etc/hosts updated" "$HOGEN_LOG_FILE"
+echo "Hostname set to $newhn and /etc/hosts updated"
 EOF
     chmod +x "$HOGEN_SCRIPT_PATH"
     log $LOG_LEVEL_INFO "Hostname generator script created successfully." "$HOGEN_LOG_FILE"
@@ -1029,7 +1039,7 @@ log $LOG_LEVEL_INFO "All script creation tasks completed successfully." "$UPDATE
 # Function to create the UFW systemd service
 create_ufw_service() {
     log $LOG_LEVEL_INFO "Creating and enabling UFW service..." "$UPDATE_LOG_FILE"
-    cat << EOF > /etc/systemd/system/ufw.service
+    cat << EOF > "$UFW_SERVICE_PATH"
 [Unit]
 Description=UFW service for startups
 After=multi-user.target
@@ -1044,7 +1054,7 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
-    chmod +x /etc/systemd/system/ufw.service
+    chmod +x "$UFW_SERVICE_PATH"
     systemctl daemon-reload
     systemctl enable ufw.service
     systemctl start ufw.service
@@ -1054,20 +1064,20 @@ EOF
 # Function to create the iptables systemd service
 create_iptables_service() {
     log $LOG_LEVEL_INFO "Creating and enabling iptables service..." "$UPDATE_LOG_FILE"
-    cat << EOF > /etc/systemd/system/iptables.service
+    cat << EOF > "$IPTABLES_SERVICE_PATH"
 [Unit]
 Description=iptables service for startups
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/iptables.sh
+ExecStart=$IPTABLES_SCRIPT_PATH
 Type=oneshot
 RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
 EOF
-    chmod +x /etc/systemd/system/iptables.service
+    chmod +x "$IPTABLES_SERVICE_PATH"
     systemctl daemon-reload
     systemctl enable iptables.service
     systemctl start iptables.service
@@ -1080,11 +1090,11 @@ create_hogen_service() {
     cat << EOF > "$HOGEN_SERVICE_PATH"
 [Unit]
 Description=HOGEN Hostname Generator
-Before=display-manager.service
 After=network-online.target
+Wants=network-online.target
 
 [Service]
-ExecStart=/usr/local/bin/hogen.sh
+ExecStart=$HOGEN_SCRIPT_PATH
 Restart=on-failure
 RestartSec=3
 
