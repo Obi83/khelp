@@ -244,26 +244,59 @@ install_apt_fast() {
     local max_attempts=3
 
     while [ $attempts -lt $max_attempts ]; do
-        apt update -y
+        log $LOG_LEVEL_INFO "Updating package lists..." "$UPDATE_LOG_FILE"
+        apt-get update -y
+        if [ $? -ne 0 ]; then
+            log $LOG_LEVEL_ERROR "Failed to update package lists." "$UPDATE_LOG_FILE"
+            attempts=$((attempts + 1))
+            sleep $((attempts * 5))
+            continue
+        fi
+
+        log $LOG_LEVEL_INFO "Installing software-properties-common..." "$UPDATE_LOG_FILE"
         apt-get install -y software-properties-common
+        if [ $? -ne 0 ]; then
+            log $LOG_LEVEL_ERROR "Failed to install software-properties-common." "$UPDATE_LOG_FILE"
+            attempts=$((attempts + 1))
+            sleep $((attempts * 5))
+            continue
+        fi
+
+        log $LOG_LEVEL_INFO "Adding apt-fast PPA repository..." "$UPDATE_LOG_FILE"
         add-apt-repository -y ppa:apt-fast/stable
-        apt-get update
+        if [ $? -ne 0 ]; then
+            log $LOG_LEVEL_ERROR "Failed to add apt-fast PPA repository." "$UPDATE_LOG_FILE"
+            attempts=$((attempts + 1))
+            sleep $((attempts * 5))
+            continue
+        fi
+
+        log $LOG_LEVEL_INFO "Updating package lists after adding PPA..." "$UPDATE_LOG_FILE"
+        apt-get update -y
+        if [ $? -ne 0 ]; then
+            log $LOG_LEVEL_ERROR "Failed to update package lists after adding PPA." "$UPDATE_LOG_FILE"
+            attempts=$((attempts + 1))
+            sleep $((attempts * 5))
+            continue
+        fi
+
+        log $LOG_LEVEL_INFO "Installing apt-fast and aria2..." "$UPDATE_LOG_FILE"
         apt-get install -y apt-fast aria2
         if [ $? -eq 0 ]; then
             log $LOG_LEVEL_INFO "apt-fast installed successfully." "$UPDATE_LOG_FILE"
             return 0
         else
+            log $LOG_LEVEL_ERROR "Failed to install apt-fast and aria2." "$UPDATE_LOG_FILE"
             attempts=$((attempts + 1))
-            log $LOG_LEVEL_ERROR "Failed to install apt-fast. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
             sleep $((attempts * 5))
         fi
     done
 
     log $LOG_LEVEL_ERROR "Failed to install apt-fast after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
     return 1
-} 
+}
 
-install_apt_fast 
+install_apt_fast
 
 # Update the system
 update_system() {
