@@ -237,6 +237,22 @@ get_primary_interface() {
     ip route | grep default | awk '{print $5}'
 }
 
+#!/bin/bash
+
+# Check if the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run this script as root."
+    exit 1
+fi
+
+# Function to log messages
+log() {
+    local level="$1"
+    local message="$2"
+    local log_file="$3"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] - $message" | tee -a "$log_file"
+}
+
 # Function to install apt-fast and handle errors
 install_apt_fast() {
     log "INFO" "Installing apt-fast..." "/var/log/update.log"
@@ -296,9 +312,7 @@ install_apt_fast() {
     return 1
 }
 
-
-
-# Update the system
+# Function to update the system
 update_system() {
     log $LOG_LEVEL_INFO "Updating and upgrading system" "$UPDATE_LOG_FILE"
     local attempts=0
@@ -327,9 +341,15 @@ update_system() {
 # Task 1: Updating System
 log $LOG_LEVEL_INFO "Starting Update/Upgrading System task" "$UPDATE_LOG_FILE"
 
-# Example usage of the updated function
-update_system & # Assuming update_system is a function defined elsewhere
-install_apt_fast &
+# Ensure apt-fast is installed before updating the system
+install_apt_fast
+if [ $? -eq 0 ]; then
+    update_system
+else
+    log $LOG_LEVEL_ERROR "Failed to install apt-fast. System update aborted." "$UPDATE_LOG_FILE"
+    exit 1
+fi
+
 log $LOG_LEVEL_INFO "Update/Upgrading task completed successfully" "$UPDATE_LOG_FILE"
 
 # Determine the primary network interface
