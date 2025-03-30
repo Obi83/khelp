@@ -1162,13 +1162,14 @@ EOF
 # Function to create the iptables systemd service
 create_iptables_service() {
     log $LOG_LEVEL_INFO "Creating and enabling iptables service..." "$UPDATE_LOG_FILE"
-    cat << EOF > /usr/local/bin/khelp/iptables.sh
+    cat << EOF > /etc/systemd/system/khelp/iptables.service
 [Unit]
 Description=iptables service for startups
-After=network.target
+After=multi-user.target
+Wants=multi-user.target
 
 [Service]
-ExecStart=$IPTABLES_SCRIPT_PATH
+ExecStart=/usr/local/bin/khelp/iptables.sh
 Type=oneshot
 RemainAfterExit=yes
 
@@ -1188,8 +1189,8 @@ create_hogen_service() {
     cat << EOF > /etc/systemd/system/khelp/hogen.service
 [Unit]
 Description=HOGEN Hostname Generator
-After=network-online.target
-Wants=network-online.target
+After=multi-user.target
+Wants=multi-user.target
 
 [Service]
 ExecStart=/usr/local/bin/khelp/hogen.sh
@@ -1212,8 +1213,8 @@ create_mspoo_service() {
     cat << EOF > /etc/systemd/system/khelp/mspoo.service
 [Unit]
 Description=MSPOO MACSpoofing Service
-After=network-online.target
-Wants=network-online.target
+After=multi-user.target
+Wants=multi-user.target
 
 [Service]
 Type=oneshot
@@ -1293,7 +1294,7 @@ WantedBy=multi-user.target
 EOF
 
     # Set the correct permissions for the service file
-    chmod 644 $SNORT_SERVICE
+    chmod +x $SNORT_SERVICE
 
     # Enable and start the Snort service
     systemctl daemon-reload
