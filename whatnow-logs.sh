@@ -30,6 +30,7 @@ fi
 #Log Files
 export UPDATE_LOG_FILE="/var/log/khelp.log"
 export PROXY_UPDATE_LOG_FILE="/var/log/khelp_proxy.log"
+export IPTABLES_LOG_FILE="/var/log/khelp_iptables.log"
 export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp_hogen.log"}
 export MSPOO_LOG_FILE=${MSPOO_LOG_FILE:-"/var/log/khelp_mspoo.log"}
 
@@ -177,6 +178,7 @@ log $LOG_LEVEL_WARNING "This is a warning message." "$UPDATE_LOG_FILE"
 # Log Files
 log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_UPDATE_LOG_FILE=$PROXY_UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "IPTABLES_LOG_FILE=$IPTABLES_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "HOGEN_LOG_FILE=$HOGEN_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "MSPOO_LOG_FILE=$MSPOO_LOG_FILE" "$UPDATE_LOG_FILE"
 
@@ -577,37 +579,37 @@ EOF
 }
 
 configure_iptables() {
-    log $LOG_LEVEL_INFO "Configuring iptables..." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Configuring iptables..." "$IPTABLES_LOG_FILE"
     iptables -F
-    log $LOG_LEVEL_INFO "Flushed all iptables rules." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Flushed all iptables rules." "$IPTABLES_LOG_FILE"
     iptables -X
-    log $LOG_LEVEL_INFO "Deleted all user-defined iptables chains." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Deleted all user-defined iptables chains." "$IPTABLES_LOG_FILE"
     iptables -P INPUT DROP
-    log $LOG_LEVEL_INFO "Set default policy for INPUT chain to DROP." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Set default policy for INPUT chain to DROP." "$IPTABLES_LOG_FILE"
     iptables -P FORWARD DROP
-    log $LOG_LEVEL_INFO "Set default policy for FORWARD chain to DROP." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Set default policy for FORWARD chain to DROP." "$IPTABLES_LOG_FILE"
     iptables -P OUTPUT ACCEPT
-    log $LOG_LEVEL_INFO "Set default policy for OUTPUT chain to ACCEPT." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Set default policy for OUTPUT chain to ACCEPT." "$IPTABLES_LOG_FILE"
     iptables -A INPUT -i lo -j ACCEPT
-    log $LOG_LEVEL_INFO "Allowed loopback traffic on INPUT chain." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Allowed loopback traffic on INPUT chain." "$IPTABLES_LOG_FILE"
     iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-    log $LOG_LEVEL_INFO "Allowed established and related connections on INPUT chain." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Allowed established and related connections on INPUT chain." "$IPTABLES_LOG_FILE"
     iptables -A INPUT -p tcp -s $ALLOWED_IP_RANGE --dport 22 -j ACCEPT
-    log $LOG_LEVEL_INFO "Allowed SSH access from $ALLOWED_IP_RANGE on port 22." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Allowed SSH access from $ALLOWED_IP_RANGE on port 22." "$IPTABLES_LOG_FILE"
     iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
     iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 -j DROP
-    log $LOG_LEVEL_INFO "Rate-limited new SSH connections." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Rate-limited new SSH connections." "$IPTABLES_LOG_FILE"
     iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
-    log $LOG_LEVEL_INFO "Dropped invalid packets on INPUT chain." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Dropped invalid packets on INPUT chain." "$IPTABLES_LOG_FILE"
     iptables -A INPUT -p icmp -j ACCEPT
-    log $LOG_LEVEL_INFO "Allowed ICMP (ping) traffic on INPUT chain." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Allowed ICMP (ping) traffic on INPUT chain." "$IPTABLES_LOG_FILE"
     iptables -N LOGGING
     iptables -A INPUT -j LOGGING
     iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
     iptables -A LOGGING -j DROP
-    log $LOG_LEVEL_INFO "Configured logging for iptables." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Configured logging for iptables." "$IPTABLES_LOG_FILE"
     iptables-save > /etc/iptables/rules.v4
-    log $LOG_LEVEL_INFO "iptables rules configured successfully." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "iptables rules configured successfully." "$IPTABLES_LOG_FILE"
 }
 
 configure_tor() {
