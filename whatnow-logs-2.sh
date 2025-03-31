@@ -647,7 +647,6 @@ configure_proxychains() {
         return 1
     else
         log $LOG_LEVEL_INFO "ProxyChains is already installed." "$UPDATE_LOG_FILE"
-        # Add your configuration commands for ProxyChains here
     fi
 
     # Check if the proxychains.conf file exists
@@ -702,10 +701,8 @@ EOF
         log $LOG_LEVEL_INFO "ProxyChains configuration updated." "$UPDATE_LOG_FILE"
     fi
 
-    # Create the ProxyChains configuration file
+    # Append fetched proxy list to the configuration file
     log $LOG_LEVEL_INFO "Appending fetched proxy list to ProxyChains configuration..." "$UPDATE_LOG_FILE"
-
-    # Append the fetched proxy list to the configuration file
     echo "$PROXY_LIST" >> "$PROXYCHAINS_CONF"
 
     log $LOG_LEVEL_INFO "ProxyChains configured successfully." "$UPDATE_LOG_FILE"
@@ -1063,8 +1060,18 @@ fetch_proxies() {
 update_proxychains_conf() {
     local proxies="$1"
     custom_log "INFO" "Updating proxychains configuration" "$PROXY_UPDATE_LOG_FILE"
-    echo "[ProxyList]" > /etc/proxychains.conf
-    echo "$proxies" >> /etc/proxychains.conf
+
+    # Ensure the [ProxyList] section exists
+    if ! grep -q "\[ProxyList\]" /etc/proxychains.conf; then
+        echo "[ProxyList]" >> /etc/proxychains.conf
+    fi
+
+    # Append new proxies to the configuration file
+    for proxy in $proxies; do
+        if ! grep -q "$proxy" /etc/proxychains.conf; then
+            echo "$proxy" >> /etc/proxychains.conf
+        fi
+    done
 }
 
 # Main function
@@ -1073,7 +1080,7 @@ main() {
     for url in "$PROXY_API_URL1" "$PROXY_API_URL2" "$PROXY_API_URL3" "$PROXY_API_URL4" "$PROXY_API_URL5" "$PROXY_API_URL6" "$PROXY_API_URL7" "$PROXY_API_URL8" "$PROXY_API_URL9" "$PROXY_API_URL10"; do
         fetched_proxies=$(fetch_proxies "$url")
         if [ -n "$fetched_proxies" ]; then
-            proxies="$proxies$fetched_proxies\n"
+            proxies="$proxies $fetched_proxies"
         fi
     done
 
