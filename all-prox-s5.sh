@@ -1051,6 +1051,7 @@ fetch_and_update_proxies() {
     )
     local proxy_chains_conf="/etc/proxychains.conf"
     local new_proxies=""
+    local max_proxies_per_api=10
 
     log $LOG_LEVEL_INFO "Fetching new proxy list..." "$UPDATE_LOG_FILE"
 
@@ -1061,9 +1062,15 @@ fetch_and_update_proxies() {
         fi
 
         log $LOG_LEVEL_INFO "Fetching from $url" "$UPDATE_LOG_FILE"
-        local response=$(curl -s $url | head -n 10)
+        local response=$(curl -s $url)
         if [ -n "$response" ]; then
-            new_proxies+="$response"$'\n'
+            # Extract valid proxies and limit to max_proxies_per_api
+            local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+' | head -n $max_proxies_per_api)
+            if [ -n "$valid_proxies" ]; then
+                new_proxies+="$valid_proxies"$'\n'
+            else
+                log $LOG_LEVEL_ERROR "No valid proxies found in the response from $url." "$UPDATE_LOG_FILE"
+            fi
         else
             log $LOG_LEVEL_ERROR "Failed to fetch proxies from $url or the response is empty." "$UPDATE_LOG_FILE"
         fi
