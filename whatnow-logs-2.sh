@@ -1024,6 +1024,73 @@ EOF
     log $LOG_LEVEL_INFO "Desktop entry created successfully." "$UPDATE_LOG_FILE"
 }
 
+create_update_proxies_script() {
+    log $LOG_LEVEL_INFO "Creating update_proxies script..." "$UPDATE_LOG_FILE"
+    cat << 'EOF' > /usr/local/bin/update_proxies.sh
+#!/bin/bash
+
+# Proxy API URLs
+PROXY_API_URL1="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
+PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
+PROXY_API_URL3="https://spys.me/socks.txt"
+PROXY_API_URL4="https://www.proxy-list.download/api/v1/get?type=socks5"
+PROXY_API_URL5="https://proxylist.geonode.com/api/proxy-list?limit=100&page=1&sort_by=lastChecked&sort_type=desc&protocols=socks5"
+PROXY_API_URL6="https://www.freeproxy.world/api/proxy?protocol=socks5&limit=100"
+PROXY_API_URL7="https://www.free-proxy-list.net/socks5.txt"
+PROXY_API_URL8="https://www.proxynova.com/proxy-server-list/"
+PROXY_API_URL9="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
+PROXY_API_URL10="https://hidemy.name/en/proxy-list/?type=5&anon=234"
+
+# Log file for proxy updates
+PROXY_UPDATE_LOG_FILE="/var/log/khelp_proxy_update.log"
+
+# Custom log function to avoid conflict
+custom_log() {
+    local level="$1"
+    local message="$2"
+    local log_file="$3"
+    local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    echo "$timestamp [$level] $message" >> "$log_file"
+}
+
+# Fetch proxies from URLs
+fetch_proxies() {
+    custom_log "INFO" "Fetching proxies from $1" "$PROXY_UPDATE_LOG_FILE"
+    curl -s "$1" || custom_log "ERROR" "Failed to fetch proxies from $1" "$PROXY_UPDATE_LOG_FILE"
+}
+
+# Update proxychains configuration
+update_proxychains_conf() {
+    local proxies="$1"
+    custom_log "INFO" "Updating proxychains configuration" "$PROXY_UPDATE_LOG_FILE"
+    echo "[ProxyList]" > /etc/proxychains.conf
+    echo "$proxies" >> /etc/proxychains.conf
+}
+
+# Main function
+main() {
+    proxies=""
+    for url in "$PROXY_API_URL1" "$PROXY_API_URL2" "$PROXY_API_URL3" "$PROXY_API_URL4" "$PROXY_API_URL5" "$PROXY_API_URL6" "$PROXY_API_URL7" "$PROXY_API_URL8" "$PROXY_API_URL9" "$PROXY_API_URL10"; do
+        fetched_proxies=$(fetch_proxies "$url")
+        if [ -n "$fetched_proxies" ]; then
+            proxies="$proxies$fetched_proxies\n"
+        fi
+    done
+
+    if [ -n "$proxies" ]; then
+        update_proxychains_conf "$proxies"
+        custom_log "INFO" "Proxychains configuration updated successfully" "$PROXY_UPDATE_LOG_FILE"
+    else
+        custom_log "ERROR" "No proxies fetched" "$PROXY_UPDATE_LOG_FILE"
+    fi
+}
+
+main
+EOF
+    chmod +x /usr/local/bin/update_proxies.sh
+    log $LOG_LEVEL_INFO "update_proxies script created successfully." "$UPDATE_LOG_FILE"
+}
+
 # Execute script creation tasks in parallel
 create_ufw_script &
 create_iptables_script &
@@ -1031,6 +1098,7 @@ create_hogen_script &
 create_mspoo_script &
 create_startup_script &
 create_desktop_entry &
+create_update_proxies_script &
 
 # Wait for all background tasks to complete
 wait
