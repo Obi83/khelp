@@ -1059,13 +1059,19 @@ fetch_and_update_proxies() {
     
     log $LOG_LEVEL_INFO "Updating proxy list in ProxyChains configuration..." "$UPDATE_LOG_FILE"
     
-    # Read the existing configuration up to the [ProxyList] section
-    local config_before_proxylist=$(awk '/^\[ProxyList\]/{flag=1; next} /^$/{flag=0} !flag' $proxy_chains_conf)
+    # Read the configuration before the [ProxyList] section
+    local config_before_proxylist=$(awk '/^\[ProxyList\]/ {flag=1; next} !flag {print}' $proxy_chains_conf)
     
-    # Update the proxy list without modifying the rest of the configuration
-    echo "$config_before_proxylist" > $proxy_chains_conf
-    echo "[ProxyList]" >> $proxy_chains_conf
-    echo "$new_proxies" >> $proxy_chains_conf
+    # Read the configuration after the [ProxyList] section
+    local config_after_proxylist=$(awk '/^\[ProxyList\]/ {flag=1; next} flag' $proxy_chains_conf | grep -v '^[^#]')
+    
+    # Write the updated configuration back to the file
+    {
+        echo "$config_before_proxylist"
+        echo "[ProxyList]"
+        echo "$new_proxies"
+        echo "$config_after_proxylist"
+    } > $proxy_chains_conf
     
     log $LOG_LEVEL_INFO "Proxy list updated successfully." "$UPDATE_LOG_FILE"
 }
