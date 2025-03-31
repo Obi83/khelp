@@ -29,7 +29,8 @@ fi
 # Environment variables for paths and configurations
 #Log Files
 export UPDATE_LOG_FILE="/var/log/khelp.log"
-export PROXY_UPDATE_LOG_FILE="/var/log/khelp_proxy.log"
+export PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
+export PROXY_TIMER_LOG_FILE="/var/log/timer_proxies.log"
 export IPTABLES_LOG_FILE="/var/log/khelp_iptables.log"
 export HOGEN_LOG_FILE=${HOGEN_LOG_FILE:-"/var/log/khelp_hogen.log"}
 export MSPOO_LOG_FILE=${MSPOO_LOG_FILE:-"/var/log/khelp_mspoo.log"}
@@ -55,6 +56,7 @@ export PROXYCHAINS_CONF="/etc/proxychains.conf"
 export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
 export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
 export CRONTAB_FILE="/etc/crontab"
+export PROXY_LIST_FILE="/etc/proxychains/fetched_proxies.txt"
 
 # Script paths
 export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
@@ -88,12 +90,7 @@ export KHELP_UPDATE_DOC_FILE="$KHELP_UPDATE_DIR/README.md"
 export TERMINATOR_DOC_FILE="$KHELP_TERMINATOR_DIR/README.md"
 
 # Proxy API URLs
-export PROXY_API_URL1="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
-export PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
-export PROXY_API_URL3="https://spys.me/socks.txt"
-export PROXY_API_URL4="https://www.proxy-list.download/api/v1/get?type=socks5"
-export PROXY_API_URL5="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
-
+export PROXY_API_URL1="https://spys.me/socks.txt"
 
 # Define log levels
 LOG_LEVEL_DEBUG=0
@@ -233,10 +230,6 @@ log $LOG_LEVEL_INFO "TERMINATOR_DOC_FILE=$TERMINATOR_DOC_FILE" "$UPDATE_LOG_FILE
 
 # Log proxy API URLs
 log $LOG_LEVEL_INFO "PROXY_API_URL1=$PROXY_API_URL1" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "PROXY_API_URL2=$PROXY_API_URL2" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "PROXY_API_URL3=$PROXY_API_URL3" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "PROXY_API_URL4=$PROXY_API_URL4" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "PROXY_API_URL5=$PROXY_API_URL5" "$UPDATE_LOG_FILE"
 
 # Function to detect the local network IP range
 detect_ip_range() {
@@ -634,8 +627,25 @@ configure_tor() {
 configure_proxychains() {
     log $LOG_LEVEL_INFO "Checking if ProxyChains is installed..." "$UPDATE_LOG_FILE"
     if ! command -v proxychains &> /dev/null; then
-        log $LOG_LEVEL_ERROR "ProxyChains is not installed. Please run install_proxychains first." "$UPDATE_LOG_FILE"
-        return 1
+        log $LOG_LEVEL_INFO "ProxyChains is not installed. Installing ProxyChains..." "$UPDATE_LOG_FILE"
+        local attempts=0
+        local max_attempts=3
+
+        while [ $attempts -lt $max_attempts ]; do
+            if apt install -y proxychains; then
+                log $LOG_LEVEL_INFO "ProxyChains installed successfully." "$UPDATE_LOG_FILE"
+                break
+            else
+                log $LOG_LEVEL_ERROR "Failed to install ProxyChains. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+                attempts=$((attempts + 1))
+                sleep $((attempts * 5))
+            fi
+
+            if [ $attempts -eq $max_attempts ]; then
+                log $LOG_LEVEL_ERROR "Failed to install ProxyChains after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+                exit 1
+            fi
+        done
     else
         log $LOG_LEVEL_INFO "ProxyChains is already installed." "$UPDATE_LOG_FILE"
     fi
@@ -653,7 +663,8 @@ dynamic_chain
 proxy_dns
 
 [ProxyList]
-# add proxy here ...
+# Include proxies from fetched_proxies.txt
+include /etc/proxychains/fetched_proxies.txt
 # defaults set to "tor"
 socks5  127.0.0.1 9050
 EOF
@@ -664,28 +675,6 @@ EOF
 
     # Validate the proxy API URLs
     validate_url "$PROXY_API_URL1" "$UPDATE_LOG_FILE"
-    validate_url "$PROXY_API_URL2" "$UPDATE_LOG_FILE"
-    validate_url "$PROXY_API_URL3" "$UPDATE_LOG_FILE"
-    validate_url "$PROXY_API_URL4" "$UPDATE_LOG_FILE"
-    validate_url "$PROXY_API_URL5" "$UPDATE_LOG_FILE"
-
-    # Configure ProxyChains
-    log $LOG_LEVEL_INFO "Configuring ProxyChains..." "$UPDATE_LOG_FILE"
-
-    # ProxyChains configuration file path
-    PROXYCHAINS_CONF="/etc/proxychains.conf"
-
-    # Check if ProxyChains is already configured for Tor
-    if grep -q "socks5  127.0.0.1 9050" "$PROXYCHAINS_CONF"; then
-        log $LOG_LEVEL_INFO "ProxyChains is already configured for Tor." "$UPDATE_LOG_FILE"
-    else
-        # Update ProxyChains configuration
-        sed -i 's/^#dynamic_chain/dynamic_chain/' "$PROXYCHAINS_CONF"
-        sed -i 's/^strict_chain/#strict_chain/' "$PROXYCHAINS_CONF"
-        sed -i 's/^#proxy_dns/proxy_dns/' "$PROXYCHAINS_CONF"
-        echo "socks5  127.0.0.1 9050" | tee -a "$PROXYCHAINS_CONF"
-        log $LOG_LEVEL_INFO "ProxyChains configuration updated." "$UPDATE_LOG_FILE"
-    fi
 
     log $LOG_LEVEL_INFO "ProxyChains configured successfully." "$UPDATE_LOG_FILE"
 }
@@ -1019,76 +1008,29 @@ log() {
     echo "$(date +"%Y-%m-%d %H:%M:%S") [LEVEL $level] $message" >> "$logfile"
 }
 
-# Check if the proxychains.conf file exists
-log $LOG_LEVEL_INFO "Checking if the proxychains.conf file exists..." "$UPDATE_LOG_FILE"
-if [ ! -f /etc/proxychains.conf ]; then
-    log $LOG_LEVEL_INFO "Creating /etc/proxychains.conf file..." "$UPDATE_LOG_FILE"
-    cat << 'EOC' > /etc/proxychains.conf
-# ProxyChains default configuration
-# Dynamic chain
-dynamic_chain
-
-# Proxy DNS requests - no leak for DNS data
-proxy_dns
-
-[ProxyList]
-# add proxy here ...
-# defaults set to "tor"
-socks5  127.0.0.1 9050
-EOC
-    log $LOG_LEVEL_INFO "ProxyChains configuration file created." "$UPDATE_LOG_FILE"
-else
-    log $LOG_LEVEL_INFO "ProxyChains configuration file already exists." "$UPDATE_LOG_FILE"
-fi
-
 fetch_and_update_proxies() {
-    local proxy_api_urls=(
-        "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
-        "https://www.proxy-list.download/api/v1/get?type=socks5"
-        "https://spys.me/socks.txt"
-        "https://www.proxy-list.download/api/v1/get?type=socks5"
-        "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
-    )
-    local proxy_chains_conf="/etc/proxychains.conf"
-    local new_proxies=""
-    local max_proxies_per_api=10
+    local proxy_api_url="https://spys.me/socks.txt"
+    local proxy_list_file="/etc/proxychains/fetched_proxies.txt"
+    local max_proxies=100
 
-    log $LOG_LEVEL_INFO "Fetching new proxy list..." "$UPDATE_LOG_FILE"
+    # Create directory if it doesn't exist
+    mkdir -p "$(dirname "$proxy_list_file")"
 
-    for url in "${proxy_api_urls[@]}"; do
-        if [ -z "$url" ]; then
-            log $LOG_LEVEL_ERROR "Empty URL found in the list." "$UPDATE_LOG_FILE"
-            continue
-        fi
+    log $LOG_LEVEL_INFO "Fetching new proxy list from $proxy_api_url..." "$UPDATE_LOG_FILE"
 
-        log $LOG_LEVEL_INFO "Fetching from $url" "$UPDATE_LOG_FILE"
-        local response=$(curl -s $url)
-        if [ -n "$response" ]; then
-            # Extract valid proxies and limit to max_proxies_per_api
-            local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+' | head -n $max_proxies_per_api)
-            if [ -n "$valid_proxies" ]; then
-                new_proxies+="$valid_proxies"$'\n'
-            else
-                log $LOG_LEVEL_ERROR "No valid proxies found in the response from $url." "$UPDATE_LOG_FILE"
-            fi
+    local response=$(curl -s $proxy_api_url)
+    if [ -n "$response" ]; then
+        # Extract valid proxies and limit to max_proxies
+        local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+' | head -n $max_proxies)
+        if [ -n "$valid_proxies" ]; then
+            echo "$valid_proxies" > "$proxy_list_file"
+            log $LOG_LEVEL_INFO "Fetched $(echo "$valid_proxies" | wc -l) valid proxies." "$UPDATE_LOG_FILE"
         else
-            log $LOG_LEVEL_ERROR "Failed to fetch proxies from $url or the response is empty." "$UPDATE_LOG_FILE"
+            log $LOG_LEVEL_ERROR "No valid proxies found in the response from $proxy_api_url." "$UPDATE_LOG_FILE"
         fi
-    done
-
-    if [ -z "$new_proxies" ]; then
-        log $LOG_LEVEL_ERROR "Failed to fetch proxy list or the list is empty." "$UPDATE_LOG_FILE"
-        return 1
+    else
+        log $LOG_LEVEL_ERROR "Failed to fetch proxies from $proxy_api_url or the response is empty." "$UPDATE_LOG_FILE"
     fi
-
-    log $LOG_LEVEL_INFO "Fetched new proxy list successfully." "$UPDATE_LOG_FILE"
-    log $LOG_LEVEL_INFO "Updating proxy list in ProxyChains configuration..." "$UPDATE_LOG_FILE"
-
-    # Update ProxyChains configuration
-    sed -i '/^\[ProxyList\]/,$d' "$proxy_chains_conf"
-    echo -e "[ProxyList]\n$new_proxies" >> "$proxy_chains_conf"
-
-    log $LOG_LEVEL_INFO "Proxy list updated successfully." "$UPDATE_LOG_FILE"
 }
 
 # Fetch and update proxy list
@@ -1231,7 +1173,7 @@ EOF
 }
 
 create_update_proxies_timer() {
-    log $LOG_LEVEL_INFO "Creating systemd timer to run the proxy update script every 30 minutes..." "$PROXY_UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Creating systemd timer to run the proxy update script every 30 minutes..." "$PROXY_TIMER_LOG_FILE"
     cat << EOF > /etc/systemd/system/update_proxies.timer
 [Unit]
 Description=Run update_proxies.sh every 30 minutes
@@ -1247,7 +1189,7 @@ EOF
     systemctl daemon-reload
     systemctl enable update_proxies.timer
     systemctl start update_proxies.timer
-    log $LOG_LEVEL_INFO "Systemd timer created and started." "$PROXY_UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Systemd timer created and started." "$PROXY_TIMER_LOG_FILE"
 }
 
 # Execute systemd service creation tasks in parallel
