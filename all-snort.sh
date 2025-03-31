@@ -653,11 +653,19 @@ EOF
 }
 
 configure_tor() {
-    log $LOG_LEVEL_INFO "Configuring and enabling Tor..." "$UPDATE_LOG_FILE"
-    apt install -y tor
+    log $LOG_LEVEL_INFO "Configuring Tor..." "$UPDATE_LOG_FILE"
+    
     systemctl enable tor
     systemctl start tor
-    log $LOG_LEVEL_INFO "Tor configured and enabled successfully." "$UPDATE_LOG_FILE"
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to start Tor service." "$UPDATE_LOG_FILE"
+        return 1
+    fi
+
+    sed -i '/socks5  127.0.0.1 9050/d' /etc/proxychains.conf
+    echo "socks5  127.0.0.1 9050" >> /etc/proxychains.conf
+
+    log $LOG_LEVEL_INFO "Tor configured successfully." "$UPDATE_LOG_FILE"
 }
 
 configure_proxychains() {
@@ -718,7 +726,6 @@ EOF
 configure_snort() {
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
     
-    # Create necessary directories with correct permissions
     mkdir -p $SNORT_RULES_DIR
     mkdir -p $SNORT_LOG_DIR
     chown snort:snort $SNORT_LOG_DIR
