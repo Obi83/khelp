@@ -1040,40 +1040,59 @@ log() {
     echo "$(date +"%Y-%m-%d %H:%M:%S") [LEVEL $level] $message" >> "$logfile"
 }
 
-# URL validation function
-validate_url() {
-    local url=$1
-    local logfile=$2
-    if [[ ! $url =~ ^https?://.*$ ]]; then
-        log $LOG_LEVEL_ERROR "Invalid URL: $url" "$logfile"
-        exit 1
-    fi
-}
+# Check if the proxychains.conf file exists
+log $LOG_LEVEL_INFO "Checking if the proxychains.conf file exists..." "$UPDATE_LOG_FILE"
+if [ ! -f /etc/proxychains.conf ]; then
+    log $LOG_LEVEL_INFO "Creating /etc/proxychains.conf file..." "$UPDATE_LOG_FILE"
+    cat << 'EOC' > /etc/proxychains.conf
+# ProxyChains default configuration
+# Dynamic chain
+dynamic_chain
 
-# Function to fetch and update the proxy list
+# Proxy DNS requests - no leak for DNS data
+proxy_dns
+
+[ProxyList]
+# add proxy here ...
+# defaults set to "tor"
+socks4  127.0.0.1 9050
+EOC
+    log $LOG_LEVEL_INFO "ProxyChains configuration file created." "$UPDATE_LOG_FILE"
+else
+    log $LOG_LEVEL_INFO "ProxyChains configuration file already exists." "$UPDATE_LOG_FILE"
+fi
+
+# Validate the proxy API URLs
+validate_url "$PROXY_API_URL1" "$UPDATE_LOG_FILE"
+validate_url "$PROXY_API_URL2" "$UPDATE_LOG_FILE"
+validate_url "$PROXY_API_URL3" "$UPDATE_LOG_FILE"
+validate_url "$PROXY_API_URL4" "$UPDATE_LOG_FILE"
+validate_url "$PROXY_API_URL5" "$UPDATE_LOG_FILE"
+validate_url "$PROXY_API_URL6" "$UPDATE_LOG_FILE"
+validate_url "$PROXY_API_URL7" "$UPDATE_LOG_FILE"
+validate_url "$PROXY_API_URL8" "$UPDATE_LOG_FILE"
+validate_url "$PROXY_API_URL9" "$UPDATE_LOG_FILE"
+validate_url "$PROXY_API_URL10" "$UPDATE_LOG_FILE"
+
+# Function to fetch and update proxy list
 fetch_and_update_proxies() {
     local proxy_api_urls=(
-        "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
-        "https://www.proxy-list.download/api/v1/get?type=socks5"
-        "https://spys.me/socks.txt"
-        "https://www.proxy-list.download/api/v1/get?type=socks5"
-        "https://proxylist.geonode.com/api/proxy-list?limit=100&page=1&sort_by=lastChecked&sort_type=desc&protocols=socks5"
-        "https://www.freeproxy.world/api/proxy?protocol=socks5&limit=100"
-        "https://www.free-proxy-list.net/socks5.txt"
-        "https://www.proxynova.com/proxy-server-list/"
-        "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
-        "https://hidemy.name/en/proxy-list/?type=5&anon=234"
+        "$PROXY_API_URL1"
+        "$PROXY_API_URL2"
+        "$PROXY_API_URL3"
+        "$PROXY_API_URL4"
+        "$PROXY_API_URL5"
+        "$PROXY_API_URL6"
+        "$PROXY_API_URL7"
+        "$PROXY_API_URL8"
+        "$PROXY_API_URL9"
+        "$PROXY_API_URL10"
     )
     local proxy_chains_conf="/etc/proxychains.conf"
     local new_proxies=""
-    
-    # Validate the proxy API URLs
-    for url in "${proxy_api_urls[@]}"; do
-        validate_url "$url" "$UPDATE_LOG_FILE"
-    done
 
     log $LOG_LEVEL_INFO "Fetching new proxy list..." "$UPDATE_LOG_FILE"
-    
+
     for url in "${proxy_api_urls[@]}"; do
         local response=$(curl -s $url)
         if [ -n "$response" ]; then
@@ -1082,24 +1101,26 @@ fetch_and_update_proxies() {
             log $LOG_LEVEL_ERROR "Failed to fetch proxies from $url or the response is empty." "$UPDATE_LOG_FILE"
         fi
     done
-    
+
     if [ -z "$new_proxies" ]; then
         log $LOG_LEVEL_ERROR "Failed to fetch proxy list or the list is empty." "$UPDATE_LOG_FILE"
         return 1
     fi
-    
+
     log $LOG_LEVEL_INFO "Fetched new proxy list successfully." "$UPDATE_LOG_FILE"
-    
     log $LOG_LEVEL_INFO "Updating proxy list in ProxyChains configuration..." "$UPDATE_LOG_FILE"
-    
+
     # Update ProxyChains configuration
     sed -i '/^\[ProxyList\]/,$d' "$proxy_chains_conf"
     echo -e "[ProxyList]\n$new_proxies" >> "$proxy_chains_conf"
-    
+
     log $LOG_LEVEL_INFO "Proxy list updated successfully." "$UPDATE_LOG_FILE"
 }
 
+# Fetch and update proxy list
 fetch_and_update_proxies
+
+log $LOG_LEVEL_INFO "update_proxies script executed successfully." "$UPDATE_LOG_FILE"
 EOF
     chmod +x /usr/local/bin/update_proxies.sh
     log $LOG_LEVEL_INFO "update_proxies script created successfully." "$UPDATE_LOG_FILE"
