@@ -656,7 +656,7 @@ proxy_dns
 [ProxyList]
 # add proxy here ...
 # defaults set to "tor"
-socks4  127.0.0.1 9050
+socks5  127.0.0.1 9050
 EOF
         log $LOG_LEVEL_INFO "ProxyChains configuration file created." "$UPDATE_LOG_FILE"
     else
@@ -1041,7 +1041,7 @@ proxy_dns
 [ProxyList]
 # add proxy here ...
 # defaults set to "tor"
-socks4  127.0.0.1 9050
+socks5  127.0.0.1 9050
 EOC
     log $LOG_LEVEL_INFO "ProxyChains configuration file created." "$UPDATE_LOG_FILE"
 else
