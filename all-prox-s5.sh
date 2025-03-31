@@ -231,7 +231,7 @@ log $LOG_LEVEL_INFO "KHELP_INSTALLER_DOC_FILE=$KHELP_INSTALLER_DOC_FILE" "$UPDAT
 log $LOG_LEVEL_INFO "KHELP_UPDATE_DOC_FILE=$KHELP_UPDATE_DOC_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "TERMINATOR_DOC_FILE=$TERMINATOR_DOC_FILE" "$UPDATE_LOG_FILE"
 
-# Proxy API URLs
+# Log proxy API URLs
 log $LOG_LEVEL_INFO "PROXY_API_URL1=$PROXY_API_URL1" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL2=$PROXY_API_URL2" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL3=$PROXY_API_URL3" "$UPDATE_LOG_FILE"
@@ -638,7 +638,6 @@ configure_proxychains() {
         return 1
     else
         log $LOG_LEVEL_INFO "ProxyChains is already installed." "$UPDATE_LOG_FILE"
-        # Add your configuration commands for ProxyChains here
     fi
 
     # Check if the proxychains.conf file exists
@@ -687,12 +686,6 @@ EOF
         echo "socks5  127.0.0.1 9050" | tee -a "$PROXYCHAINS_CONF"
         log $LOG_LEVEL_INFO "ProxyChains configuration updated." "$UPDATE_LOG_FILE"
     fi
-
-    # Create the ProxyChains configuration file
-    log $LOG_LEVEL_INFO "Appending fetched proxy list to ProxyChains configuration..." "$UPDATE_LOG_FILE"
-
-    # Append the fetched proxy list to the configuration file
-    echo "$PROXY_LIST" >> "$PROXYCHAINS_CONF"
 
     log $LOG_LEVEL_INFO "ProxyChains configured successfully." "$UPDATE_LOG_FILE"
 }
@@ -1050,11 +1043,11 @@ fi
 
 fetch_and_update_proxies() {
     local proxy_api_urls=(
-        "$PROXY_API_URL1"
-        "$PROXY_API_URL2"
-        "$PROXY_API_URL3"
-        "$PROXY_API_URL4"
-        "$PROXY_API_URL5"
+        "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
+        "https://www.proxy-list.download/api/v1/get?type=socks5"
+        "https://spys.me/socks.txt"
+        "https://www.proxy-list.download/api/v1/get?type=socks5"
+        "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
     )
     local proxy_chains_conf="/etc/proxychains.conf"
     local new_proxies=""
