@@ -1042,13 +1042,31 @@ log() {
 
 # Function to fetch and update the proxy list
 fetch_and_update_proxies() {
-    local proxy_list_url="https://example.com/proxylist"
+    local proxy_api_urls=(
+        "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
+        "https://www.proxy-list.download/api/v1/get?type=socks5"
+        "https://spys.me/socks.txt"
+        "https://www.proxy-list.download/api/v1/get?type=socks5"
+        "https://proxylist.geonode.com/api/proxy-list?limit=100&page=1&sort_by=lastChecked&sort_type=desc&protocols=socks5"
+        "https://www.freeproxy.world/api/proxy?protocol=socks5&limit=100"
+        "https://www.free-proxy-list.net/socks5.txt"
+        "https://www.proxynova.com/proxy-server-list/"
+        "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=elite"
+        "https://hidemy.name/en/proxy-list/?type=5&anon=234"
+    )
     local proxy_chains_conf="/etc/proxychains.conf"
+    local new_proxies=""
     
     log $LOG_LEVEL_INFO "Fetching new proxy list..." "$UPDATE_LOG_FILE"
     
-    # Fetch the new proxy list
-    local new_proxies=$(curl -s $proxy_list_url)
+    for url in "${proxy_api_urls[@]}"; do
+        local response=$(curl -s $url)
+        if [ -n "$response" ]; then
+            new_proxies+="$response"$'\n'
+        else
+            log $LOG_LEVEL_ERROR "Failed to fetch proxies from $url or the response is empty." "$UPDATE_LOG_FILE"
+        fi
+    done
     
     if [ -z "$new_proxies" ]; then
         log $LOG_LEVEL_ERROR "Failed to fetch proxy list or the list is empty." "$UPDATE_LOG_FILE"
