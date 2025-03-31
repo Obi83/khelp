@@ -1040,6 +1040,16 @@ log() {
     echo "$(date +"%Y-%m-%d %H:%M:%S") [LEVEL $level] $message" >> "$logfile"
 }
 
+# URL validation function
+validate_url() {
+    local url=$1
+    local logfile=$2
+    if [[ ! $url =~ ^https?://.*$ ]]; then
+        log $LOG_LEVEL_ERROR "Invalid URL: $url" "$logfile"
+        exit 1
+    fi
+}
+
 # Function to fetch and update the proxy list
 fetch_and_update_proxies() {
     local proxy_api_urls=(
@@ -1057,6 +1067,11 @@ fetch_and_update_proxies() {
     local proxy_chains_conf="/etc/proxychains.conf"
     local new_proxies=""
     
+    # Validate the proxy API URLs
+    for url in "${proxy_api_urls[@]}"; do
+        validate_url "$url" "$UPDATE_LOG_FILE"
+    done
+
     log $LOG_LEVEL_INFO "Fetching new proxy list..." "$UPDATE_LOG_FILE"
     
     for url in "${proxy_api_urls[@]}"; do
@@ -1077,19 +1092,9 @@ fetch_and_update_proxies() {
     
     log $LOG_LEVEL_INFO "Updating proxy list in ProxyChains configuration..." "$UPDATE_LOG_FILE"
     
-    # Read the configuration before the [ProxyList] section
-    local config_before_proxylist=$(awk '/^\[ProxyList\]/ {flag=1; next} !flag {print}' $proxy_chains_conf)
-    
-    # Read the configuration after the [ProxyList] section
-    local config_after_proxylist=$(awk '/^\[ProxyList\]/ {flag=1; next} flag' $proxy_chains_conf | grep -v '^[^#]')
-    
-    # Write the updated configuration back to the file
-    {
-        echo "$config_before_proxylist"
-        echo "[ProxyList]"
-        echo "$new_proxies"
-        echo "$config_after_proxylist"
-    } > $proxy_chains_conf
+    # Update ProxyChains configuration
+    sed -i '/^\[ProxyList\]/,$d' "$proxy_chains_conf"
+    echo -e "[ProxyList]\n$new_proxies" >> "$proxy_chains_conf"
     
     log $LOG_LEVEL_INFO "Proxy list updated successfully." "$UPDATE_LOG_FILE"
 }
