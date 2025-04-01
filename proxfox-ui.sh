@@ -684,7 +684,15 @@ log() {
     local level=$1
     local message=$2
     local logfile=$3
-    echo "$(date +"%Y-%m-%d %H:%M:%S") [LEVEL $level] $message" >> "$logfile"
+    local level_name
+
+    case "$level" in
+        $LOG_LEVEL_INFO) level_name="INFO" ;;
+        $LOG_LEVEL_ERROR) level_name="ERROR" ;;
+        *) level_name="UNKNOWN" ;;
+    esac
+
+    echo "$(date +"%Y-%m-%d %H:%M:%S") [$level_name] $message" | tee -a "$logfile"
 }
 
 fetch_and_update_proxies() {
@@ -698,7 +706,14 @@ fetch_and_update_proxies() {
 
     while [ $attempts -lt $max_attempts ]; do
         log $LOG_LEVEL_INFO "Fetching new proxy list from $proxy_api_url (attempt $((attempts + 1)))..." "$UPDATE_LOG_FILE"
-        local response=$(curl -s $proxy_api_url)
+        local response=$(curl --silent --show-error --fail $proxy_api_url)
+        if [ $? -ne 0 ]; then
+            log $LOG_LEVEL_ERROR "Curl command failed. Retrying..." "$UPDATE_LOG_FILE"
+            attempts=$((attempts + 1))
+            sleep 5
+            continue
+        fi
+
         if [ -n "$response" ]; then
             local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+' | head -n $max_proxies)
             if [ -n "$valid_proxies" ]; then
@@ -799,11 +814,14 @@ After=network.target
 ExecStart=/usr/local/bin/update_proxies.sh
 Type=oneshot
 RemainAfterExit=true
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
 EOF
-    chmod +x /etc/systemd/system/update_proxies.service
+    chmod 644 /etc/systemd/system/update_proxies.service
+    sudo chmod +x /usr/local/bin/update_proxies.sh
     systemctl daemon-reload
     systemctl enable update_proxies.service
     systemctl start update_proxies.service
