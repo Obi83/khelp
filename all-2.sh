@@ -1106,7 +1106,10 @@ EOF
 }
 
 create_snort_script() {
-    log $LOG_LEVEL_ERROR "Snort configuration file /etc/snort/snort.conf not found. Creating default configuration." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Checking for Snort configuration file..." "$UPDATE_LOG_FILE"
+
+    if [ ! -f /etc/snort/snort.conf ]; then
+        log $LOG_LEVEL_ERROR "Snort configuration file /etc/snort/snort.conf not found. Creating default configuration." "$UPDATE_LOG_FILE"
         cat << 'EOF' > /etc/snort/snort.conf
 # Define network variables
 var HOME_NET 192.168.1.0/24
@@ -1151,9 +1154,9 @@ dynamicdetection directory /usr/local/lib/snort_dynamicrules/
 # Customize and add your rules
 include \$RULE_PATH/snort.rules
 EOF
-    log $LOG_LEVEL_INFO "Default Snort configuration file created at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
+        log $LOG_LEVEL_INFO "Default Snort configuration file created at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
     else
-    log $LOG_LEVEL_INFO "Snort configuration file already exists at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
+        log $LOG_LEVEL_INFO "Snort configuration file already exists at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
     fi
 
     # Test the Snort configuration
