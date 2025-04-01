@@ -731,32 +731,6 @@ configure_snort() {
     chown snort:snort $SNORT_LOG_DIR
     chmod 750 $SNORT_LOG_DIR
 
-    # Ensure the snort configuration file exists
-    if [ ! -f /etc/snort/snort.conf ]; then
-        log $LOG_LEVEL_ERROR "Snort configuration file /etc/snort/snort.conf not found." "$UPDATE_LOG_FILE"
-        return 1
-    fi
-
-    # Test the Snort configuration
-    snort -T -c $SNORT_CONF -i $PRIMARY_INTERFACE
-    if [ $? -ne 0 ]; then
-        log $LOG_LEVEL_ERROR "Snort configuration test failed." "$UPDATE_LOG_FILE"
-        return 1
-    fi
-
-    # Configure Snort rules
-    log $LOG_LEVEL_INFO "Creating snort rules..." "$UPDATE_LOG_FILE"
-    cat << EOF > $SNORT_RULES_DIR/local.rules
-alert tcp \$EXTERNAL_NET any -> \$HOME_NET 22 (msg:"SSH connection attempt"; sid:1000001; rev:1;)
-alert tcp \$EXTERNAL_NET any -> \$HOME_NET 80 (msg:"HTTP connection attempt"; sid:1000002; rev:1;)
-alert tcp \$HOME_NET 80 -> \$EXTERNAL_NET any (msg:"HTTP response"; sid:1000003; rev:1;)
-alert icmp \$EXTERNAL_NET any -> \$HOME_NET any (msg:"ICMP packet"; sid:1000004; rev:1;)
-EOF
-
-    log $LOG_LEVEL_INFO "Snort rules created successfully." "$UPDATE_LOG_FILE"
-    chown snort:snort $SNORT_RULES_DIR/local.rules
-    chmod 644 $SNORT_RULES_DIR/local.rules
-
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
 }
 
@@ -1132,8 +1106,8 @@ EOF
 }
 
 create_snort_script() {
-    log $LOG_LEVEL_INFO "Creating snort script..." "$UPDATE_LOG_FILE"
-    cat << EOF > "$SNORT_CONF"
+    log $LOG_LEVEL_ERROR "Snort configuration file /etc/snort/snort.conf not found. Creating default configuration." "$UPDATE_LOG_FILE"
+        cat << 'EOF' > /etc/snort/snort.conf
 # Define network variables
 var HOME_NET 192.168.1.0/24
 var EXTERNAL_NET any
@@ -1164,10 +1138,10 @@ include \$RULE_PATH/community.rules
 
 # Output modules
 output alert_fast: stdout
-output log_tcpdump: $SNORT_LOG_DIR/snort.log
+output log_tcpdump: /var/log/khelp/snort/snort.log
 
 # Path to rule files
-var RULE_PATH $SNORT_RULES_DIR
+var RULE_PATH /etc/snort/rules
 
 # Path to dynamic preprocessor libraries
 dynamicpreprocessor directory /usr/local/lib/snort_dynamicpreprocessor/
@@ -1177,8 +1151,32 @@ dynamicdetection directory /usr/local/lib/snort_dynamicrules/
 # Customize and add your rules
 include \$RULE_PATH/snort.rules
 EOF
-    chmod +x "$SNORT_LOG_DIR"
-    log $LOG_LEVEL_INFO "snort script created successfully." "$UPDATE_LOG_FILE"
+        log $LOG_LEVEL_INFO "Default Snort configuration file created at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_INFO "Snort configuration file already exists at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
+    fi
+
+    # Test the Snort configuration
+    snort -T -c $SNORT_CONF -i $PRIMARY_INTERFACE
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Snort configuration test failed." "$UPDATE_LOG_FILE"
+        return 1
+    fi
+
+    # Configure Snort rules
+    log $LOG_LEVEL_INFO "Creating Snort rules..." "$UPDATE_LOG_FILE"
+    cat << EOF > $SNORT_RULES_DIR/local.rules
+alert tcp \$EXTERNAL_NET any -> \$HOME_NET 22 (msg:"SSH connection attempt"; sid:1000001; rev:1;)
+alert tcp \$EXTERNAL_NET any -> \$HOME_NET 80 (msg:"HTTP connection attempt"; sid:1000002; rev:1;)
+alert tcp \$HOME_NET 80 -> \$EXTERNAL_NET any (msg:"HTTP response"; sid:1000003; rev:1;)
+alert icmp \$EXTERNAL_NET any -> \$HOME_NET any (msg:"ICMP packet"; sid:1000004; rev:1;)
+EOF
+
+    log $LOG_LEVEL_INFO "Snort rules created successfully." "$UPDATE_LOG_FILE"
+    chown snort:snort $SNORT_RULES_DIR/local.rules
+    chmod 644 $SNORT_RULES_DIR/local.rules
+
+    log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
 }
 
 # Execute script creation tasks in parallel
