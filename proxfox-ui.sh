@@ -26,6 +26,16 @@ else
     export USER_HOME=$HOME
 fi
 
+# Define log levels
+LOG_LEVEL_DEBUG=0
+LOG_LEVEL_INFO=1
+LOG_LEVEL_WARNING=2
+LOG_LEVEL_ERROR=3
+LOG_LEVEL_CRITICAL=4
+
+# Set the current log level (adjust as needed)
+CURRENT_LOG_LEVEL=${CURRENT_LOG_LEVEL:-$LOG_LEVEL_DEBUG}
+
 # Enhanced logging function with log levels, log rotation, and detailed formatting
 log() {
     local level="$1"
@@ -99,16 +109,6 @@ export IPTABLES_SERVICE_PATH="/etc/systemd/system/iptables.service"
 export PROXY_API_URL1="https://spys.me/socks.txt"
 
 log $LOG_LEVEL_INFO "Variables task completed successfully" "$UPDATE_LOG_FILE"
-
-# Define log levels
-LOG_LEVEL_DEBUG=0
-LOG_LEVEL_INFO=1
-LOG_LEVEL_WARNING=2
-LOG_LEVEL_ERROR=3
-LOG_LEVEL_CRITICAL=4
-
-# Set the current log level (adjust as needed)
-CURRENT_LOG_LEVEL=${CURRENT_LOG_LEVEL:-$LOG_LEVEL_DEBUG}
 
 # Improved URL validation function
 validate_url() {
