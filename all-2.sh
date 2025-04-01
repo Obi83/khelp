@@ -1151,9 +1151,9 @@ dynamicdetection directory /usr/local/lib/snort_dynamicrules/
 # Customize and add your rules
 include \$RULE_PATH/snort.rules
 EOF
-        log $LOG_LEVEL_INFO "Default Snort configuration file created at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Default Snort configuration file created at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
     else
-        log $LOG_LEVEL_INFO "Snort configuration file already exists at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Snort configuration file already exists at /etc/snort/snort.conf." "$UPDATE_LOG_FILE"
     fi
 
     # Test the Snort configuration
