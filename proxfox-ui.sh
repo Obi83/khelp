@@ -26,6 +26,43 @@ else
     export USER_HOME=$HOME
 fi
 
+#Log Files
+export UPDATE_LOG_FILE="/var/log/khelp.log"
+export PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
+export PROXY_TIMER_LOG_FILE="/var/log/timer_proxies.log"
+export IPTABLES_LOG_FILE="/var/log/khelp_iptables.log"
+
+# Directories
+export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
+export KHELP_INSTALLER_DIR="/usr/local/share/khelp_installer"
+export KHELP_PROXYCHAINS_DIR="/usr/local/share/khelp_proxychains"
+export KHELP_UFW_DIR="/usr/local/share/khelp_ufw"
+export KHELP_FAIL2BAN_DIR="/usr/local/share/khelp_fail2ban"
+export KHELP_IPTABLES_DIR="/usr/local/share/khelp_iptables"
+export KHELP_TOR_DIR="/usr/local/share/khelp_tor"
+export KHELP_LOGGING_DIR="/usr/local/share/khelp_logging"
+
+# Configuration files
+export PROXYCHAINS_CONF="/etc/proxychains.conf"
+export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
+export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
+export CRONTAB_FILE="/etc/crontab"
+export PROXY_LIST_FILE="/etc/proxychains/fetched_proxies.txt"
+
+# Script paths
+export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
+export UFW_SCRIPT="/usr/local/bin/ufw.sh"
+export IPTABLES_SCRIPT="/usr/local/bin/iptables.sh"
+
+# Service paths
+export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/update_proxies.service"
+export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/update_proxies.timer"
+export UFW_SERVICE_PATH="/etc/systemd/system/ufw.service"
+export IPTABLES_SERVICE_PATH="/etc/systemd/system/iptables.service"
+
+# Proxy API URLs
+export PROXY_API_URL1="https://spys.me/socks.txt"
+
 # Define log levels
 LOG_LEVEL_DEBUG=0
 LOG_LEVEL_INFO=1
@@ -68,48 +105,6 @@ log() {
     echo "$timestamp [$log_level_name] [$script_name] [$user@$hostname] - $message" | tee -a "$log_file"
 }
 
-# Task 1: Variables
-log $LOG_LEVEL_INFO "Starting Variables task" "$UPDATE_LOG_FILE"
-
-#Log Files
-export UPDATE_LOG_FILE="/var/log/khelp.log"
-export PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
-export PROXY_TIMER_LOG_FILE="/var/log/timer_proxies.log"
-export IPTABLES_LOG_FILE="/var/log/khelp_iptables.log"
-
-# Directories
-export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
-export KHELP_INSTALLER_DIR="/usr/local/share/khelp_installer"
-export KHELP_PROXYCHAINS_DIR="/usr/local/share/khelp_proxychains"
-export KHELP_UFW_DIR="/usr/local/share/khelp_ufw"
-export KHELP_FAIL2BAN_DIR="/usr/local/share/khelp_fail2ban"
-export KHELP_IPTABLES_DIR="/usr/local/share/khelp_iptables"
-export KHELP_TOR_DIR="/usr/local/share/khelp_tor"
-export KHELP_LOGGING_DIR="/usr/local/share/khelp_logging"
-
-# Configuration files
-export PROXYCHAINS_CONF="/etc/proxychains.conf"
-export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
-export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
-export CRONTAB_FILE="/etc/crontab"
-export PROXY_LIST_FILE="/etc/proxychains/fetched_proxies.txt"
-
-# Script paths
-export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
-export UFW_SCRIPT="/usr/local/bin/ufw.sh"
-export IPTABLES_SCRIPT="/usr/local/bin/iptables.sh"
-
-# Service paths
-export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/update_proxies.service"
-export SYSTEMD_UPDATE_PROXIES_TIMER="/etc/systemd/system/update_proxies.timer"
-export UFW_SERVICE_PATH="/etc/systemd/system/ufw.service"
-export IPTABLES_SERVICE_PATH="/etc/systemd/system/iptables.service"
-
-# Proxy API URLs
-export PROXY_API_URL1="https://spys.me/socks.txt"
-
-log $LOG_LEVEL_INFO "Variables task completed successfully" "$UPDATE_LOG_FILE"
-
 # Improved URL validation function
 validate_url() {
     local url="$1"
@@ -120,6 +115,10 @@ validate_url() {
         exit 1
     fi
 }
+
+# Task 1: Variables
+log $LOG_LEVEL_INFO "Starting Variables task" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "Variables task completed successfully" "$UPDATE_LOG_FILE"
 
 # Log Files
 log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
