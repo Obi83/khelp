@@ -679,12 +679,30 @@ EOF
     log $LOG_LEVEL_INFO "ProxyChains configured successfully." "$UPDATE_LOG_FILE"
 }
 
+configure_resolv_conf() {
+    log $LOG_LEVEL_INFO "Configuring resolv.conf to prevent DNS leaks..." "$UPDATE_LOG_FILE"
+    
+    # Backup existing resolv.conf
+    cp /etc/resolv.conf /etc/resolv.conf.backup
+    
+    # Set DNS servers
+    cat <<EOF > /etc/resolv.conf
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+EOF
+
+    log $LOG_LEVEL_INFO "resolv.conf configured successfully." "$UPDATE_LOG_FILE"
+}
+
 # Execute independent tasks in parallel
 configure_ufw &
 configure_fail2ban &
 configure_iptables &
 configure_tor &
 configure_proxychains &
+configure_resolv_conf &
 
 # Wait for all background tasks to complete
 wait
