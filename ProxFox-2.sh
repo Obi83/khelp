@@ -515,6 +515,7 @@ configure_ufw() {
 
 configure_fail2ban() {
     log $LOG_LEVEL_INFO "Configuring Fail2ban..." "$UPDATE_LOG_FILE"
+    apt install -y fail2ban
     cat << 'EOF' > /etc/fail2ban/jail.local
 [DEFAULT]
 ignoreip = 127.0.0.1/8
