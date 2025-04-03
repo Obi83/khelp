@@ -1049,11 +1049,18 @@ display_tor_circuits_status() {
     }
     
     # Authentifizieren beim Tor-Controller
-    AUTH_COOKIE=$(xxd -p $COOKIE_FILE)
-    if send_command "AUTHENTICATE $AUTH_COOKIE"; then
+    if [ ! -f "$COOKIE_FILE" ]; then
+        log $LOG_LEVEL_ERROR "Tor Control Cookie file not found: $COOKIE_FILE" "$UPDATE_LOG_FILE"
+        return 1
+    fi
+
+    AUTH_COOKIE=$(xxd -p "$COOKIE_FILE" | tr -d '\n')
+    AUTH_RESPONSE=$(send_command "AUTHENTICATE $AUTH_COOKIE")
+    
+    if [[ "$AUTH_RESPONSE" == "250 OK" ]]; then
         log $LOG_LEVEL_INFO "Authenticated with Tor Controller successfully." "$UPDATE_LOG_FILE"
     else
-        log $LOG_LEVEL_ERROR "Authentication with Tor Controller failed." "$UPDATE_LOG_FILE"
+        log $LOG_LEVEL_ERROR "Authentication with Tor Controller failed. Response: $AUTH_RESPONSE" "$UPDATE_LOG_FILE"
         return 1
     fi
     
