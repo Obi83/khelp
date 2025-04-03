@@ -162,12 +162,6 @@ check_anonymity() {
   fi
 }
 
-check_security() {
-  local proxy=$1
-  log $LOG_LEVEL_DEBUG "Testing security for proxy: $proxy" "$PROXY_UPDATE_LOG_FILE"
-  echo "Secure (SOCKS5)"
-}
-
 validate_proxies() {
   local proxy_list_file="/etc/proxychains/fetched_proxies.txt"
   local proxy_list_file_validated="/etc/proxychains/validated_proxies.txt"
@@ -178,15 +172,11 @@ validate_proxies() {
   if [ -f "$proxy_list_file" ]; then
     while IFS= read -r proxy; do
       echo "Checking proxy: $proxy"
-      reachability=$(check_reachability "$proxy")
       anonymity=$(check_anonymity "$proxy")
-      security=$(check_security "$proxy")
-      if [ "$reachability" == "Reachable" ] && [ "$anonymity" == "Anonymous" ] && [ "$security" == "Secure (SOCKS5)" ]; then
+      if [ "$anonymity" == "Anonymous" ]; then
         echo "$proxy" >> "$proxy_list_file_validated"
       fi
-      echo "Reachability: $reachability"
       echo "Anonymity: $anonymity"
-      echo "Security: $security"
       echo "-------------------------"
     done < "$proxy_list_file"
   else
