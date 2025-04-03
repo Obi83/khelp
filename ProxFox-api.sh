@@ -1033,6 +1033,61 @@ wait
 
 log $LOG_LEVEL_INFO "All systemd service creation tasks completed successfully." "$UPDATE_LOG_FILE"
 
+# Function to display the Tor Circuits status
+display_tor_circuits_status() {
+    log $LOG_LEVEL_INFO "Displaying Tor Circuits status..." "$UPDATE_LOG_FILE"
+    
+    # Pfad zur Tor-Control-Cookie-Datei
+    COOKIE_FILE="/var/run/tor/control.authcookie"
+    
+    # Tor-Control-Port
+    CONTROL_PORT="9051"
+    
+    # Funktion zum Senden von Befehlen an den Tor-Controller
+    send_command() {
+        echo -e "$1" | nc 127.0.0.1 $CONTROL_PORT
+    }
+    
+    # Authentifizieren beim Tor-Controller
+    AUTH_COOKIE=$(xxd -p $COOKIE_FILE)
+    if send_command "AUTHENTICATE $AUTH_COOKIE"; then
+        log $LOG_LEVEL_INFO "Authenticated with Tor Controller successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Authentication with Tor Controller failed." "$UPDATE_LOG_FILE"
+        return 1
+    fi
+    
+    # Informationen über die Circuits abrufen
+    CIRCUITS=$(send_command "GETINFO circuit-status")
+    if [ -z "$CIRCUITS" ]; then
+        log $LOG_LEVEL_ERROR "Failed to retrieve circuit status from Tor Controller." "$UPDATE_LOG_FILE"
+        return 1
+    else
+        log $LOG_LEVEL_INFO "Retrieved circuit status from Tor Controller successfully." "$UPDATE_LOG_FILE"
+    fi
+    
+    # Ausgabe formatieren und anzeigen
+    echo "Tor Circuits Status:"
+    echo "$CIRCUITS" | grep "CIRC" | while read -r line ; do
+        CIRC_ID=$(echo $line | cut -d' ' -f2)
+        CIRC_STATUS=$(echo $line | cut -d' ' -f4)
+        echo "Circuit ID: $CIRC_ID"
+        echo "Status: $CIRC_STATUS"
+        RELAYS=$(send_command "GETINFO circuit-status/$CIRC_ID")
+        if [ -z "$RELAYS" ]; then
+            log $LOG_LEVEL_WARNING "Failed to retrieve relays for circuit ID $CIRC_ID." "$UPDATE_LOG_FILE"
+        else
+            echo "$RELAYS" | grep "CIRC" | cut -d' ' -f5- | tr ',' '\n' | while read -r relay ; do
+                echo "  Relay: $relay"
+            done
+            log $LOG_LEVEL_INFO "Displayed relays for circuit ID $CIRC_ID." "$UPDATE_LOG_FILE"
+        fi
+        echo
+    done
+    
+    log $LOG_LEVEL_INFO "Tor Circuits status displayed successfully." "$UPDATE_LOG_FILE"
+}
+
 # Call the display_logo function
 display_logo
 
@@ -1048,8 +1103,8 @@ systemctl status rsyslog | tee -a "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "Scanning local network..." "$UPDATE_LOG_FILE"
 check_local_network
 
-# Verifying proxies
+# Verifying proxy circuits
 log $LOG_LEVEL_INFO "Verifying proxies..." "$UPDATE_LOG_FILE"
-traceroute www.showmyip.com | tee -a "$UPDATE_LOG_FILE"
+display_tor_circuits_status
 
 log $LOG_LEVEL_INFO "Verification completed." "$UPDATE_LOG_FILE"
