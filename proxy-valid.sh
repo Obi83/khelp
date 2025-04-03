@@ -148,18 +148,6 @@ fetch_proxies_with_fallback() {
   fi
 }
 
-check_reachability() {
-  local proxy=$1
-  log $LOG_LEVEL_DEBUG "Testing reachability for proxy: $proxy" "$PROXY_UPDATE_LOG_FILE"
-  if curl -x "socks5://$proxy" -s --connect-timeout 5 https://www.google.com -o /dev/null; then
-    log $LOG_LEVEL_DEBUG "Proxy $proxy is reachable" "$PROXY_UPDATE_LOG_FILE"
-    echo "Reachable"
-  else
-    log $LOG_LEVEL_DEBUG "Proxy $proxy is not reachable" "$PROXY_UPDATE_LOG_FILE"
-    echo "Not reachable"
-  fi
-}
-
 check_anonymity() {
   local proxy=$1
   log $LOG_LEVEL_DEBUG "Testing anonymity for proxy: $proxy" "$PROXY_UPDATE_LOG_FILE"
