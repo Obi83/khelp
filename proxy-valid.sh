@@ -13,7 +13,7 @@ else
     export USER_HOME=$HOME
 fi
 
-#Log Files
+# Log Files
 export UPDATE_LOG_FILE="/var/log/khelp.log"
 export PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
 
@@ -150,32 +150,42 @@ fetch_proxies_with_fallback() {
 
 check_reachability() {
   local proxy=$1
+  log $LOG_LEVEL_DEBUG "Testing reachability for proxy: $proxy" "$PROXY_UPDATE_LOG_FILE"
   if curl -x "socks5://$proxy" -s --connect-timeout 5 https://www.google.com -o /dev/null; then
+    log $LOG_LEVEL_DEBUG "Proxy $proxy is reachable" "$PROXY_UPDATE_LOG_FILE"
     echo "Reachable"
   else
+    log $LOG_LEVEL_DEBUG "Proxy $proxy is not reachable" "$PROXY_UPDATE_LOG_FILE"
     echo "Not reachable"
   fi
 }
 
 check_anonymity() {
   local proxy=$1
+  log $LOG_LEVEL_DEBUG "Testing anonymity for proxy: $proxy" "$PROXY_UPDATE_LOG_FILE"
   original_ip=$(curl -s https://api.ipify.org)
   proxy_ip=$(curl -x "socks5://$proxy" -s https://api.ipify.org)
   if [ "$original_ip" != "$proxy_ip" ]; then
+    log $LOG_LEVEL_DEBUG "Proxy $proxy is anonymous" "$PROXY_UPDATE_LOG_FILE"
     echo "Anonymous"
   else
+    log $LOG_LEVEL_DEBUG "Proxy $proxy is not anonymous" "$PROXY_UPDATE_LOG_FILE"
     echo "Not anonymous"
   fi
 }
 
 check_security() {
   local proxy=$1
+  log $LOG_LEVEL_DEBUG "Testing security for proxy: $proxy" "$PROXY_UPDATE_LOG_FILE"
   echo "Secure (SOCKS5)"
 }
 
 validate_proxies() {
   local proxy_list_file="/etc/proxychains/fetched_proxies.txt"
   local proxy_list_file_validated="/etc/proxychains/validated_proxies.txt"
+
+  # Ensure the validated proxies file is empty before starting validation
+  > "$proxy_list_file_validated"
 
   if [ -f "$proxy_list_file" ]; then
     while IFS= read -r proxy; do
