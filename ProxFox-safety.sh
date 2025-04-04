@@ -70,7 +70,6 @@ export IPTABLES_SERVICE_PATH="/etc/systemd/system/iptables.service"
 # Proxy API URLs
 export PROXY_API_URL1="https://spys.me/socks.txt"
 export PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
-export PROXY_API_URL3="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
 
 # Define log levels
 LOG_LEVEL_DEBUG=0
@@ -169,7 +168,6 @@ log $LOG_LEVEL_INFO "IPTABLES_SERVICE_PATH=$IPTABLES_SERVICE_PATH" "$UPDATE_LOG_
 # Log proxy API URLs
 log $LOG_LEVEL_INFO "PROXY_API_URL1=$PROXY_API_URL1" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_API_URL2=$PROXY_API_URL2" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "PROXY_API_URL3=$PROXY_API_URL3" "$UPDATE_LOG_FILE"
 
 # Function to detect the local network IP range
 detect_ip_range() {
@@ -893,7 +891,6 @@ UPDATE_LOG_FILE="/var/log/khelp.log"
 PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
 PROXY_API_URL1="https://spys.me/socks.txt"
 PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
-PROXY_API_URL3="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
 temp_proxy_list_file1="/tmp/temp_proxies1.txt"
 temp_proxy_list_file2="/tmp/temp_proxies2.txt"
 
@@ -912,80 +909,53 @@ fetch_proxies_with_fallback() {
   touch "$temp_proxy_list_file1" "$temp_proxy_list_file2"
 
   # Fetch proxies from the first API
-  log $LOG_LEVEL_INFO "Fetching new proxy list from $PROXY_API_URL1..." "$PROXY_UPDATE_LOG_FILE"
-  local response=$(curl -s $PROXY_API_URL1)
-  if [ -z "$response" ]; then
-    log $LOG_LEVEL_ERROR "Failed to fetch proxies from $PROXY_API_URL1 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
+  log $LOG_LEVEL_INFO "Fetching new proxy list from $proxy_api_url1..." "$PROXY_UPDATE_LOG_FILE"
+  local response=$(curl -s $proxy_api_url1)
+  if [ -n "$response" ]; then
+      local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
+      if [ -n "$valid_proxies" ]; then
+          while IFS= read -r proxy; do
+              log $LOG_LEVEL_DEBUG "Testing anonymity for proxy: $proxy" "$PROXY_UPDATE_LOG_FILE"
+              original_ip=$(curl -s https://api.ipify.org)
+              proxy_ip=$(curl -x "socks5://$proxy" -s https://api.ipify.org)
+              if [ "$original_ip" != "$proxy_ip" ]; then
+                  log $LOG_LEVEL_DEBUG "Proxy $proxy is anonymous" "$PROXY_UPDATE_LOG_FILE"
+                  echo "$proxy" >> "$proxy_list_file"
+              else
+                  log $LOG_LEVEL_DEBUG "Proxy $proxy is not anonymous" "$PROXY_UPDATE_LOG_FILE"
+              fi
+          done <<< "$valid_proxies"
+          log $LOG_LEVEL_INFO "Fetched and validated $(cat "$proxy_list_file" | wc -l) valid proxies from the first API." "$PROXY_UPDATE_LOG_FILE"
+      else
+          log $LOG_LEVEL_ERROR "No valid proxies found in the response from $proxy_api_url1." "$PROXY_UPDATE_LOG_FILE"
+      fi
   else
-    local valid_proxies_from_api1=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
-    if [ -z "$valid_proxies_from_api1" ]; then
-      log $LOG_LEVEL_ERROR "No valid proxies found in the response from $PROXY_API_URL1." "$PROXY_UPDATE_LOG_FILE"
-    else
-      while IFS= read -r proxy; do
-        original_ip=$(curl -s https://api.ipify.org)
-        proxy_ip=$(curl -x "socks5://$proxy" -s https://api.ipify.org)
-        if [ "$original_ip" != "$proxy_ip" ]; then
-          echo "$proxy" >> "$temp_proxy_list_file1"
-        fi
-      done <<< "$valid_proxies_from_api1"
-      log $LOG_LEVEL_INFO "Fetched and validated $(cat "$temp_proxy_list_file1" | wc -l) valid proxies from the first API." "$PROXY_UPDATE_LOG_FILE"
-    fi
+    log $LOG_LEVEL_ERROR "Failed to fetch proxies from $proxy_api_url1 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
   fi
 
   # Fetch proxies from the second API
-  log $LOG_LEVEL_INFO "Fetching new proxy list from $PROXY_API_URL2..." "$PROXY_UPDATE_LOG_FILE"
-  local response=$(curl -s $PROXY_API_URL2)
-  if [ -z "$response" ]; then
-    log $LOG_LEVEL_ERROR "Failed to fetch proxies from $PROXY_API_URL2 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
-  else
-    local valid_proxies_from_api2=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
-    if [ -z "$valid_proxies_from_api2" ]; then
-      log $LOG_LEVEL_ERROR "No valid proxies found in the response from $PROXY_API_URL2." "$PROXY_UPDATE_LOG_FILE"
-    else
-      while IFS= read -r proxy; do
-        original_ip=$(curl -s https://api.ipify.org)
-        proxy_ip=$(curl -x "socks5://$proxy" -s https://api.ipify.org)
-        if [ "$original_ip" != "$proxy_ip" ]; then
-          echo "$proxy" >> "$temp_proxy_list_file2"
-        fi
-      done <<< "$valid_proxies_from_api2"
-      log $LOG_LEVEL_INFO "Fetched and validated $(cat "$temp_proxy_list_file2" | wc -l) valid proxies from the second API." "$PROXY_UPDATE_LOG_FILE"
-    fi
-  fi
-
-  # Combine and shuffle proxies
-  cat "$temp_proxy_list_file1" "$temp_proxy_list_file2" | shuf > "$proxy_list_file"
-  if [ $? -ne 0 ]; then
-    log $LOG_LEVEL_ERROR "Failed to write combined proxies to $proxy_list_file" "$PROXY_UPDATE_LOG_FILE"
-  else
-    log $LOG_LEVEL_INFO "Combined and shuffled proxies." "$PROXY_UPDATE_LOG_FILE"
-    log $LOG_LEVEL_INFO "Final proxy count: $(cat "$proxy_list_file" | wc -l)" "$PROXY_UPDATE_LOG_FILE"
-  fi
-
-  # Cleanup temporary files
-  rm -f "$temp_proxy_list_file1" "$temp_proxy_list_file2"
-
-  # Fallback to the third API if the proxy list is empty
-  if [ ! -s "$proxy_list_file" ]; then
-    log $LOG_LEVEL_INFO "Fallback: Fetching new proxy list from $PROXY_API_URL3..." "$PROXY_UPDATE_LOG_FILE"
-    local response=$(curl -s $PROXY_API_URL3)
-    if [ -z "$response" ]; then
-      log $LOG_LEVEL_ERROR "Failed to fetch proxies from $PROXY_API_URL3 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
-    else
-      local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+' | head -n $max_proxies)
-      if [ -z "$valid_proxies" ]; then
-        log $LOG_LEVEL_ERROR "No valid proxies found in the response from $PROXY_API_URL3." "$PROXY_UPDATE_LOG_FILE"
+  log $LOG_LEVEL_INFO "Fetching new proxy list from $proxy_api_url2..." "$PROXY_UPDATE_LOG_FILE"
+  local response=$(curl -s $proxy_api_url2)
+  if [ -n "$response" ]; then
+      local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
+      if [ -n "$valid_proxies" ]; then
+          while IFS= read -r proxy; do
+              log $LOG_LEVEL_DEBUG "Testing anonymity for proxy: $proxy" "$PROXY_UPDATE_LOG_FILE"
+              original_ip=$(curl -s https://api.ipify.org)
+              proxy_ip=$(curl -x "socks5://$proxy" -s https://api.ipify.org)
+              if [ "$original_ip" != "$proxy_ip" ]; then
+                  log $LOG_LEVEL_DEBUG "Proxy $proxy is anonymous" "$PROXY_UPDATE_LOG_FILE"
+                  echo "$proxy" >> "$proxy_list_file"
+              else
+                  log $LOG_LEVEL_DEBUG "Proxy $proxy is not anonymous" "$PROXY_UPDATE_LOG_FILE"
+              fi
+          done <<< "$valid_proxies"
+          log $LOG_LEVEL_INFO "Fetched and validated $(cat "$proxy_list_file" | wc -l) valid proxies from the second API." "$PROXY_UPDATE_LOG_FILE"
       else
-        while IFS= read -r proxy; do
-          original_ip=$(curl -s https://api.ipify.org)
-          proxy_ip=$(curl -x "socks5://$proxy" -s https://api.ipify.org)
-          if [ "$original_ip" != "$proxy_ip" ]; then
-            echo "$proxy" >> "$proxy_list_file"
-          fi
-        done <<< "$valid_proxies"
-        log $LOG_LEVEL_INFO "Fetched and validated $(cat "$proxy_list_file" | wc -l) valid proxies from the fallback API." "$PROXY_UPDATE_LOG_FILE"
+          log $LOG_LEVEL_ERROR "No valid proxies found in the response from $proxy_api_url2." "$PROXY_UPDATE_LOG_FILE"
       fi
-    fi
+  else
+      log $LOG_LEVEL_ERROR "Failed to fetch proxies from $proxy_api_url2 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
   fi
 
   if [ ! -s "$proxy_list_file" ]; then
