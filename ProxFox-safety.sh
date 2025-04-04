@@ -887,7 +887,11 @@ create_update_proxies_script() {
 
 LOG_LEVEL_INFO=0
 LOG_LEVEL_ERROR=1
-UPDATE_LOG_FILE="/var/log/update_proxies.log"
+UPDATE_LOG_FILE="/var/log/khelp.log"
+PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
+PROXY_API_URL1="https://spys.me/socks.txt"
+PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
+PROXY_API_URL3="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
 
 log() {
     local level=$1
