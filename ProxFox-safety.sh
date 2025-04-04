@@ -906,8 +906,6 @@ log() {
 
 fetch_proxies_with_fallback() {
   local proxy_list_file="/etc/proxychains/fetched_proxies.txt"
-  local temp_proxy_list_file1="/tmp/temp_proxies1.txt"
-  local temp_proxy_list_file2="/tmp/temp_proxies2.txt"
   local valid_proxies=()
 
   mkdir -p "$(dirname "$proxy_list_file")"
@@ -989,8 +987,8 @@ fetch_proxies_with_fallback() {
   fi
 
   if [ ! -s "$proxy_list_file" ]; then
-    log $LOG_LEVEL_ERROR "Failed to fetch proxies after attempting all APIs. Exiting." "$PROXY_UPDATE_LOG_FILE"
-    exit 1
+    log $LOG_LEVEL_ERROR "Failed to fetch proxies after attempting all APIs. Continuing without updated proxies." "$PROXY_UPDATE_LOG_FILE"
+    return 1
   fi
 }
 
