@@ -53,6 +53,8 @@ export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
 export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
 export CRONTAB_FILE="/etc/crontab"
 export PROXY_LIST_FILE="/etc/proxychains/fetched_proxies.txt"
+export TEMP_PROXY_LIST_FILE1="/tmp/temp_proxies1.txt"
+export TEMP_PROXY_LIST_FILE2="/tmp/temp_proxies2.txt"
 
 # Script paths
 export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
@@ -892,6 +894,8 @@ PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
 PROXY_API_URL1="https://spys.me/socks.txt"
 PROXY_API_URL2="https://www.proxy-list.download/api/v1/get?type=socks5"
 PROXY_API_URL3="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
+temp_proxy_list_file1="/tmp/temp_proxies1.txt"
+temp_proxy_list_file2="/tmp/temp_proxies2.txt"
 
 log() {
     local level=$1
@@ -901,18 +905,17 @@ log() {
 }
 
 fetch_proxies_with_fallback() {
-  local proxy_api_url1="https://spys.me/socks.txt"
-  local proxy_api_url2="https://www.proxy-list.download/api/v1/get?type=socks5"
   local proxy_list_file="/etc/proxychains/fetched_proxies.txt"
   local temp_proxy_list_file1="/tmp/temp_proxies1.txt"
   local temp_proxy_list_file2="/tmp/temp_proxies2.txt"
   local valid_proxies=()
 
   mkdir -p "$(dirname "$proxy_list_file")"
+  touch "$temp_proxy_list_file1" "$temp_proxy_list_file2"
 
   # Fetch proxies from the first API
-  log $LOG_LEVEL_INFO "Fetching new proxy list from $proxy_api_url1..." "$PROXY_UPDATE_LOG_FILE"
-  local response=$(curl -s $proxy_api_url1)
+  log $LOG_LEVEL_INFO "Fetching new proxy list from $PROXY_API_URL1..." "$PROXY_UPDATE_LOG_FILE"
+  local response=$(curl -s $PROXY_API_URL1)
   if [ -n "$response" ]; then
       local valid_proxies_from_api1=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
       if [ -n "$valid_proxies_from_api1" ]; then
@@ -925,15 +928,15 @@ fetch_proxies_with_fallback() {
           done <<< "$valid_proxies_from_api1"
           log $LOG_LEVEL_INFO "Fetched and validated $(cat "$temp_proxy_list_file1" | wc -l) valid proxies from the first API." "$PROXY_UPDATE_LOG_FILE"
       else
-          log $LOG_LEVEL_ERROR "No valid proxies found in the response from $proxy_api_url1." "$PROXY_UPDATE_LOG_FILE"
+          log $LOG_LEVEL_ERROR "No valid proxies found in the response from $PROXY_API_URL1." "$PROXY_UPDATE_LOG_FILE"
       fi
   else
-    log $LOG_LEVEL_ERROR "Failed to fetch proxies from $proxy_api_url1 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
+    log $LOG_LEVEL_ERROR "Failed to fetch proxies from $PROXY_API_URL1 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
   fi
 
   # Fetch proxies from the second API
-  log $LOG_LEVEL_INFO "Fetching new proxy list from $proxy_api_url2..." "$PROXY_UPDATE_LOG_FILE"
-  local response=$(curl -s $proxy_api_url2)
+  log $LOG_LEVEL_INFO "Fetching new proxy list from $PROXY_API_URL2..." "$PROXY_UPDATE_LOG_FILE"
+  local response=$(curl -s $PROXY_API_URL2)
   if [ -n "$response" ]; then
       local valid_proxies_from_api2=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
       if [ -n "$valid_proxies_from_api2" ]; then
@@ -946,10 +949,10 @@ fetch_proxies_with_fallback() {
           done <<< "$valid_proxies_from_api2"
           log $LOG_LEVEL_INFO "Fetched and validated $(cat "$temp_proxy_list_file2" | wc -l) valid proxies from the second API." "$PROXY_UPDATE_LOG_FILE"
       else
-          log $LOG_LEVEL_ERROR "No valid proxies found in the response from $proxy_api_url2." "$PROXY_UPDATE_LOG_FILE"
+          log $LOG_LEVEL_ERROR "No valid proxies found in the response from $PROXY_API_URL2." "$PROXY_UPDATE_LOG_FILE"
       fi
   else
-      log $LOG_LEVEL_ERROR "Failed to fetch proxies from $proxy_api_url2 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
+      log $LOG_LEVEL_ERROR "Failed to fetch proxies from $PROXY_API_URL2 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
   fi
 
   # Combine and shuffle proxies
@@ -963,8 +966,8 @@ fetch_proxies_with_fallback() {
 
   # Fallback to the third API if the proxy list is empty
   if [ ! -s "$proxy_list_file" ]; then
-    log $LOG_LEVEL_INFO "Fallback: Fetching new proxy list from $proxy_api_url3..." "$PROXY_UPDATE_LOG_FILE"
-    local response=$(curl -s $proxy_api_url3)
+    log $LOG_LEVEL_INFO "Fallback: Fetching new proxy list from $PROXY_API_URL3..." "$PROXY_UPDATE_LOG_FILE"
+    local response=$(curl -s $PROXY_API_URL3)
     if [ -n "$response" ]; then
         local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+' | head -n $max_proxies)
         if [ -n "$valid_proxies" ]; then
@@ -978,10 +981,10 @@ fetch_proxies_with_fallback() {
             log $LOG_LEVEL_INFO "Fetched and validated $(cat "$proxy_list_file" | wc -l) valid proxies from the fallback API." "$PROXY_UPDATE_LOG_FILE"
             return 0
         else
-            log $LOG_LEVEL_ERROR "No valid proxies found in the response from $proxy_api_url3." "$PROXY_UPDATE_LOG_FILE"
+            log $LOG_LEVEL_ERROR "No valid proxies found in the response from $PROXY_API_URL3." "$PROXY_UPDATE_LOG_FILE"
         fi
     else
-        log $LOG_LEVEL_ERROR "Failed to fetch proxies from $proxy_api_url3 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
+        log $LOG_LEVEL_ERROR "Failed to fetch proxies from $PROXY_API_URL3 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
     fi
   fi
 
