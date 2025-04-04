@@ -27,6 +27,17 @@ else
 fi
 
 # Environment variables for paths and configurations
+
+# Configuration files
+export PROXYCHAINS_CONF="/etc/proxychains.conf"
+export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
+export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
+export CRONTAB_FILE="/etc/crontab"
+export PROXY_LIST_FILE="/etc/proxychains/fetched_proxies.txt"
+
+# SSL DOMAIN
+export SSL_DOMAIN="example.com"
+
 #Log Files
 export UPDATE_LOG_FILE="/var/log/khelp.log"
 export PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
@@ -42,13 +53,6 @@ export KHELP_FAIL2BAN_DIR="/usr/local/share/khelp_fail2ban"
 export KHELP_IPTABLES_DIR="/usr/local/share/khelp_iptables"
 export KHELP_TOR_DIR="/usr/local/share/khelp_tor"
 export KHELP_LOGGING_DIR="/usr/local/share/khelp_logging"
-
-# Configuration files
-export PROXYCHAINS_CONF="/etc/proxychains.conf"
-export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
-export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
-export CRONTAB_FILE="/etc/crontab"
-export PROXY_LIST_FILE="/etc/proxychains/fetched_proxies.txt"
 
 # Script paths
 export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
@@ -124,10 +128,15 @@ validate_url() {
     fi
 }
 
-# Example usage of the log function
-log $LOG_LEVEL_INFO "This is an informational message." "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_ERROR "This is an error message." "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_WARNING "This is a warning message." "$UPDATE_LOG_FILE"
+# Configuration files
+log $LOG_LEVEL_INFO "PROXYCHAINS_CONF=$PROXYCHAINS_CONF" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "FAIL2BAN_CONFIG=$FAIL2BAN_CONFIG" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "IPTABLES_RULES_FILE=$IPTABLES_RULES_FILE" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "CRONTAB_FILE=$CRONTAB_FILE" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "PROXY_LIST_FILE=$PROXY_LIST_FILE" "$UPDATE_LOG_FILE"
+
+# SSL Domain Log
+log $LOG_LEVEL_INFO "SSL_DOMAIN=$SSL_DOMAIN" "$UPDATE_LOG_FILE"
 
 # Log Files
 log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
@@ -143,12 +152,6 @@ log $LOG_LEVEL_INFO "KHELP_FAIL2BAN_DIR=$KHELP_FAIL2BAN_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_IPTABLES_DIR=$KHELP_IPTABLES_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_TOR_DIR=$KHELP_TOR_DIR" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "KHELP_LOGGING_DIR=$KHELP_LOGGING_DIR" "$UPDATE_LOG_FILE"
-
-# Configuration files
-log $LOG_LEVEL_INFO "PROXYCHAINS_CONF=$PROXYCHAINS_CONF" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "FAIL2BAN_CONFIG=$FAIL2BAN_CONFIG" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "IPTABLES_RULES_FILE=$IPTABLES_RULES_FILE" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "CRONTAB_FILE=$CRONTAB_FILE" "$UPDATE_LOG_FILE"
 
 # Script paths
 log $LOG_LEVEL_INFO "UPDATE_PROXIES_SCRIPT=$UPDATE_PROXIES_SCRIPT" "$UPDATE_LOG_FILE"
@@ -509,10 +512,11 @@ configure_ufw() {
     systemctl enable ufw
     ufw --force enable
     ufw default deny incoming
-    ufw default allow outgoing
+    ufw default deny outgoing
     ufw allow from $ALLOWED_IP_RANGE to any port 22
-    ufw allow 9050/tcp
-    ufw allow 9001/tcp
+    ufw allow out 9050/tcp
+    ufw allow out 9001/tcp
+    ufw allow out 443/tcp  # Erlaubt ausgehende HTTPS-Verbindungen
     ufw limit ssh/tcp
     ufw logging on
     log $LOG_LEVEL_INFO "UFW firewall configured successfully." "$UPDATE_LOG_FILE"
@@ -524,21 +528,50 @@ configure_fail2ban() {
     cat << 'EOF' > /etc/fail2ban/jail.local
 [DEFAULT]
 ignoreip = 127.0.0.1/8
-bantime  = 3600
+bantime  = 86400  # 1 Tag
 findtime  = 600
 maxretry = 3
 
+# SSH Jail
 [sshd]
 enabled = true
 
+# SSHD DDOS Jail
 [sshd-ddos]
 enabled = true
 
+# Apache Auth Jail
 [apache-auth]
 enabled  = true
 port     = http,https
 logpath  = /var/log/apache2/*error.log
 maxretry = 3
+
+# Recidive Jail
+[recidive]
+enabled = true
+logpath = /var/log/fail2ban.log
+bantime = 604800  # 1 Woche
+findtime = 86400  # 1 Tag
+maxretry = 5
+
+# Custom Filter Beispiel für Tor
+[tor]
+enabled = true
+filter = tor
+action = iptables[name=Tor, port="9050,9001", protocol=tcp]
+logpath = /var/log/tor/log
+maxretry = 3
+bantime = 3600
+
+# Custom Filter Beispiel für SOCKS5
+[socks5]
+enabled = true
+filter = socks5
+action = iptables[name=SOCKS5, port="1080", protocol=tcp]
+logpath = /var/log/socks5.log
+maxretry = 3
+bantime = 3600
 EOF
 
     log $LOG_LEVEL_INFO "Creating/Updating sshd-ddos filter..." "$UPDATE_LOG_FILE"
@@ -571,8 +604,8 @@ configure_iptables() {
     log $LOG_LEVEL_INFO "Set default policy for INPUT chain to DROP." "$IPTABLES_LOG_FILE"
     iptables -P FORWARD DROP
     log $LOG_LEVEL_INFO "Set default policy for FORWARD chain to DROP." "$IPTABLES_LOG_FILE"
-    iptables -P OUTPUT ACCEPT
-    log $LOG_LEVEL_INFO "Set default policy for OUTPUT chain to ACCEPT." "$IPTABLES_LOG_FILE"
+    iptables -P OUTPUT DROP  # Ändern, um sicherzustellen, dass nur erlaubte Verbindungen ausgehen
+    log $LOG_LEVEL_INFO "Set default policy for OUTPUT chain to DROP." "$IPTABLES_LOG_FILE"
     iptables -A INPUT -i lo -j ACCEPT
     log $LOG_LEVEL_INFO "Allowed loopback traffic on INPUT chain." "$IPTABLES_LOG_FILE"
     iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
@@ -580,6 +613,10 @@ configure_iptables() {
     iptables -A INPUT -p tcp -s $ALLOWED_IP_RANGE --dport 22 -j ACCEPT
     iptables -A INPUT -p tcp --dport 9050 -j ACCEPT
     iptables -A INPUT -p tcp --dport 9001 -j ACCEPT
+    iptables -A INPUT -p tcp --dport 443 -j ACCEPT  # Erlaubt eingehende HTTPS-Verbindungen
+    iptables -A OUTPUT -p tcp --dport 9050 -j ACCEPT
+    iptables -A OUTPUT -p tcp --dport 9001 -j ACCEPT
+    iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT  # Erlaubt ausgehende HTTPS-Verbindungen
     log $LOG_LEVEL_INFO "Set Allow Tor to ACCEPT." "$IPTABLES_LOG_FILE"
     log $LOG_LEVEL_INFO "Allowed SSH access from $ALLOWED_IP_RANGE on port 22." "$IPTABLES_LOG_FILE"
     iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
@@ -594,10 +631,6 @@ configure_iptables() {
     iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
     iptables -A LOGGING -j DROP
     log $LOG_LEVEL_INFO "Configured logging for iptables." "$IPTABLES_LOG_FILE"
-    # Entfernen oder nicht hinzufügen:
-    # ip6tables -A INPUT -p icmpv6 -j ACCEPT
-
-    log $LOG_LEVEL_INFO "Configured logging for iptables." "$IPTABLES_LOG_FILE"
     
     # Ensure the rules file exists and has default content if not
     if [ ! -f /etc/iptables/rules.v4 ]; then
@@ -608,10 +641,16 @@ configure_iptables() {
 *filter
 :INPUT DROP [0:0]
 :FORWARD DROP [0:0]
-:OUTPUT ACCEPT [0:0]
+:OUTPUT DROP [0:0]  # Ändern, um sicherzustellen, dass nur erlaubte Verbindungen ausgehen
 -A INPUT -i lo -j ACCEPT
 -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 -A INPUT -p tcp --dport 22 -j ACCEPT
+-A INPUT -p tcp --dport 9050 -j ACCEPT
+-A INPUT -p tcp --dport 9001 -j ACCEPT
+-A INPUT -p tcp --dport 443 -j ACCEPT  # Erlaubt eingehende HTTPS-Verbindungen
+-A OUTPUT -p tcp --dport 9050 -j ACCEPT
+-A OUTPUT -p tcp --dport 9001 -j ACCEPT
+-A OUTPUT -p tcp --dport 443 -j ACCEPT  # Erlaubt ausgehende HTTPS-Verbindungen
 -A INPUT -p icmp -m limit --limit 1/s --limit-burst 10 -j ACCEPT
 COMMIT
 EOF
@@ -684,6 +723,11 @@ ExitPolicy reject *:*  # Example: Reject all exit traffic
 # ServerTransportPlugin obfs4 exec /usr/bin/obfs4proxy
 # ExtORPort auto
 # ContactInfo <Your_Name> <your_email@example.com>
+
+# Multi-Hop Configuration
+# Ensure at least 5 Entry Guards and 7 Directory Guards
+NumEntryGuards 6
+NumDirectoryGuards 10
 EOF
     chmod 600 /etc/tor/torrc
     chown root:root /etc/tor/torrc
@@ -754,19 +798,25 @@ EOF
 }
 
 configure_openssl() {
-    log $LOG_LEVEL_INFO "Configuring openssl..." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Configuring OpenSSL..." "$UPDATE_LOG_FILE"
     
     local ssl_dir="/etc/ssl"
+    local domain="${SSL_DOMAIN:-your_domain.com}"  # Use environment variable or default to "your_domain.com"
+
+    # Create necessary directories
     mkdir -p "$ssl_dir/private"
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout "$ssl_dir/private/nginx-selfsigned.key" -out "$ssl_dir/certs/nginx-selfsigned.crt" -subj "/CN=your_domain.com"
-    
-    if [ $? -eq 0 ]; then
-        log $LOG_LEVEL_INFO "openssl configured successfully." "$UPDATE_LOG_FILE"
-        return 0
-    else
-        log $LOG_LEVEL_ERROR "Failed to configure openssl." "$UPDATE_LOG_FILE"
-        return 1
+    mkdir -p "$ssl_dir/certs"
+
+    # Generate self-signed certificate and key
+    if ! openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout "$ssl_dir/private/nginx-selfsigned.key" -out "$ssl_dir/certs/nginx-selfsigned.crt" -subj "/CN=$domain"; then
+        log $LOG_LEVEL_ERROR "Failed to generate self-signed certificate and key. Exiting." "$UPDATE_LOG_FILE"
+        exit 1
     fi
+
+    # Set secure permissions for the key file
+    chmod 600 "$ssl_dir/private/nginx-selfsigned.key"
+
+    log $LOG_LEVEL_INFO "OpenSSL configured successfully." "$UPDATE_LOG_FILE"
 }
 
 setup_monitoring() {
@@ -851,11 +901,10 @@ log() {
 fetch_proxies_with_fallback() {
   local proxy_api_url1="https://spys.me/socks.txt"
   local proxy_api_url2="https://www.proxy-list.download/api/v1/get?type=socks5"
-  local proxy_api_url3="https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=1000&country=all&ssl=all&anonymity=all"
   local proxy_list_file="/etc/proxychains/fetched_proxies.txt"
-  local max_proxies=100
-  local attempts=0
-  local max_attempts=3
+  local temp_proxy_list_file1="/tmp/temp_proxies1.txt"
+  local temp_proxy_list_file2="/tmp/temp_proxies2.txt"
+  local valid_proxies=()
 
   mkdir -p "$(dirname "$proxy_list_file")"
 
@@ -863,16 +912,16 @@ fetch_proxies_with_fallback() {
   log $LOG_LEVEL_INFO "Fetching new proxy list from $proxy_api_url1..." "$PROXY_UPDATE_LOG_FILE"
   local response=$(curl -s $proxy_api_url1)
   if [ -n "$response" ]; then
-      local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
-      if [ -n "$valid_proxies" ]; then
+      local valid_proxies_from_api1=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
+      if [ -n "$valid_proxies_from_api1" ]; then
           while IFS= read -r proxy; do
               original_ip=$(curl -s https://api.ipify.org)
               proxy_ip=$(curl -x "socks5://$proxy" -s https://api.ipify.org)
               if [ "$original_ip" != "$proxy_ip" ]; then
-                  echo "$proxy" >> "$proxy_list_file"
+                  echo "$proxy" >> "$temp_proxy_list_file1"
               fi
-          done <<< "$valid_proxies"
-          log $LOG_LEVEL_INFO "Fetched and validated $(cat "$proxy_list_file" | wc -l) valid proxies from the first API." "$PROXY_UPDATE_LOG_FILE"
+          done <<< "$valid_proxies_from_api1"
+          log $LOG_LEVEL_INFO "Fetched and validated $(cat "$temp_proxy_list_file1" | wc -l) valid proxies from the first API." "$PROXY_UPDATE_LOG_FILE"
       else
           log $LOG_LEVEL_ERROR "No valid proxies found in the response from $proxy_api_url1." "$PROXY_UPDATE_LOG_FILE"
       fi
@@ -884,22 +933,31 @@ fetch_proxies_with_fallback() {
   log $LOG_LEVEL_INFO "Fetching new proxy list from $proxy_api_url2..." "$PROXY_UPDATE_LOG_FILE"
   local response=$(curl -s $proxy_api_url2)
   if [ -n "$response" ]; then
-      local valid_proxies=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
-      if [ -n "$valid_proxies" ]; then
+      local valid_proxies_from_api2=$(echo "$response" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+')
+      if [ -n "$valid_proxies_from_api2" ]; then
           while IFS= read -r proxy; do
               original_ip=$(curl -s https://api.ipify.org)
               proxy_ip=$(curl -x "socks5://$proxy" -s https://api.ipify.org)
               if [ "$original_ip" != "$proxy_ip" ]; then
-                  echo "$proxy" >> "$proxy_list_file"
+                  echo "$proxy" >> "$temp_proxy_list_file2"
               fi
-          done <<< "$valid_proxies"
-          log $LOG_LEVEL_INFO "Fetched and validated $(cat "$proxy_list_file" | wc -l) valid proxies from the second API." "$PROXY_UPDATE_LOG_FILE"
+          done <<< "$valid_proxies_from_api2"
+          log $LOG_LEVEL_INFO "Fetched and validated $(cat "$temp_proxy_list_file2" | wc -l) valid proxies from the second API." "$PROXY_UPDATE_LOG_FILE"
       else
           log $LOG_LEVEL_ERROR "No valid proxies found in the response from $proxy_api_url2." "$PROXY_UPDATE_LOG_FILE"
       fi
   else
       log $LOG_LEVEL_ERROR "Failed to fetch proxies from $proxy_api_url2 or the response is empty." "$PROXY_UPDATE_LOG_FILE"
   fi
+
+  # Combine and shuffle proxies
+  cat "$temp_proxy_list_file1" "$temp_proxy_list_file2" | shuf > "$proxy_list_file"
+
+  log $LOG_LEVEL_INFO "Combined and shuffled proxies." "$PROXY_UPDATE_LOG_FILE"
+  log $LOG_LEVEL_INFO "Final proxy count: $(cat "$proxy_list_file" | wc -l)" "$PROXY_UPDATE_LOG_FILE"
+
+  # Cleanup temporary files
+  rm -f "$temp_proxy_list_file1" "$temp_proxy_list_file2"
 
   # Fallback to the third API if the proxy list is empty
   if [ ! -s "$proxy_list_file" ]; then
