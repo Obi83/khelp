@@ -860,7 +860,8 @@ configure_proxychains() {
     # Ensure the directory for fetched proxies exists
     if [ ! -d /etc/proxychains ]; then
         mkdir -p /etc/proxychains
-        chmod 700 /etc/proxychains
+        chmod 755 /etc/proxychains
+        chown $USER:$USER /etc/proxychains  # Set the ownership to the current user
     fi
 
     # Check if the proxychains.conf file exists
