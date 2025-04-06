@@ -891,11 +891,6 @@ configure_proxychains() {
         chmod 755 /etc/proxychains
     fi
 
-    # Ensure the fetched_proxies.txt file exists and set permissions
-    touch /etc/proxychains/fetched_proxies.txt
-    chmod 644 /etc/proxychains/fetched_proxies.txt
-    chown root:root /etc/proxychains/fetched_proxies.txt
-
     # Check if the proxychains.conf file exists
     log $LOG_LEVEL_INFO "Checking if the proxychains.conf file exists..." "$UPDATE_LOG_FILE"
     if [ ! -f /etc/proxychains.conf ]; then
