@@ -194,16 +194,12 @@ log $LOG_LEVEL_INFO "IPTABLES_SERVICE_PATH=$IPTABLES_SERVICE_PATH" "$UPDATE_LOG_
 
 # Log proxy API URLs
 log $LOG_LEVEL_INFO "PROXY_API_URL1=$PROXY_API_URL1" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "PROXY_API_URL2=$PROXY_API_URL2" "$UPDATE_LOG_FILE"
 
 # Set permissions for log files
-touch /var/log/khelp_iptables.log
 chmod 644 /var/log/khelp.log
 chmod 644 /var/log/nginx/error.log
-chmod 644 /var/log/khelp_iptables.log
 chown root:adm /var/log/khelp.log
 chown root:adm /var/log/nginx/error.log
-chown root:adm /var/log/khelp_iptables.log
 
 # Function to detect the local network IP range
 detect_ip_range() {
@@ -1107,6 +1103,10 @@ configure_openssl &
 setup_monitoring &
 setup_syslog &
 configure_nginx_ssl &
+
+touch /var/log/khelp_iptables.log
+chmod 644 /var/log/khelp_iptables.log
+chown root:adm /var/log/khelp_iptables.log
 
 wait
 
