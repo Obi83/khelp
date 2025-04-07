@@ -632,7 +632,6 @@ backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
 
 # Configure of Snort Service
-
 configure_snort() {
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
     cat << 'EOF' > /etc/snort/snort.conf
@@ -665,7 +664,7 @@ preprocessor ssh: server_ports { $SSH_PORTS } \
     autodetect
 
 # Define output settings
-output unified2: filename snort.log, limit 128
+output unified2: filename /var/log/snort/snort.log, limit 128
 
 # Include rule sets
 include $RULE_PATH/local.rules
@@ -688,7 +687,7 @@ EOF
     chown root:root /var/log/snort
     chmod 644 /var/log/snort/snort.log
     chown root:root /var/log/snort/snort.log
-    
+
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
 
 }
@@ -717,10 +716,7 @@ EOF
 configure_snort
 create_snort_service
 
-wait
-
 # Configure of Fail2ban Service
-
 configure_fail2ban() {
     log $LOG_LEVEL_INFO "Configuring Fail2ban..." "$UPDATE_LOG_FILE"
     apt install -y fail2ban
@@ -825,10 +821,6 @@ EOF
 
 configure_fail2ban
 create_f2b_snort_filter
-
-wait
-
-# Scripts runs in parallel now
 
 # Function to update or create config files
 configure_ufw() {
