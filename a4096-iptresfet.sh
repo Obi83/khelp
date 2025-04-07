@@ -683,7 +683,14 @@ EOF
         log $LOG_LEVEL_INFO "Created Snort log file at /var/log/snort/snort.log" "$UPDATE_LOG_FILE"
     fi
     
+    # Set permissions for the log directory and file
+    chmod 755 /var/log/snort
+    chown root:root /var/log/snort
+    chmod 644 /var/log/snort/snort.log
+    chown root:root /var/log/snort/snort.log
+    
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
+
 }
 
 create_snort_service() {
