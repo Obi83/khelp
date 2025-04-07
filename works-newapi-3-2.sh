@@ -1082,8 +1082,14 @@ ssl_session_tickets off;
 ssl_dhparam /etc/ssl/certs/dhparam.pem;
 EOF
 
-    # Generate DH parameters
+    # Hier den neuen Code einfügen
+    log $LOG_LEVEL_INFO "Generating DH parameters, this might take a while..." "$UPDATE_LOG_FILE"
+    start_time=$(date +%s)
     openssl dhparam -out /etc/ssl/certs/dhparam.pem 4096
+    end_time=$(date +%s)
+    elapsed_time=$((end_time - start_time))
+    log $LOG_LEVEL_INFO "DH parameters generated in $elapsed_time seconds." "$UPDATE_LOG_FILE"
+
     if [ $? -ne 0 ]; then
         log $LOG_LEVEL_ERROR "Failed to generate DH parameters." "$UPDATE_LOG_FILE"
         return 1
@@ -1102,13 +1108,15 @@ configure_resolv_conf &
 configure_openssl &
 setup_monitoring &
 setup_syslog &
-configure_nginx_ssl &
 
 touch /var/log/khelp_iptables.log
 chmod 644 /var/log/khelp_iptables.log
 chown root:adm /var/log/khelp_iptables.log
 
 wait
+
+# Nginx SSL-Konfiguration separat ausführen
+configure_nginx_ssl 
 
 log $LOG_LEVEL_INFO "All independent tasks completed successfully." "$UPDATE_LOG_FILE"
 
