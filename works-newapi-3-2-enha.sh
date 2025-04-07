@@ -29,6 +29,17 @@ else
     export USER_HOME=$HOME
 fi
 
+# Example usage of mktemp for temporary files
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+
+# Function to perform cleanup
+cleanup_function() {
+    # Cleanup commands
+    echo "Cleaning up..."
+    rm -rf "$TEMP_DIR"
+}
+
 # Environment variables for paths and configurations
 #Log Files
 export UPDATE_LOG_FILE="/var/log/khelp.log"
