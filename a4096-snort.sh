@@ -66,6 +66,7 @@ export SSL_CERT="$SSL_CERTS_DIR/nginx-selfsigned.crt"
 export SSL_DHPARAM="$SSL_CERTS_DIR/dhparam.pem"
 export NGX_SSL_CONF="/etc/nginx/snippets/self-signed.conf"
 export DOMAIN="your_domain.com"
+export SNORT_DIR="/etc/snort"
 
 # Configuration files
 export PROXYCHAINS_CONF="/etc/proxychains.conf"
@@ -705,7 +706,7 @@ get_primary_interface() {
 INTERFACE=$(get_primary_interface)
 
 # Start Snort with the primary network interface
-/usr/bin/snort -c "$SNORT_CONF" -i "$INTERFACE"
+/usr/sbin/snort -c "$SNORT_CONF" -i "$INTERFACE"
 EOF
     chmod 755 /usr/local/bin/start_snort.sh
     chown root:root /usr/local/bin/start_snort.sh
