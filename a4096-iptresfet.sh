@@ -689,7 +689,6 @@ EOF
     chown root:root /var/log/snort/snort.log
 
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
-
 }
 
 create_snort_wrapper() {
@@ -703,10 +702,10 @@ get_primary_interface() {
 }
 
 # Get the primary network interface
-INTERFACE=\$(get_primary_interface)
+INTERFACE=$(get_primary_interface)
 
 # Start Snort with the primary network interface
-/usr/sbin/snort -c /etc/snort/snort.conf -i "\$INTERFACE"
+/usr/sbin/snort -c /etc/snort/snort.conf -i "$INTERFACE"
 EOF
     chmod 755 /usr/local/bin/start_snort.sh
     chown root:root /usr/local/bin/start_snort.sh
