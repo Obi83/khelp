@@ -73,6 +73,7 @@ export FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
 export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
 export CRONTAB_FILE="/etc/crontab"
 export PROXY_LIST_FILE="/etc/proxychains/fetched_proxies.txt"
+export SNORT_CONF="/etc/snort/snort.conf"
 
 # Script paths
 export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
@@ -704,7 +705,7 @@ get_primary_interface() {
 INTERFACE=$(get_primary_interface)
 
 # Start Snort with the primary network interface
-/usr/sbin/snort -c /etc/snort/snort.conf -i "$INTERFACE"
+/usr/bin/snort -c "$SNORT_CONF" -i "$INTERFACE"
 EOF
     chmod 755 /usr/local/bin/start_snort.sh
     chown root:root /usr/local/bin/start_snort.sh
