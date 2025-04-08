@@ -692,6 +692,28 @@ EOF
 
 }
 
+create_snort_wrapper() {
+    log $LOG_LEVEL_INFO "Creating wrapper for snort..." "$UPDATE_LOG_FILE"
+    cat << EOF > /usr/local/bin/start_snort.sh
+#!/bin/bash
+
+# Function to determine the primary network interface
+get_primary_interface() {
+    ip route | grep default | awk '{print $5}'
+}
+
+# Get the primary network interface
+INTERFACE=\$(get_primary_interface)
+
+# Start Snort with the primary network interface
+/usr/sbin/snort -c /etc/snort/snort.conf -i "\$INTERFACE"
+EOF
+    chmod 755 /usr/local/bin/start_snort.sh
+    chown root:root /usr/local/bin/start_snort.sh
+    
+    log $LOG_LEVEL_INFO "Snort wrapper created successfully." "$UPDATE_LOG_FILE"
+}
+
 create_snort_service() {
     log $LOG_LEVEL_INFO "Creating and enabling Snort service..." "$UPDATE_LOG_FILE"
     cat << EOF > /etc/systemd/system/snort.service
@@ -700,7 +722,7 @@ Description=Snort Network Intrusion Detection System
 After=network.target
 
 [Service]
-ExecStart=/usr/sbin/snort -c /etc/snort/snort.conf -i eth0
+ExecStart=/usr/local/bin/start_snort.sh
 Restart=always
 
 [Install]
@@ -714,6 +736,7 @@ EOF
 }
 
 configure_snort
+create_snort_wrapper
 create_snort_service
 
 # Configure of Fail2ban Service
