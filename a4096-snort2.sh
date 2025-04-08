@@ -636,7 +636,9 @@ backup_config "/etc/nginx/nginx.conf"
 
 configure_snort() {
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
-    cat << 'EOF' > /etc/snort/snort.conf
+
+    # Create the Snort configuration file in Unix format
+    cat << EOF | sed 's/\r//' > /etc/snort/snort.conf
 # Snort configuration file
 
 # Define network variables
@@ -651,29 +653,29 @@ portvar SSH_PORTS 22
 
 # Define preprocessor settings
 preprocessor frag3_global: max_frags 65536
-preprocessor frag3_engine: policy linux bind_to $HOME_NET
+preprocessor frag3_engine: policy linux bind_to \$HOME_NET
 
 preprocessor stream5_global: track_tcp yes, track_udp yes
 preprocessor stream5_tcp: policy linux, use_static_footprint_sizes
 preprocessor stream5_udp: timeout 180
 
 preprocessor http_inspect: global iis_unicode_map unicode.map 1252
-preprocessor http_inspect_server: server default \
-    profile all ports { $HTTP_PORTS $HTTPS_PORTS } \
+preprocessor http_inspect_server: server default \\
+    profile all ports { \$HTTP_PORTS \$HTTPS_PORTS } \\
     oversize_dir_length 500
 
-preprocessor ssh: server_ports { $SSH_PORTS } \
+preprocessor ssh: server_ports { \$SSH_PORTS } \\
     autodetect
 
 # Define output settings
 output unified2: filename /var/log/snort/snort.log, limit 128
 
 # Include rule sets
-include $RULE_PATH/local.rules
-include $RULE_PATH/community.rules
+include \$RULE_PATH/local.rules
+include \$RULE_PATH/community.rules
 EOF
 
-    # Set permissions for snort configuration file
+    # Set permissions for the Snort configuration file
     chmod 644 /etc/snort/snort.conf
     chown root:root /etc/snort/snort.conf
 
