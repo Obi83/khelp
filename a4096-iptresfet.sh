@@ -631,7 +631,6 @@ backup_config "/etc/tor/torrc"
 backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
 
-# Configure of Snort Service
 configure_snort() {
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
     cat << 'EOF' > /etc/snort/snort.conf
