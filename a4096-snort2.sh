@@ -75,6 +75,7 @@ export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
 export CRONTAB_FILE="/etc/crontab"
 export PROXY_LIST_FILE="/etc/proxychains/fetched_proxies.txt"
 export SNORT_CONF="/etc/snort/snort.conf"
+export HOME_NET="[192.168.1.0/24,10.0.0.0/8]"
 
 # Script paths
 export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
@@ -634,16 +635,15 @@ backup_config "/etc/tor/torrc"
 backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
 
+# Configure of Snort Service
 configure_snort() {
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
-
-    # Create the Snort configuration file in Unix format
-    cat << EOF | sed 's/\r//' > /etc/snort/snort.conf
+    cat << 'EOF' > /etc/snort/snort.conf
 # Snort configuration file
 
 # Define network variables
-ipvar HOME_NET any
-ipvar EXTERNAL_NET !$HOME_NET
+var HOME_NET [192.168.1.0/24,10.0.0.0/8]
+var EXTERNAL_NET !$HOME_NET
 
 # Define port variables
 portvar HTTP_PORTS 80
@@ -653,26 +653,29 @@ portvar SSH_PORTS 22
 
 # Define preprocessor settings
 preprocessor frag3_global: max_frags 65536
-preprocessor frag3_engine: policy linux bind_to \$HOME_NET
+preprocessor frag3_engine: policy linux bind_to $HOME_NET
 
 preprocessor stream5_global: track_tcp yes, track_udp yes
 preprocessor stream5_tcp: policy linux, use_static_footprint_sizes
 preprocessor stream5_udp: timeout 180
 
 preprocessor http_inspect: global iis_unicode_map unicode.map 1252
-preprocessor http_inspect_server: server default \\
-    profile all ports { \$HTTP_PORTS \$HTTPS_PORTS } \\
+preprocessor http_inspect_server: server default \
+    profile all ports { $HTTP_PORTS $HTTPS_PORTS } \
     oversize_dir_length 500
 
-preprocessor ssh: server_ports { \$SSH_PORTS } \\
+preprocessor ssh: server_ports { $SSH_PORTS } \
     autodetect
 
 # Define output settings
 output unified2: filename /var/log/snort/snort.log, limit 128
 
+# Define rule path
+var RULE_PATH /etc/snort/rules
+
 # Include rule sets
-include \$RULE_PATH/local.rules
-include \$RULE_PATH/community.rules
+include $RULE_PATH/local.rules
+include $RULE_PATH/community.rules
 EOF
 
     # Set permissions for the Snort configuration file
@@ -700,31 +703,14 @@ create_snort_wrapper() {
     cat << 'EOF' > /usr/local/bin/start_snort.sh
 #!/bin/bash
 
-# Fallback: Set default value for SNORT_CONF if not already set
-: "${SNORT_CONF:=/etc/snort/snort.conf}"
+# Set default value for HOME_NET if not already set
+: "${HOME_NET:=192.168.1.0/24}"
 
-# Function to determine the primary network interface
-get_primary_interface() {
-    ip route | grep default | awk '{print $5}'
-}
+# Export HOME_NET for Snort
+export HOME_NET
 
-# Get the primary network interface
-INTERFACE=$(get_primary_interface)
-
-# Log the configuration file being used (for debugging purposes)
-echo "Using Snort configuration file: $SNORT_CONF"
-
-# Check if the configuration file exists
-if [ ! -f "$SNORT_CONF" ]; then
-    echo "Error: Snort configuration file not found at $SNORT_CONF. Using fallback: /etc/snort/snort.conf"
-    SNORT_CONF="/etc/snort/snort.conf"
-fi
-
-# Validate the fallback configuration file exists
-if [ ! -f "$SNORT_CONF" ]; then
-    echo "Fatal Error: Fallback configuration file /etc/snort/snort.conf not found. Exiting."
-    exit 1
-fi
+# Log the used HOME_NET value
+echo "Using HOME_NET: $HOME_NET"
 
 # Start Snort with the primary network interface
 /usr/sbin/snort -c "$SNORT_CONF" -i "$INTERFACE"
