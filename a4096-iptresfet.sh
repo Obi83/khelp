@@ -694,7 +694,7 @@ EOF
 
 create_snort_wrapper() {
     log $LOG_LEVEL_INFO "Creating wrapper for snort..." "$UPDATE_LOG_FILE"
-    cat << EOF > /usr/local/bin/start_snort.sh
+    cat << 'EOF' > /usr/local/bin/start_snort.sh
 #!/bin/bash
 
 # Function to determine the primary network interface
