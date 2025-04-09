@@ -686,30 +686,8 @@ backup_config "/etc/tor/torrc"
 backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
 
-# Configure of Snort Service
-convert_snort_config_to_ascii() {
-    log $LOG_LEVEL_INFO "Converting Snort configuration file to ASCII..." "$UPDATE_LOG_FILE"
-    
-    # Prüfen, ob die Datei existiert
-    if [ ! -f "/etc/snort/snort.conf" ]; then
-        log $LOG_LEVEL_ERROR "Snort configuration file not found: /etc/snort/snort.conf" "$UPDATE_LOG_FILE"
-        exit 1
-    fi
-
-    # Konvertieren und überschreiben
-    iconv -f UTF-8 -t ASCII /etc/snort/snort.conf -o /etc/snort/snort_ascii.conf
-    if [ $? -eq 0 ]; then
-        mv /etc/snort/snort_ascii.conf /etc/snort/snort.conf
-        log $LOG_LEVEL_INFO "Snort configuration file converted to ASCII successfully." "$UPDATE_LOG_FILE"
-    else
-        log $LOG_LEVEL_ERROR "Failed to convert Snort configuration file to ASCII." "$UPDATE_LOG_FILE"
-        exit 1
-    fi
-}
-
-# Konfiguration von Snort
+# Configuration of Snort Service
 configure_snort() {
-    # Überprüfen, ob HOME_NET gesetzt ist
     if [ -z "$HOME_NET" ]; then
         log $LOG_LEVEL_ERROR "HOME_NET is not set. Please set the HOME_NET variable before configuring Snort." "$UPDATE_LOG_FILE"
         exit 1
@@ -755,30 +733,81 @@ var RULE_PATH /etc/snort/rules
 include \$RULE_PATH/local.rules
 include \$RULE_PATH/community.rules
 EOF
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to create Snort configuration file." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
+    # Bereinigen der Datei: Entfernen von leeren Zeilen
+    sed -i '/^[[:space:]]*$/d' /etc/snort/snort.conf
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to clean up Snort configuration file." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+    log $LOG_LEVEL_INFO "Removed empty lines from Snort configuration file." "$UPDATE_LOG_FILE"
 
     chmod 644 /etc/snort/snort.conf
     chown root:root /etc/snort/snort.conf
 
-    if [ ! -f /var/log/snort/snort.log ]; then
+    # Verzeichnis für Logs erstellen und prüfen
+    if [ ! -d /var/log/snort ]; then
         mkdir -p /var/log/snort
+        if [ $? -ne 0 ]; then
+            log $LOG_LEVEL_ERROR "Failed to create Snort log directory." "$UPDATE_LOG_FILE"
+            exit 1
+        fi
+        chmod 755 /var/log/snort
+        chown root:root /var/log/snort
+    fi
+
+    # Log-Datei erstellen
+    if [ ! -f /var/log/snort/snort.log ]; then
         touch /var/log/snort/snort.log
+        if [ $? -ne 0 ]; then
+            log $LOG_LEVEL_ERROR "Failed to create Snort log file." "$UPDATE_LOG_FILE"
+            exit 1
+        fi
+        chmod 644 /var/log/snort/snort.log
+        chown root:root /var/log/snort/snort.log
         log $LOG_LEVEL_INFO "Created Snort log file at /var/log/snort/snort.log" "$UPDATE_LOG_FILE"
     fi
-    
-    chmod 755 /var/log/snort
-    chown root:root /var/log/snort
-    chmod 644 /var/log/snort/snort.log
-    chown root:root /var/log/snort/snort.log
 
-    # Konvertiere die Datei in ASCII
+    # Konvertieren der Konfiguration in ASCII
     convert_snort_config_to_ascii
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to convert Snort configuration file to ASCII." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
 
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
 }
 
+convert_snort_config_to_ascii() {
+    log $LOG_LEVEL_INFO "Converting Snort configuration file to ASCII..." "$UPDATE_LOG_FILE"
+    
+    if [ ! -f "/etc/snort/snort.conf" ]; then
+        log $LOG_LEVEL_ERROR "Snort configuration file not found: /etc/snort/snort.conf" "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
+    iconv -f UTF-8 -t ASCII /etc/snort/snort.conf -o /etc/snort/snort_ascii.conf
+    if [ $? -eq 0 ]; then
+        mv /etc/snort/snort_ascii.conf /etc/snort/snort.conf
+        log $LOG_LEVEL_INFO "Snort configuration file converted to ASCII successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Failed to convert Snort configuration file to ASCII." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+}
+
 create_snort_rules() {
-    log $LOG_LEVEL_INFO "Creating rules for snort..." "$UPDATE_LOG_FILE"
-    sudo mkdir -p /etc/snort/rules
+    log $LOG_LEVEL_INFO "Creating rules for Snort..." "$UPDATE_LOG_FILE"
+    mkdir -p /etc/snort/rules
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to create Snort rules directory." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
     cat << 'EOF' > /etc/snort/rules/local.rules
 # Snort Rules for Monitoring HTTPS Traffic over SOCKS5 via Tor
 
@@ -843,10 +872,16 @@ alert tcp any any -> $HOME_NET 443 (msg:"Deprecated TLS version detected (TLS 1.
 alert tcp any any -> $HOME_NET 9050 (msg:"Brute-force attack on hidden service detected"; flow:to_server,established; threshold:type both, track by_src, count 5, seconds 60; sid:2000020; rev:1;)
 EOF
 
-    chmod 755 /etc/snort
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to create Snort local rules file." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
+    chmod 755 /etc/snort/rules
     chmod 644 /etc/snort/rules/local.rules
+    chown root:root /etc/snort/rules
     chown root:root /etc/snort/rules/local.rules
-    
+
     log $LOG_LEVEL_INFO "Snort rules configured successfully." "$UPDATE_LOG_FILE"
 }
 
@@ -1032,14 +1067,29 @@ After=network.target
 Environment="SNORT_CONF=/etc/snort/snort.conf"
 ExecStart=/usr/local/bin/start_snort.sh
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
 EOF
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to create Snort service file." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
     chmod 600 /etc/systemd/system/snort.service
     systemctl daemon-reload
     systemctl enable snort.service
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to enable Snort service." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
     systemctl start snort.service
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to start Snort service." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
     log $LOG_LEVEL_INFO "Snort service created and enabled." "$UPDATE_LOG_FILE"
 }
 
