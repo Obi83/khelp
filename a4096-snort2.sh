@@ -46,6 +46,7 @@ export UPDATE_LOG_FILE="/var/log/khelp.log"
 export PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
 export PROXY_TIMER_LOG_FILE="/var/log/timer_proxies.log"
 export IPTABLES_LOG_FILE="/var/log/khelp_iptables.log"
+export LOG_PATH="/var/log/snort"
 
 # Directories
 export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
@@ -81,6 +82,7 @@ export HOME_NET="[192.168.1.0/24,10.0.0.0/8]"
 export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
 export UFW_SCRIPT="/usr/local/bin/ufw.sh"
 export IPTABLES_SCRIPT="/usr/local/bin/iptables.sh"
+export RULE_PATH="/etc/snort/rules"
 
 # Service paths
 export SYSTEMD_UPDATE_PROXIES_SERVICE="/etc/systemd/system/update_proxies.service"
@@ -636,13 +638,20 @@ backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
 
 # Configure of Snort Service
+# Configure of Snort Service
 configure_snort() {
+    # Überprüfen, ob HOME_NET gesetzt ist
+    if [ -z "$HOME_NET" ]; then
+        log $LOG_LEVEL_ERROR "HOME_NET is not set. Please set the HOME_NET variable before configuring Snort." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
-    cat << 'EOF' > /etc/snort/snort.conf
+    cat << EOF > /etc/snort/snort.conf
 # Snort configuration file
 
 # Define network variables
-var HOME_NET [192.168.1.0/24,10.0.0.0/8]
+var HOME_NET [$HOME_NET]
 var EXTERNAL_NET !$HOME_NET
 
 # Define port variables
@@ -653,7 +662,7 @@ portvar SSH_PORTS 22
 
 # Define preprocessor settings
 preprocessor frag3_global: max_frags 65536
-preprocessor frag3_engine: policy linux bind_to $HOME_NET
+preprocessor frag3_engine: policy linux bind_to \$HOME_NET
 
 preprocessor stream5_global: track_tcp yes, track_udp yes
 preprocessor stream5_tcp: policy linux, use_static_footprint_sizes
@@ -661,10 +670,10 @@ preprocessor stream5_udp: timeout 180
 
 preprocessor http_inspect: global iis_unicode_map unicode.map 1252
 preprocessor http_inspect_server: server default \
-    profile all ports { $HTTP_PORTS $HTTPS_PORTS } \
+    profile all ports { \$HTTP_PORTS \$HTTPS_PORTS } \
     oversize_dir_length 500
 
-preprocessor ssh: server_ports { $SSH_PORTS } \
+preprocessor ssh: server_ports { \$SSH_PORTS } \
     autodetect
 
 # Define output settings
@@ -674,28 +683,217 @@ output unified2: filename /var/log/snort/snort.log, limit 128
 var RULE_PATH /etc/snort/rules
 
 # Include rule sets
-include $RULE_PATH/local.rules
-include $RULE_PATH/community.rules
+include \$RULE_PATH/local.rules
+include \$RULE_PATH/community.rules
 EOF
 
-    # Set permissions for the Snort configuration file
-    chmod 644 /etc/snort/snort.conf
+    chmod 600 /etc/snort/snort.conf
     chown root:root /etc/snort/snort.conf
 
-    # Ensure the Snort log file exists
     if [ ! -f /var/log/snort/snort.log ]; then
         mkdir -p /var/log/snort
         touch /var/log/snort/snort.log
         log $LOG_LEVEL_INFO "Created Snort log file at /var/log/snort/snort.log" "$UPDATE_LOG_FILE"
     fi
     
-    # Set permissions for the log directory and file
     chmod 755 /var/log/snort
     chown root:root /var/log/snort
     chmod 644 /var/log/snort/snort.log
     chown root:root /var/log/snort/snort.log
 
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
+}
+
+create_snort_rules() {
+    log $LOG_LEVEL_INFO "Creating rules for snort..." "$UPDATE_LOG_FILE"
+    sudo mkdir -p /etc/snort/rules
+    cat << 'EOF' > /etc/snort/rules/local.rules
+# Snort Rules for Monitoring HTTPS Traffic over SOCKS5 via Tor
+
+# Rule 1: Detect HTTPS Traffic via SOCKS5 (Port 9050)
+alert tcp any any -> \$HOME_NET 9050 (msg:"HTTPS traffic detected over SOCKS5"; content:"CONNECT"; http_method; sid:2000001; rev:1;)
+
+# Rule 2: Detect Large HTTPS Packets (Potential Data Exfiltration)
+alert tcp any any -> \$HOME_NET 443 (msg:"Large HTTPS packet detected"; dsize:>1400; sid:2000002; rev:1;)
+
+# Rule 3: Detect Suspicious User-Agent in HTTPS Traffic
+alert tcp any any -> \$HOME_NET 443 (msg:"Suspicious User-Agent in HTTPS traffic"; content:"Mozilla/5.0 (Windows NT 10.0; Win64; x64)"; http_header; sid:2000003; rev:1;)
+
+# Rule 4: Detect HTTPS Traffic with Potentially Harmful Domains
+alert tcp any any -> \$HOME_NET 443 (msg:"Potentially harmful domain detected in HTTPS traffic"; content:"malicious.com"; http_uri; nocase; sid:2000004; rev:1;)
+
+# Rule 5: Detect DNS Resolution for Malicious Domains via Tor SOCKS5
+alert udp any any -> \$HOME_NET 9050 (msg:"DNS resolution for malicious domain via SOCKS5"; content:"malicious.com"; nocase; sid:2000005; rev:1;)
+
+# Rule 6: Detect Possible Port Scan via SOCKS5 Proxy (Tor)
+alert tcp any any -> \$HOME_NET 9050 (msg:"Port scan detected via SOCKS5 proxy"; flags:S; threshold:type both, track by_src, count 20, seconds 10; sid:2000006; rev:1;)
+
+# Rule 7: Detect HTTPS Traffic with Suspicious Content Over Tor
+alert tcp any any -> \$HOME_NET 9050 (msg:"Suspicious HTTPS content detected over Tor"; content:"/admin"; http_uri; nocase; sid:2000007; rev:1;)
+
+# Rule 8: Detect High Volume HTTPS Traffic via Tor SOCKS5 Proxy
+alert tcp any any -> \$HOME_NET 9050 (msg:"High volume HTTPS traffic via SOCKS5 proxy"; flow:to_server,established; threshold:type both, track by_src, count 100, seconds 60; sid:2000008; rev:1;)
+
+# Rule 9: Detect Possible Brute-Force Login Attempts via Tor
+alert tcp any any -> \$HOME_NET 443 (msg:"Possible brute-force login attempt detected over Tor"; flow:to_server,established; content:"POST"; http_method; threshold:type both, track by_src, count 5, seconds 60; sid:2000009; rev:1;)
+
+# Rule 10: Detect Use of Non-Standard Ports for HTTPS over Tor
+alert tcp any any -> \$HOME_NET !443 (msg:"Non-standard HTTPS port detected over Tor"; content:"CONNECT"; http_method; sid:2000010; rev:1;)
+
+# Rule 11: Detect Potential Command and Control (C2) Traffic Patterns
+alert tcp any any -> $HOME_NET any (msg:"Potential C2 traffic detected"; content:"/gate.php"; http_uri; nocase; sid:2000011; rev:1;)
+
+# Rule 12: Detect Suspicious DNS Queries Over Tor SOCKS5
+alert udp any any -> $HOME_NET 9050 (msg:"Suspicious DNS query detected over Tor"; content:"dnslog"; nocase; sid:2000012; rev:1;)
+
+# Rule 13: Detect HTTP Sessions with Suspicious Headers
+alert tcp any any -> $HOME_NET 9050 (msg:"Suspicious HTTP header detected via SOCKS5"; content:"X-Forwarded-For"; http_header; sid:2000013; rev:1;)
+
+# Rule 14: Detect Large Data Transfers via Tor (Potential Data Exfiltration)
+alert tcp any any -> $HOME_NET 9050 (msg:"Large data transfer detected over Tor"; dsize:>5000; flow:to_server,established; sid:2000014; rev:1;)
+
+# Rule 15: Detect Repeated Connections from the Same Host to Multiple Ports
+alert tcp any any -> $HOME_NET any (msg:"Repeated connections to multiple ports detected"; flags:S; threshold:type both, track by_src, count 10, seconds 30; sid:2000015; rev:1;)
+
+# Rule 16: Detect Connections to Known Malicious IPs
+alert ip 123.45.67.89 any -> $HOME_NET any (msg:"Connection to known malicious IP detected"; sid:2000016; rev:1;)
+
+# Rule 17: Detect Suspicious Tor Bridge Connections
+alert tcp any any -> $HOME_NET 9001 (msg:"Suspicious Tor bridge connection detected"; sid:2000017; rev:1;)
+
+# Rule 18: Detect Attempts to Bypass Tor SOCKS5 Proxy
+alert tcp any any -> $HOME_NET !9050 (msg:"Direct connection attempt bypassing SOCKS5 proxy"; sid:2000018; rev:1;)
+
+# Rule 19: Detect Use of Deprecated TLS Versions
+alert tcp any any -> $HOME_NET 443 (msg:"Deprecated TLS version detected (TLS 1.0/1.1)"; content:"|16 03 01|"; sid:2000019; rev:1;)
+
+# Rule 20: Detect Brute-Force Attempts on Hidden Services
+alert tcp any any -> $HOME_NET 9050 (msg:"Brute-force attack on hidden service detected"; flow:to_server,established; threshold:type both, track by_src, count 5, seconds 60; sid:2000020; rev:1;)
+EOF
+
+    chmod 644 /etc/snort/rules/local.rules
+    chown root:root /etc/snort/rules/local.rules
+    
+    log $LOG_LEVEL_INFO "Snort rules configured successfully." "$UPDATE_LOG_FILE"
+}
+
+create_snort_classification_config() {
+    log $LOG_LEVEL_INFO "Creating classification.config for Snort..." "$UPDATE_LOG_FILE"
+    cat << 'EOF' > /etc/snort/classification.config
+config classification: misc-activity, Misc activity, 3
+config classification: attempted-recon, Attempted Information Leak, 2
+config classification: successful-recon-limited, Information Leak, 2
+config classification: successful-recon-largescale, Large Scale Information Leak, 2
+config classification: attempted-dos, Attempted Denial of Service, 2
+config classification: successful-dos, Denial of Service, 2
+config classification: attempted-user, Attempted User Privilege Gain, 1
+config classification: successful-user, User Privilege Gain, 1
+config classification: attempted-admin, Attempted Administrator Privilege Gain, 1
+config classification: successful-admin, Administrator Privilege Gain, 1
+EOF
+
+    if [ -f /etc/snort/classification.config ]; then
+        chmod 600 /etc/snort/classification.config
+        chown root:root /etc/snort/classification.config
+        log $LOG_LEVEL_INFO "Snort classification.config created and secured successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Failed to create classification.config for Snort." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+}
+
+create_snort_reference_config() {
+    log $LOG_LEVEL_INFO "Creating reference.config for Snort..." "$UPDATE_LOG_FILE"
+    cat << 'EOF' > /etc/snort/reference.config
+# snort reference configuration
+config reference: bugtraq http://www.securityfocus.com/bid/
+config reference: cve http://cve.mitre.org/cgi-bin/cvename.cgi?name=
+config reference: arachNIDS http://www.whitehats.com/info/IDS
+config reference: mcafee http://vil.nai.com/vil/content_v_
+config reference: nessus http://cgi.nessus.org/plugins/dump.php3?id=
+EOF
+
+    if [ -f /etc/snort/reference.config ]; then
+        chmod 600 /etc/snort/reference.config
+        chown root:root /etc/snort/reference.config
+        log $LOG_LEVEL_INFO "Snort reference.config created and secured successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Failed to create reference.config for Snort." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+}
+
+create_snort_unicode_map() {
+    log $LOG_LEVEL_INFO "Creating unicode.map for Snort..." "$UPDATE_LOG_FILE"
+    cat << 'EOF' > /etc/snort/unicode.map
+# Unicode Map for Snort
+1252    0x0000  0x007F  0      # Basic Latin
+1252    0x0080  0x00FF  0      # Latin-1 Supplement
+1252    0x0100  0x017F  0      # Latin Extended-A
+1252    0x0180  0x024F  0      # Latin Extended-B
+1252    0x0250  0x02AF  0      # IPA Extensions
+1252    0x02B0  0x02FF  0      # Spacing Modifier Letters
+1252    0x0300  0x036F  0      # Combining Diacritical Marks
+1252    0x0370  0x03FF  0      # Greek and Coptic
+1252    0x0400  0x04FF  0      # Cyrillic
+1252    0x0500  0x052F  0      # Cyrillic Supplement
+1252    0x0530  0x058F  0      # Armenian
+1252    0x0590  0x05FF  0      # Hebrew
+1252    0x0600  0x06FF  0      # Arabic
+1252    0x0700  0x074F  0      # Syriac
+1252    0x0750  0x077F  0      # Arabic Supplement
+1252    0x0780  0x07BF  0      # Thaana
+1252    0x07C0  0x07FF  0      # N'Ko
+1252    0x0800  0x083F  0      # Samaritan
+1252    0x0840  0x085F  0      # Mandaic
+EOF
+
+    if [ -f /etc/snort/unicode.map ]; then
+        chmod 600 /etc/snort/unicode.map
+        chown root:root /etc/snort/unicode.map
+        log $LOG_LEVEL_INFO "Snort unicode.map created and secured successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Failed to create unicode.map for Snort." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+}
+
+create_snort_threshold_conf() {
+    log $LOG_LEVEL_INFO "Creating threshold.conf for Snort..." "$UPDATE_LOG_FILE"
+    cat << 'EOF' > /etc/snort/threshold.conf
+# Snort threshold configuration
+suppress gen_id 1, sig_id 2000001, track by_src, ip 192.168.1.1
+suppress gen_id 1, sig_id 2000002, track by_src, ip 10.0.0.5
+EOF
+
+    if [ -f /etc/snort/threshold.conf ]; then
+        chmod 600 /etc/snort/threshold.conf
+        chown root:root /etc/snort/threshold.conf
+        log $LOG_LEVEL_INFO "Snort threshold.conf created and secured successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Failed to create threshold.conf for Snort." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+}
+
+create_snort_sid_msg_map() {
+    log $LOG_LEVEL_INFO "Creating sid-msg.map for Snort..." "$UPDATE_LOG_FILE"
+    cat << 'EOF' > /etc/snort/sid-msg.map
+2000001 || HTTPS traffic detected over SOCKS5
+2000002 || Large HTTPS packet detected
+2000003 || Suspicious User-Agent in HTTPS traffic
+2000004 || Potentially harmful domain detected in HTTPS traffic
+2000005 || DNS resolution for malicious domain via SOCKS5
+EOF
+
+    if [ -f /etc/snort/sid-msg.map ]; then
+        chmod 600 /etc/snort/sid-msg.map
+        chown root:root /etc/snort/sid-msg.map
+        log $LOG_LEVEL_INFO "Snort sid-msg.map created and secured successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Failed to create sid-msg.map for Snort." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
 }
 
 create_snort_wrapper() {
@@ -713,7 +911,7 @@ export HOME_NET
 echo "Using HOME_NET: $HOME_NET"
 
 # Start Snort with the primary network interface
-/usr/sbin/snort -c "$SNORT_CONF" -i "$INTERFACE"
+/usr/sbin/snort -c "$SNORT_CONF" -i "$PRIMARY_INTERFACE"
 EOF
     chmod 755 /usr/local/bin/start_snort.sh
     chown root:root /usr/local/bin/start_snort.sh
@@ -744,6 +942,12 @@ EOF
 }
 
 configure_snort
+create_snort_rules
+create_snort_classification_config
+create_snort_reference_config
+create_snort_unicode_map
+create_snort_threshold_conf
+create_snort_sid_msg_map
 create_snort_wrapper
 create_snort_service
 
