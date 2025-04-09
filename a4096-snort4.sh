@@ -728,6 +728,11 @@ var RULE_PATH /etc/snort/rules
 include \$RULE_PATH/local.rules
 include \$RULE_PATH/community.rules
 EOF
+
+    # Set permissions immediately after file creation
+    chmod 644 /etc/snort/snort.conf
+    chown root:root /etc/snort/snort.conf
+
     if [ $? -ne 0 ]; then
         log $LOG_LEVEL_ERROR "Failed to create Snort configuration file." "$UPDATE_LOG_FILE"
         exit 1
@@ -740,9 +745,6 @@ EOF
         exit 1
     fi
     log $LOG_LEVEL_INFO "Removed empty lines from Snort configuration file." "$UPDATE_LOG_FILE"
-
-    chmod 644 /etc/snort/snort.conf
-    chown root:root /etc/snort/snort.conf
 
     # Verzeichnis für Logs erstellen und prüfen
     if [ ! -d /var/log/snort ]; then
