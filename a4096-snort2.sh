@@ -955,9 +955,39 @@ create_snort_wrapper() {
 # Export HOME_NET for Snort
 export HOME_NET
 
-# Check if PRIMARY_INTERFACE is set
+# Funktion zur Bestimmung des primären Netzwerk-Interfaces
+get_primary_interface() {
+    local interface
+    interface=$(ip route | grep default | awk '{print $5}')
+
+    # Prüfe, ob eine primäre Schnittstelle gefunden wurde
+    if [ -z "$interface" ]; then
+        log $LOG_LEVEL_WARNING "PRIMARY_INTERFACE is not set. Attempting to use fallback interfaces." "$UPDATE_LOG_FILE"
+
+        # Erster Fallback: Versuche eth0
+        if ip link show eth0 > /dev/null 2>&1; then
+            echo "eth0"
+            log $LOG_LEVEL_INFO "Fallback to eth0 as PRIMARY_INTERFACE." "$UPDATE_LOG_FILE"
+        # Zweiter Fallback: Versuche wlan0
+        elif ip link show wlan0 > /dev/null 2>&1; then
+            echo "wlan0"
+            log $LOG_LEVEL_INFO "Fallback to wlan0 as PRIMARY_INTERFACE." "$UPDATE_LOG_FILE"
+        else
+            log $LOG_LEVEL_ERROR "No valid network interface found. Please check your network settings." "$UPDATE_LOG_FILE"
+            exit 1
+        fi
+    else
+        echo "$interface"
+        log $LOG_LEVEL_INFO "Detected primary interface: $interface" "$UPDATE_LOG_FILE"
+    fi
+}
+
+# Bestimmen Sie das primäre Netzwerk-Interface
+PRIMARY_INTERFACE=$(get_primary_interface)
+
+# Prüfen, ob PRIMARY_INTERFACE erfolgreich gesetzt wurde
 if [ -z "$PRIMARY_INTERFACE" ]; then
-    log $LOG_LEVEL_ERROR "PRIMARY_INTERFACE is not set. Please set this variable before starting Snort." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_ERROR "Failed to determine the primary network interface." "$UPDATE_LOG_FILE"
     exit 1
 fi
 
