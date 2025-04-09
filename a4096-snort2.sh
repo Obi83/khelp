@@ -955,36 +955,21 @@ create_snort_wrapper() {
 # Export HOME_NET for Snort
 export HOME_NET
 
-# Log-Funktion
-log() {
-    local level="$1"
-    local message="$2"
-    local logfile="${UPDATE_LOG_FILE:-/var/log/start_snort.log}"
-
-    echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] $message" >> "$logfile"
-}
-
 # Funktion zur Bestimmung des primären Netzwerk-Interfaces
 get_primary_interface() {
     local interface
     interface=$(ip route | grep default | awk '{print $5}')
 
     if [ -z "$interface" ]; then
-        log "WARNING" "PRIMARY_INTERFACE is not set. Attempting to use fallback interfaces."
-
         if ip link show eth0 > /dev/null 2>&1; then
             echo "eth0"
-            log "INFO" "Fallback to eth0 as PRIMARY_INTERFACE."
         elif ip link show wlan0 > /dev/null 2>&1; then
             echo "wlan0"
-            log "INFO" "Fallback to wlan0 as PRIMARY_INTERFACE."
         else
-            log "ERROR" "No valid network interface found. Please check your network settings."
             exit 1
         fi
     else
         echo "$interface"
-        log "INFO" "Detected primary interface: $interface"
     fi
 }
 
@@ -992,22 +977,15 @@ get_primary_interface() {
 PRIMARY_INTERFACE=$(get_primary_interface)
 
 if [ -z "$PRIMARY_INTERFACE" ]; then
-    log "ERROR" "Failed to determine the primary network interface."
     exit 1
 fi
 
 # Überprüfen der Snort-Konfigurationsdatei
 if [ ! -f "$SNORT_CONF" ]; then
-    log "ERROR" "Snort configuration file not found: $SNORT_CONF"
     exit 1
 elif ! grep -q "var HOME_NET" "$SNORT_CONF"; then
-    log "ERROR" "Snort configuration file is invalid or missing mandatory variables."
     exit 1
 fi
-
-# Log the used HOME_NET and PRIMARY_INTERFACE values
-log "INFO" "Using HOME_NET: $HOME_NET"
-log "INFO" "Using PRIMARY_INTERFACE: $PRIMARY_INTERFACE"
 
 # Start Snort with the primary network interface
 /usr/sbin/snort -c "$SNORT_CONF" -i "$PRIMARY_INTERFACE"
@@ -1049,6 +1027,11 @@ create_snort_threshold_conf
 create_snort_sid_msg_map
 create_snort_wrapper
 create_snort_service
+
+chmod 755 /var/log/snort
+chmod 644 /var/log/snort/snort.log
+chown root:root /var/log/snort
+chown root:root /var/log/snort/snort.log
 
 # Configure of Fail2ban Service
 configure_fail2ban() {
