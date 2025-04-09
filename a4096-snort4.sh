@@ -694,7 +694,7 @@ configure_snort() {
     fi
 
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
-    cat << EOF > /etc/snort/snort.conf
+    cat << 'EOF' > /etc/snort/snort.conf
 # Define network variables
 var HOME_NET 192.168.1.0/24
 var EXTERNAL_NET !$HOME_NET
