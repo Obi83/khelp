@@ -234,7 +234,29 @@ detect_ip_range
 
 # Function to determine the primary network interface
 get_primary_interface() {
-    ip route | grep default | awk '{print $5}'
+    local interface
+    interface=$(ip route | grep default | awk '{print $5}')
+
+    # Prüfe, ob eine primäre Schnittstelle gefunden wurde
+    if [ -z "$interface" ]; then
+        log $LOG_LEVEL_WARNING "PRIMARY_INTERFACE is not set. Attempting to use fallback interfaces." "$UPDATE_LOG_FILE"
+
+        # Erster Fallback: Versuche eth0
+        if ip link show eth0 > /dev/null 2>&1; then
+            PRIMARY_INTERFACE="eth0"
+            log $LOG_LEVEL_INFO "Fallback to eth0 as PRIMARY_INTERFACE." "$UPDATE_LOG_FILE"
+        # Zweiter Fallback: Versuche wlan0
+        elif ip link show wlan0 > /dev/null 2>&1; then
+            PRIMARY_INTERFACE="wlan0"
+            log $LOG_LEVEL_INFO "Fallback to wlan0 as PRIMARY_INTERFACE." "$UPDATE_LOG_FILE"
+        else
+            log $LOG_LEVEL_ERROR "No valid network interface found. Please check your network settings." "$UPDATE_LOG_FILE"
+            exit 1
+        fi
+    else
+        PRIMARY_INTERFACE="$interface"
+        log $LOG_LEVEL_INFO "Detected primary interface: $PRIMARY_INTERFACE" "$UPDATE_LOG_FILE"
+    fi
 }
 
 # Update the system
@@ -263,6 +285,11 @@ update_system
 
 # Determine the primary network interface
 PRIMARY_INTERFACE=$(get_primary_interface)
+if [ $? -ne 0 ] || [ -z "$PRIMARY_INTERFACE" ]; then
+    log $LOG_LEVEL_ERROR "Failed to determine the primary network interface." "$UPDATE_LOG_FILE"
+    exit 1
+fi
+log $LOG_LEVEL_INFO "Primary network interface determined: $PRIMARY_INTERFACE" "$UPDATE_LOG_FILE"
 
 # Export the primary interface
 export PRIMARY_INTERFACE
@@ -578,6 +605,27 @@ install_snort() {
     return 1
 }
 
+install_ip() {
+    log $LOG_LEVEL_INFO "Installing ip..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y ip
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "ip installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install ip. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install ip after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
 # Main script execution
 log $LOG_LEVEL_INFO "Starting khelp setup..." "$UPDATE_LOG_FILE"
 
@@ -596,6 +644,7 @@ install_rsyslog &
 install_nginx &
 install_coreutils_shuf &
 install_snort &
+install_ip &
 
 # Wait for all background tasks to complete
 wait
@@ -637,7 +686,6 @@ backup_config "/etc/tor/torrc"
 backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
 
-# Configure of Snort Service
 # Configure of Snort Service
 configure_snort() {
     # Überprüfen, ob HOME_NET gesetzt ist
@@ -907,8 +955,15 @@ create_snort_wrapper() {
 # Export HOME_NET for Snort
 export HOME_NET
 
-# Log the used HOME_NET value
-echo "Using HOME_NET: $HOME_NET"
+# Check if PRIMARY_INTERFACE is set
+if [ -z "$PRIMARY_INTERFACE" ]; then
+    log $LOG_LEVEL_ERROR "PRIMARY_INTERFACE is not set. Please set this variable before starting Snort." "$UPDATE_LOG_FILE"
+    exit 1
+fi
+
+# Log the used HOME_NET and PRIMARY_INTERFACE values
+log $LOG_LEVEL_INFO "Using HOME_NET: $HOME_NET" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "Using PRIMARY_INTERFACE: $PRIMARY_INTERFACE" "$UPDATE_LOG_FILE"
 
 # Start Snort with the primary network interface
 /usr/sbin/snort -c "$SNORT_CONF" -i "$PRIMARY_INTERFACE"
