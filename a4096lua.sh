@@ -689,6 +689,10 @@ configure_snort() {
 
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
 
+    # Ensure LOG_PATH and SNORT_LOG_FILE are defined
+    LOG_PATH="${LOG_PATH:-/var/log/snort}"
+    SNORT_LOG_FILE="${SNORT_LOG_FILE:-$LOG_PATH/snort.log}"
+
     # Create the snort.lua configuration file
     cat << EOF > /etc/snort/snort.lua
 HOME_NET = '$HOME_NET'
@@ -766,7 +770,8 @@ ips = {
 # Logging-Konfiguration
 alert_fast = {
     file = true,
-    packet = true,
+    packet = false, -- Deaktiviere Paketdetails, um die Log-Datei übersichtlicher zu machen
+    format = "legacy" -- Erzwinge das klassische Log-Format
 }
 EOF
 
@@ -783,7 +788,7 @@ EOF
     if [ ! -d "$LOG_PATH" ]; then
         mkdir -p "$LOG_PATH"
         if [ $? -ne 0 ]; then
-            log $LOG_LEVEL_ERROR "Failed to create Snort log directory." "$UPDATE_LOG_FILE"
+            log $LOG_LEVEL_ERROR "Failed to create Snort log directory at $LOG_PATH." "$UPDATE_LOG_FILE"
             exit 1
         fi
         chmod 755 "$LOG_PATH"
@@ -794,7 +799,7 @@ EOF
     if [ ! -f "$SNORT_LOG_FILE" ]; then
         touch "$SNORT_LOG_FILE"
         if [ $? -ne 0 ]; then
-            log $LOG_LEVEL_ERROR "Failed to create Snort log file." "$UPDATE_LOG_FILE"
+            log $LOG_LEVEL_ERROR "Failed to create Snort log file at $SNORT_LOG_FILE." "$UPDATE_LOG_FILE"
             exit 1
         fi
         chmod 644 "$SNORT_LOG_FILE"
