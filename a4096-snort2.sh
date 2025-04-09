@@ -735,7 +735,7 @@ include \$RULE_PATH/local.rules
 include \$RULE_PATH/community.rules
 EOF
 
-    chmod 600 /etc/snort/snort.conf
+    chmod 644 /etc/snort/snort.conf
     chown root:root /etc/snort/snort.conf
 
     if [ ! -f /var/log/snort/snort.log ]; then
@@ -955,45 +955,59 @@ create_snort_wrapper() {
 # Export HOME_NET for Snort
 export HOME_NET
 
+# Log-Funktion
+log() {
+    local level="$1"
+    local message="$2"
+    local logfile="${UPDATE_LOG_FILE:-/var/log/start_snort.log}"
+
+    echo "$(date +'%Y-%m-%d %H:%M:%S') [$level] $message" >> "$logfile"
+}
+
 # Funktion zur Bestimmung des primären Netzwerk-Interfaces
 get_primary_interface() {
     local interface
     interface=$(ip route | grep default | awk '{print $5}')
 
-    # Prüfe, ob eine primäre Schnittstelle gefunden wurde
     if [ -z "$interface" ]; then
-        log $LOG_LEVEL_WARNING "PRIMARY_INTERFACE is not set. Attempting to use fallback interfaces." "$UPDATE_LOG_FILE"
+        log "WARNING" "PRIMARY_INTERFACE is not set. Attempting to use fallback interfaces."
 
-        # Erster Fallback: Versuche eth0
         if ip link show eth0 > /dev/null 2>&1; then
             echo "eth0"
-            log $LOG_LEVEL_INFO "Fallback to eth0 as PRIMARY_INTERFACE." "$UPDATE_LOG_FILE"
-        # Zweiter Fallback: Versuche wlan0
+            log "INFO" "Fallback to eth0 as PRIMARY_INTERFACE."
         elif ip link show wlan0 > /dev/null 2>&1; then
             echo "wlan0"
-            log $LOG_LEVEL_INFO "Fallback to wlan0 as PRIMARY_INTERFACE." "$UPDATE_LOG_FILE"
+            log "INFO" "Fallback to wlan0 as PRIMARY_INTERFACE."
         else
-            log $LOG_LEVEL_ERROR "No valid network interface found. Please check your network settings." "$UPDATE_LOG_FILE"
+            log "ERROR" "No valid network interface found. Please check your network settings."
             exit 1
         fi
     else
         echo "$interface"
-        log $LOG_LEVEL_INFO "Detected primary interface: $interface" "$UPDATE_LOG_FILE"
+        log "INFO" "Detected primary interface: $interface"
     fi
 }
 
 # Bestimmen Sie das primäre Netzwerk-Interface
 PRIMARY_INTERFACE=$(get_primary_interface)
 
-# Prüfen, ob PRIMARY_INTERFACE erfolgreich gesetzt wurde
 if [ -z "$PRIMARY_INTERFACE" ]; then
-    log $LOG_LEVEL_ERROR "Failed to determine the primary network interface." "$UPDATE_LOG_FILE"
+    log "ERROR" "Failed to determine the primary network interface."
+    exit 1
+fi
+
+# Überprüfen der Snort-Konfigurationsdatei
+if [ ! -f "$SNORT_CONF" ]; then
+    log "ERROR" "Snort configuration file not found: $SNORT_CONF"
+    exit 1
+elif ! grep -q "var HOME_NET" "$SNORT_CONF"; then
+    log "ERROR" "Snort configuration file is invalid or missing mandatory variables."
     exit 1
 fi
 
 # Log the used HOME_NET and PRIMARY_INTERFACE values
-log $LOG_LEVEL_INFO "Using HOME_NET: $HOME_NET" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "Using PRIMARY_INTERFACE: $PRIMARY_INTERFACE" "$UPDATE_LOG_FILE"
+log "INFO" "Using HOME_NET: $HOME_NET"
+log "INFO" "Using PRIMARY_INTERFACE: $PRIMARY_INTERFACE"
 
 # Start Snort with the primary network interface
 /usr/sbin/snort -c "$SNORT_CONF" -i "$PRIMARY_INTERFACE"
