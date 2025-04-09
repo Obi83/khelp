@@ -76,7 +76,7 @@ export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
 export CRONTAB_FILE="/etc/crontab"
 export PROXY_LIST_FILE="/etc/proxychains/fetched_proxies.txt"
 export SNORT_CONF="/etc/snort/snort.conf"
-export HOME_NET="[192.168.1.0/24,10.0.0.0/8]"
+export HOME_NET="192.168.1.0/24"
 
 # Script paths
 export UPDATE_PROXIES_SCRIPT="/usr/local/bin/update_proxies.sh"
@@ -696,7 +696,7 @@ configure_snort() {
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
     cat << EOF > /etc/snort/snort.conf
 # Define network variables
-var HOME_NET [$HOME_NET]
+var HOME_NET 192.168.1.0/24
 var EXTERNAL_NET !$HOME_NET
 
 # Define port variables
@@ -707,15 +707,15 @@ portvar SSH_PORTS 22
 
 # Define preprocessor settings
 preprocessor frag3_global: max_frags 65536
-preprocessor frag3_engine: policy linux bind_to \$HOME_NET
+preprocessor frag3_engine: policy linux bind_to $HOME_NET
 preprocessor stream5_global: track_tcp yes, track_udp yes
 preprocessor stream5_tcp: policy linux, use_static_footprint_sizes
 preprocessor stream5_udp: timeout 180
 preprocessor http_inspect: global iis_unicode_map unicode.map 65001
 preprocessor http_inspect_server: server default \
-    profile all ports { \$HTTP_PORTS \$HTTPS_PORTS } \
+    profile all ports { $HTTP_PORTS $HTTPS_PORTS } \
     oversize_dir_length 500
-preprocessor ssh: server_ports { \$SSH_PORTS } \
+preprocessor ssh: server_ports { $SSH_PORTS } \
     autodetect
 
 # Define output settings
@@ -725,8 +725,8 @@ output unified2: filename /var/log/snort/snort.log, limit 128
 var RULE_PATH /etc/snort/rules
 
 # Include rule sets
-include \$RULE_PATH/local.rules
-include \$RULE_PATH/community.rules
+include $RULE_PATH/local.rules
+include $RULE_PATH/community.rules
 EOF
 
     # Set permissions immediately after file creation
