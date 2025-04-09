@@ -687,6 +687,27 @@ backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
 
 # Configure of Snort Service
+convert_snort_config_to_ascii() {
+    log $LOG_LEVEL_INFO "Converting Snort configuration file to ASCII..." "$UPDATE_LOG_FILE"
+    
+    # Prüfen, ob die Datei existiert
+    if [ ! -f "/etc/snort/snort.conf" ]; then
+        log $LOG_LEVEL_ERROR "Snort configuration file not found: /etc/snort/snort.conf" "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
+    # Konvertieren und überschreiben
+    iconv -f UTF-8 -t ASCII /etc/snort/snort.conf -o /etc/snort/snort_ascii.conf
+    if [ $? -eq 0 ]; then
+        mv /etc/snort/snort_ascii.conf /etc/snort/snort.conf
+        log $LOG_LEVEL_INFO "Snort configuration file converted to ASCII successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Failed to convert Snort configuration file to ASCII." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+}
+
+# Konfiguration von Snort
 configure_snort() {
     # Überprüfen, ob HOME_NET gesetzt ist
     if [ -z "$HOME_NET" ]; then
@@ -748,6 +769,9 @@ EOF
     chown root:root /var/log/snort
     chmod 644 /var/log/snort/snort.log
     chown root:root /var/log/snort/snort.log
+
+    # Konvertiere die Datei in ASCII
+    convert_snort_config_to_ascii
 
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
 }
@@ -819,6 +843,7 @@ alert tcp any any -> $HOME_NET 443 (msg:"Deprecated TLS version detected (TLS 1.
 alert tcp any any -> $HOME_NET 9050 (msg:"Brute-force attack on hidden service detected"; flow:to_server,established; threshold:type both, track by_src, count 5, seconds 60; sid:2000020; rev:1;)
 EOF
 
+    chmod 755 /etc/snort
     chmod 644 /etc/snort/rules/local.rules
     chown root:root /etc/snort/rules/local.rules
     
