@@ -214,7 +214,6 @@ log $LOG_LEVEL_INFO "CRONTAB_FILE=$CRONTAB_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "UPDATE_PROXIES_SCRIPT=$UPDATE_PROXIES_SCRIPT" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "UFW_SCRIPT=$UFW_SCRIPT" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "IPTABLES_SCRIPT=$IPTABLES_SCRIPT" "$UPDATE_LOG_FILE"
-log $LOG_LEVEL_INFO "LOG_PATH=$LOG_PATH" "$UPDATE_LOG_FILE"
 
 # Service paths
 log $LOG_LEVEL_INFO "SYSTEMD_UPDATE_PROXIES_SERVICE=$SYSTEMD_UPDATE_PROXIES_SERVICE" "$UPDATE_LOG_FILE"
@@ -846,6 +845,27 @@ configure_iptables() {
     iptables -A LOGGING -j DROP
     log $LOG_LEVEL_INFO "Configured logging for iptables." "$IPTABLES_LOG_FILE"
 
+    # Ensure the rules file exists and has default content if not
+    if [ ! -f /etc/iptables/rules.v4 ]; then
+        log $LOG_LEVEL_INFO "Creating default iptables rules file..." "$IPTABLES_LOG_FILE"
+        mkdir -p /etc/iptables
+        cat << EOF > /etc/iptables/rules.v4
+# Default iptables rules
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p tcp --dport 22 -j ACCEPT
+-A INPUT -p tcp --dport 443 -j ACCEPT  # Allow HTTPS
+-A INPUT -p tcp --dport 9050 -j ACCEPT  # Allow port 9050
+# -A INPUT -p icmp -m limit --limit 1/s --limit-burst 10 -j ACCEPT
+COMMIT
+EOF
+        log $LOG_LEVEL_INFO "Created default iptables rules file." "$IPTABLES_LOG_FILE"
+    fi
+    
     # Save the iptables rules
     mkdir -p /etc/iptables
     iptables-save > /etc/iptables/rules.v4
