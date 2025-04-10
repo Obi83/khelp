@@ -79,7 +79,12 @@ export SSL_KEY="$SSL_PRIVATE_DIR/nginx-selfsigned.key"
 export SSL_CERT="$SSL_CERTS_DIR/nginx-selfsigned.crt"
 export SSL_DHPARAM="$SSL_CERTS_DIR/dhparam.pem"
 export NGX_SSL_CONF="/etc/nginx/snippets/self-signed.conf"
-export DOMAIN="your_domain.com"
+export DOMAIN="example.com"  # Replace with your actual domain
+
+# Nginx Directories
+export NGX_CONF_DIR="/etc/nginx"
+export NGX_SITES_AVAILABLE="$NGX_CONF_DIR/sites-available"
+export NGX_SITES_ENABLED="$NGX_CONF_DIR/sites-enabled"
 
 # Snort Variables
 export LOG_PATH="/var/log/snort"
@@ -1836,34 +1841,99 @@ configure_nginx_ssl() {
         return 1
     fi
 
-    # Create directory for Nginx snippets if it doesn't exist
-    mkdir -p /etc/nginx/snippets
+    # Ensure directories exist
+    for dir in "$NGX_SITES_AVAILABLE" "$NGX_SITES_ENABLED" "/etc/nginx/snippets"; do
+        if [ ! -d "$dir" ]; then
+            mkdir -p "$dir"
+            log $LOG_LEVEL_INFO "Created directory: $dir" "$UPDATE_LOG_FILE"
+        else
+            log $LOG_LEVEL_INFO "Directory already exists: $dir" "$UPDATE_LOG_FILE"
+        fi
+    done
+
+    # Set the domain name dynamically or use a default
+    DOMAIN_NAME=${DOMAIN_NAME:-example.com}
+    log $LOG_LEVEL_INFO "Using domain name: $DOMAIN_NAME." "$UPDATE_LOG_FILE"
 
     # Configure Nginx SSL
-    local nginx_conf="/etc/nginx/snippets/self-signed.conf"
-    cat << 'EOF' > "$nginx_conf"
+    cat << EOF > "$NGX_SSL_CONF"
 # Nginx SSL configuration
 
-ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
-ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+ssl_certificate $SSL_CERT;
+ssl_certificate_key $SSL_KEY;
 ssl_protocols TLSv1.2 TLSv1.3;
 ssl_prefer_server_ciphers on;
 ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
 ssl_session_timeout 1d;
 ssl_session_cache shared:SSL:50m;
 ssl_session_tickets off;
-ssl_dhparam /etc/ssl/certs/dhparam.pem;
+ssl_dhparam $SSL_DHPARAM;
+
+# OCSP stapling
+ssl_stapling on;
+ssl_stapling_verify on;
+resolver 8.8.8.8 8.8.4.4 valid=300s;
+resolver_timeout 5s;
+
+# Add security headers
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+add_header X-Content-Type-Options nosniff;
+add_header X-Frame-Options SAMEORIGIN;
+add_header X-XSS-Protection "1; mode=block";
 EOF
 
-    log $LOG_LEVEL_INFO "Generating DH parameters, this might take a while..." "$UPDATE_LOG_FILE"
-    start_time=$(date +%s)
-    openssl dhparam -out /etc/ssl/certs/dhparam.pem 4096
-    end_time=$(date +%s)
-    elapsed_time=$((end_time - start_time))
-    log $LOG_LEVEL_INFO "DH parameters generated in $elapsed_time seconds." "$UPDATE_LOG_FILE"
+    # Create Tor proxy server configuration
+    cat << EOF > "$NGX_SITES_AVAILABLE/tor_proxy"
+server {
+    listen 443 ssl;
+    server_name $DOMAIN_NAME;
 
-    if [ $? -ne 0 ]; then
-        log $LOG_LEVEL_ERROR "Failed to generate DH parameters." "$UPDATE_LOG_FILE"
+    include $NGX_SSL_CONF;
+
+    location / {
+        root /var/www/html;
+        index index.html index.htm;
+
+        proxy_pass http://127.0.0.1:9050;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header Host \$host;
+    }
+}
+
+# Redirect HTTP traffic to HTTPS
+server {
+    listen 80;
+    server_name $DOMAIN_NAME;
+
+    return 301 https://\$host\$request_uri;
+}
+EOF
+
+    # Create symbolic link
+    local nginx_sites_enabled="$NGX_SITES_ENABLED/tor_proxy"
+    if [ ! -f "$nginx_sites_enabled" ]; then
+        ln -s "$NGX_SITES_AVAILABLE/tor_proxy" "$nginx_sites_enabled"
+        log $LOG_LEVEL_INFO "Linked $NGX_SITES_AVAILABLE/tor_proxy to $nginx_sites_enabled." "$UPDATE_LOG_FILE"
+    fi
+
+    # Generate Diffie-Hellman parameters
+    if ! openssl dhparam -out "$SSL_DHPARAM" 4096; then
+        log $LOG_LEVEL_ERROR "Failed to generate DH parameters. Check permissions." "$UPDATE_LOG_FILE"
+        return 1
+    fi
+
+    # Test Nginx configuration
+    if ! nginx -t; then
+        log $LOG_LEVEL_ERROR "Nginx configuration test failed." "$UPDATE_LOG_FILE"
+        return 1
+    fi
+
+    # Reload Nginx
+    if systemctl reload nginx; then
+        log $LOG_LEVEL_INFO "Nginx reloaded successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Failed to reload Nginx." "$UPDATE_LOG_FILE"
         return 1
     fi
 
@@ -1871,19 +1941,42 @@ EOF
     return 0
 }
 
-# Nginx SSL-Konfiguration separat ausführen
-configure_nginx_ssl 
+configure_nginx_ssl
+
+# Function to log the status of systemd services
+log_service_status() {
+    local service_name=$1
+    log $LOG_LEVEL_INFO "Checking status of $service_name..." "$UPDATE_LOG_FILE"
+    systemctl status "$service_name" | tee -a "$UPDATE_LOG_FILE"
+
+    # Check if the service is active
+    if systemctl is-active --quiet "$service_name"; then
+        log $LOG_LEVEL_INFO "Service $service_name is active and running." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Service $service_name is not active or failed!" "$UPDATE_LOG_FILE"
+    fi
+}
 
 # Verifying systemd services
 log $LOG_LEVEL_INFO "Verifying systemd services..." "$UPDATE_LOG_FILE"
-systemctl status update_proxies | tee -a "$UPDATE_LOG_FILE"
-systemctl status iptables | tee -a "$UPDATE_LOG_FILE"
-systemctl status ufw | tee -a "$UPDATE_LOG_FILE"
-systemctl status fail2ban | tee -a "$UPDATE_LOG_FILE"
-systemctl status rsyslog | tee -a "$UPDATE_LOG_FILE"
-systemctl status snort | tee -a "$UPDATE_LOG_FILE"
-systemctl status update_proxies.service | tee -a "$UPDATE_LOG_FILE"
-systemctl status update_proxies.timer | tee -a "$UPDATE_LOG_FILE"
+
+# List of services to validate
+services=("update_proxies" "iptables" "ufw" "fail2ban" "rsyslog" "snort" "update_proxies.timer")
+
+# Loop through the services array and validate each service
+for service in "${services[@]}"; do
+    log_service_status "$service"
+done
+
+# Additional checks
+log $LOG_LEVEL_INFO "Verifying iptables rules..." "$UPDATE_LOG_FILE"
+iptables -L -v | tee -a "$UPDATE_LOG_FILE"
+
+log $LOG_LEVEL_INFO "Verifying fail2ban status..." "$UPDATE_LOG_FILE"
+fail2ban-client status | tee -a "$UPDATE_LOG_FILE"
+
+log $LOG_LEVEL_INFO "Verifying ufw status..." "$UPDATE_LOG_FILE"
+ufw status verbose | tee -a "$UPDATE_LOG_FILE"
 
 # Scan local network
 log $LOG_LEVEL_INFO "Scanning local network..." "$UPDATE_LOG_FILE"
