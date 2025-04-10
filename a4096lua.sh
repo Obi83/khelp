@@ -691,10 +691,6 @@ configure_snort() {
 
     log $LOG_LEVEL_INFO "Configuring Snort..." "$UPDATE_LOG_FILE"
 
-    # Ensure LOG_PATH and SNORT_LOG_FILE are defined
-    LOG_PATH="${LOG_PATH:-/var/log/snort}"
-    SNORT_LOG_FILE="${SNORT_LOG_FILE:-$LOG_PATH/snort.log}"
-
     # Create the snort.lua configuration file
     cat << EOF > /etc/snort/snort.lua
 HOME_NET = '$HOME_NET'
