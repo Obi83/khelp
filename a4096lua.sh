@@ -1113,6 +1113,17 @@ configure_ufw() {
         return 1
     fi
 
+    # Configure UFW rules
+    ufw --force enable
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow from $ALLOWED_IP_RANGE to any port 22
+    ufw allow 9050/tcp
+    ufw allow 9001/tcp
+    ufw allow 443/tcp
+    ufw limit ssh/tcp
+    ufw logging full
+
     # Enable UFW service
     systemctl enable ufw
     if [ $? -ne 0 ]; then
@@ -1126,17 +1137,6 @@ configure_ufw() {
         log $LOG_LEVEL_ERROR "Failed to start UFW service." "$UPDATE_LOG_FILE"
         return 1
     fi
-
-    # Configure UFW rules
-    ufw --force enable
-    ufw default deny incoming
-    ufw default allow outgoing
-    ufw allow from $ALLOWED_IP_RANGE to any port 22
-    ufw allow 9050/tcp
-    ufw allow 9001/tcp
-    ufw allow 443/tcp
-    ufw limit ssh/tcp
-    ufw logging full
 
     # Verify UFW status
     ufw status verbose
@@ -1753,8 +1753,7 @@ Wants=multi-user.target
 [Service]
 Environment="USER_HOME=${USER_HOME}"
 ExecStart=/usr/local/bin/ufw.sh
-Type=simple
-Restart=always
+Type=oneshot
 RestartSec=5
 
 
