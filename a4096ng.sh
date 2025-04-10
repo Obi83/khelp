@@ -1849,7 +1849,7 @@ log $LOG_LEVEL_INFO "All systemd service creation tasks completed successfully."
 display_logo
 
 configure_nginx_ssl() {
-    log $LOG_LEVEL_INFO "Configuring Nginx SSL using Let's Encrypt..." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Configuring Nginx SSL with strict HTTPS redirection..." "$UPDATE_LOG_FILE"
 
     # Check if Nginx is installed
     if ! command -v nginx &> /dev/null; then
@@ -1877,16 +1877,31 @@ configure_nginx_ssl() {
     DOMAIN_NAME=${DOMAIN_NAME:-example.com}
     log $LOG_LEVEL_INFO "Using domain name: $DOMAIN_NAME." "$UPDATE_LOG_FILE"
 
-    # Create basic Nginx configuration for the domain
+    # Create Nginx configuration for strict HTTPS redirection
     cat << EOF > "$NGX_SITES_AVAILABLE/tor_proxy"
 server {
     listen 80;
     server_name $DOMAIN_NAME;
 
+    # Redirect all HTTP to HTTPS
+    return 301 https://\$host\$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name $DOMAIN_NAME;
+
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN_NAME/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN_NAME/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
     location / {
         root /var/www/html;
         index index.html index.htm;
 
+        # Pass traffic to the SOCKS5 proxy
         proxy_pass http://127.0.0.1:9050;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -1938,17 +1953,7 @@ EOF
         return 1
     fi
 
-    # Add certbot to cron for automatic renewal
-    log $LOG_LEVEL_INFO "Setting up automatic certificate renewal with Certbot..." "$UPDATE_LOG_FILE"
-    if ! systemctl is-active --quiet certbot.timer; then
-        systemctl enable certbot.timer
-        systemctl start certbot.timer
-        log $LOG_LEVEL_INFO "Certbot timer enabled for automatic certificate renewal." "$UPDATE_LOG_FILE"
-    else
-        log $LOG_LEVEL_INFO "Certbot timer is already active." "$UPDATE_LOG_FILE"
-    fi
-
-    log $LOG_LEVEL_INFO "Nginx SSL configured successfully with Let's Encrypt." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Nginx SSL with strict HTTPS redirection configured successfully." "$UPDATE_LOG_FILE"
     return 0
 }
 
