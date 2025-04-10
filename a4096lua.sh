@@ -46,7 +46,7 @@ export UPDATE_LOG_FILE="/var/log/khelp.log"
 export PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
 export PROXY_TIMER_LOG_FILE="/var/log/timer_proxies.log"
 export IPTABLES_LOG_FILE="/var/log/khelp_iptables.log"
-export SNORT_LOG_FILE="/var/log/snort/snort.log"
+export LOG_FILE="/var/log/snort/snort.log"
 
 # Directories
 export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
