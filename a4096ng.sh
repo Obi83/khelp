@@ -1849,39 +1849,86 @@ log $LOG_LEVEL_INFO "All systemd service creation tasks completed successfully."
 display_logo
 
 configure_nginx_ssl() {
-    log $LOG_LEVEL_INFO "Configuring Nginx SSL with strict HTTPS redirection..." "$UPDATE_LOG_FILE"
-
+    log $LOG_LEVEL_INFO "Configuring Nginx SSL with strict HTTPS enforcement and SOCKS5 proxy..." "$UPDATE_LOG_FILE"
+    
     # Check if Nginx is installed
     if ! command -v nginx &> /dev/null; then
         log $LOG_LEVEL_ERROR "Nginx is not installed. Please install Nginx before running this script." "$UPDATE_LOG_FILE"
         return 1
     fi
 
-    # Check if Certbot is installed
-    if ! command -v certbot &> /dev/null; then
-        log $LOG_LEVEL_ERROR "Certbot is not installed. Please install Certbot before running this script." "$UPDATE_LOG_FILE"
+    # Check if OpenSSL is installed
+    if ! command -v openssl &> /dev/null; then
+        log $LOG_LEVEL_ERROR "OpenSSL is not installed. Please install OpenSSL before running this script." "$UPDATE_LOG_FILE"
         return 1
     fi
 
-    # Ensure directories for Nginx configurations exist
-    for dir in "$NGX_SITES_AVAILABLE" "$NGX_SITES_ENABLED"; do
-        if [ ! -d "$dir" ]; then
-            mkdir -p "$dir"
-            log $LOG_LEVEL_INFO "Created directory: $dir" "$UPDATE_LOG_FILE"
-        else
-            log $LOG_LEVEL_INFO "Directory already exists: $dir" "$UPDATE_LOG_FILE"
+    # Create required directories
+    mkdir -p /etc/nginx/snippets
+    mkdir -p /var/www/html
+
+    # Generate a self-signed certificate if it doesn't exist
+    if [ ! -f /etc/ssl/private/nginx-selfsigned.key ] || [ ! -f /etc/ssl/certs/nginx-selfsigned.crt ]; then
+        log $LOG_LEVEL_INFO "Generating self-signed SSL certificate..." "$UPDATE_LOG_FILE"
+        openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
+            -keyout /etc/ssl/private/nginx-selfsigned.key \
+            -out /etc/ssl/certs/nginx-selfsigned.crt \
+            -subj "/CN=localhost"
+        
+        if [ $? -ne 0 ]; then
+            log $LOG_LEVEL_ERROR "Failed to generate self-signed SSL certificate." "$UPDATE_LOG_FILE"
+            return 1
         fi
-    done
+        log $LOG_LEVEL_INFO "Self-signed SSL certificate generated successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_INFO "Self-signed SSL certificate already exists, skipping generation." "$UPDATE_LOG_FILE"
+    fi
 
-    # Set the domain name dynamically or use a default
-    DOMAIN_NAME=${DOMAIN_NAME:-example.com}
-    log $LOG_LEVEL_INFO "Using domain name: $DOMAIN_NAME." "$UPDATE_LOG_FILE"
+    # Generate DH parameters if they don't exist
+    if [ ! -f /etc/ssl/certs/dhparam.pem ]; then
+        log $LOG_LEVEL_INFO "Generating DH parameters, this might take a while..." "$UPDATE_LOG_FILE"
+        start_time=$(date +%s)
+        openssl dhparam -out /etc/ssl/certs/dhparam.pem 4096
+        end_time=$(date +%s)
+        elapsed_time=$((end_time - start_time))
+        log $LOG_LEVEL_INFO "DH parameters generated in $elapsed_time seconds." "$UPDATE_LOG_FILE"
 
-    # Create Nginx configuration for strict HTTPS redirection
-    cat << EOF > "$NGX_SITES_AVAILABLE/tor_proxy"
+        if [ $? -ne 0 ]; then
+            log $LOG_LEVEL_ERROR "Failed to generate DH parameters." "$UPDATE_LOG_FILE"
+            return 1
+        fi
+    else
+        log $LOG_LEVEL_INFO "DH parameters already exist, skipping generation." "$UPDATE_LOG_FILE"
+    fi
+
+    # Configure Nginx SSL snippet
+    local nginx_ssl_conf="/etc/nginx/snippets/self-signed.conf"
+    cat << 'EOF' > "$nginx_ssl_conf"
+# Nginx SSL configuration
+
+ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_prefer_server_ciphers on;
+ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
+ssl_session_timeout 1d;
+ssl_session_cache shared:SSL:50m;
+ssl_session_tickets off;
+ssl_dhparam /etc/ssl/certs/dhparam.pem;
+
+# Add security headers
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+add_header X-Content-Type-Options nosniff;
+add_header X-Frame-Options SAMEORIGIN;
+add_header X-XSS-Protection "1; mode=block";
+EOF
+
+    # Create Nginx configuration for strict HTTPS and SOCKS5 proxy
+    local nginx_conf="/etc/nginx/sites-available/tor_proxy"
+    cat << EOF > "$nginx_conf"
 server {
     listen 80;
-    server_name $DOMAIN_NAME;
+    server_name localhost;
 
     # Redirect all HTTP to HTTPS
     return 301 https://\$host\$request_uri;
@@ -1889,19 +1936,15 @@ server {
 
 server {
     listen 443 ssl;
-    server_name $DOMAIN_NAME;
+    server_name localhost;
 
-    ssl_certificate /etc/letsencrypt/live/$DOMAIN_NAME/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN_NAME/privkey.pem;
-
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
+    include /etc/nginx/snippets/self-signed.conf;
 
     location / {
         root /var/www/html;
         index index.html index.htm;
 
-        # Pass traffic to the SOCKS5 proxy
+        # Forward traffic to SOCKS5 proxy
         proxy_pass http://127.0.0.1:9050;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -1910,11 +1953,13 @@ server {
 }
 EOF
 
-    # Create symbolic link to enable the site
-    local nginx_sites_enabled="$NGX_SITES_ENABLED/tor_proxy"
+    # Enable the site by creating a symbolic link
+    local nginx_sites_enabled="/etc/nginx/sites-enabled/tor_proxy"
     if [ ! -f "$nginx_sites_enabled" ]; then
-        ln -s "$NGX_SITES_AVAILABLE/tor_proxy" "$nginx_sites_enabled"
-        log $LOG_LEVEL_INFO "Linked $NGX_SITES_AVAILABLE/tor_proxy to $nginx_sites_enabled." "$UPDATE_LOG_FILE"
+        ln -s "$nginx_conf" "$nginx_sites_enabled"
+        log $LOG_LEVEL_INFO "Linked $nginx_conf to $nginx_sites_enabled." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_INFO "Nginx site configuration already enabled, skipping." "$UPDATE_LOG_FILE"
     fi
 
     # Test Nginx configuration
@@ -1923,37 +1968,15 @@ EOF
         return 1
     fi
 
-    # Ensure Nginx is running
-    if ! systemctl is-active --quiet nginx; then
-        log $LOG_LEVEL_INFO "Nginx is not active. Attempting to start..." "$UPDATE_LOG_FILE"
-        if ! systemctl start nginx; then
-            log $LOG_LEVEL_ERROR "Failed to start Nginx. Check the service status." "$UPDATE_LOG_FILE"
-            return 1
-        fi
-    fi
-
-    # Obtain SSL certificate using Certbot
-    log $LOG_LEVEL_INFO "Requesting Let's Encrypt certificate for $DOMAIN_NAME..." "$UPDATE_LOG_FILE"
-    if ! certbot --nginx -d "$DOMAIN_NAME" --non-interactive --agree-tos -m "admin@$DOMAIN_NAME"; then
-        log $LOG_LEVEL_ERROR "Failed to obtain SSL certificate from Let's Encrypt. Check Certbot logs." "$UPDATE_LOG_FILE"
-        return 1
-    fi
-
-    # Test Nginx configuration again after Certbot modifications
-    if ! nginx -t; then
-        log $LOG_LEVEL_ERROR "Nginx configuration test failed after Certbot modifications. Check your configuration." "$UPDATE_LOG_FILE"
-        return 1
-    fi
-
     # Reload Nginx to apply changes
     if systemctl reload nginx; then
-        log $LOG_LEVEL_INFO "Nginx reloaded successfully with Let's Encrypt certificate." "$UPDATE_LOG_FILE"
+        log $LOG_LEVEL_INFO "Nginx reloaded successfully with updated configuration." "$UPDATE_LOG_FILE"
     else
         log $LOG_LEVEL_ERROR "Failed to reload Nginx. Check the service status." "$UPDATE_LOG_FILE"
         return 1
     fi
 
-    log $LOG_LEVEL_INFO "Nginx SSL with strict HTTPS redirection configured successfully." "$UPDATE_LOG_FILE"
+    log $LOG_LEVEL_INFO "Nginx SSL with strict HTTPS and SOCKS5 proxy configured successfully." "$UPDATE_LOG_FILE"
     return 0
 }
 
