@@ -968,6 +968,7 @@ After=network.target
 [Service]
 Environment="SNORT_CONF=/etc/snort/snort.lua"
 ExecStart=/usr/local/bin/start_snort.sh
+Type=simple
 Restart=always
 RestartSec=5
 
@@ -1752,8 +1753,10 @@ Wants=multi-user.target
 [Service]
 Environment="USER_HOME=${USER_HOME}"
 ExecStart=/usr/local/bin/ufw.sh
+Type=simple
 Restart=always
-RestartSec=3
+RestartSec=5
+
 
 [Install]
 WantedBy=multi-user.target
@@ -1774,7 +1777,9 @@ After=network.target
 
 [Service]
 ExecStart=/usr/local/bin/iptables.sh
-Type=oneshot
+Type=simple
+Restart=always
+RestartSec=5
 RemainAfterExit=yes
 
 [Install]
