@@ -720,19 +720,20 @@ configure_snort() {
 
     # Create the snort.lua configuration file
     cat << EOF > /etc/snort/snort.lua
-HOME_NET = '$HOME_NET'
-EXTERNAL_NET = '$EXTERNAL_NET'
+-- Netzwerkeinstellungen
+HOME_NET = HOME_NET
+EXTERNAL_NET = EXTERNAL_NET
 
-# Stream settings for TCP and HTTP traffic
+-- Stream settings for TCP and HTTP traffic
 stream = {
     tcp = {
         policy = "linux", -- Verwende Linux-spezifische Wiederaufbau-Strategie
         timeout = 30,      -- Timeout für TCP-Sitzungen
-        ports = "$HTTPS_PORTS $SOCKS_PORTS" -- Ports für HTTPS und SOCKS5
+        ports = HTTPS_PORTS .. " " .. SOCKS_PORTS -- Ports für HTTPS und SOCKS5
     }
 }
 
-# HTTP Inspector für HTTPS-Traffic
+-- HTTP Inspector für HTTPS-Traffic
 http_inspect = {
     global = {
         iis_unicode_map = "unicode.map 65001", -- UTF-8 Unicode-Mapping aktivieren
@@ -740,11 +741,11 @@ http_inspect = {
         decompress_pdf = true                 -- PDF-Dateien dekomprimieren
     },
     servers = {
-        { server = "default", profile = "all", ports = "$HTTPS_PORTS", oversize_dir_length = 500 }
+        { server = "default", profile = "all", ports = HTTPS_PORTS, oversize_dir_length = 500 }
     }
 }
 
-# Preprocessor für Fragmentierung und verdächtige Streams
+-- Preprocessor für Fragmentierung und verdächtige Streams
 frag3 = {
     global = {
         max_frags = 65535 -- Maximale Anzahl von Fragmenten
@@ -754,9 +755,10 @@ frag3 = {
     }
 }
 
-wizard = default_wizard
+-- Platzhalter für Wizard-Konfiguration (muss definiert werden)
+wizard = nil -- oder definiere default_wizard hier, falls vorhanden
 
-# Referenz-URLs für Alarme
+-- Referenz-URLs für Alarme
 references = {
     { name = "bugtraq", url = "http://www.securityfocus.com/bid/" },
     { name = "cve", url = "http://cve.mitre.org/cgi-bin/cvename.cgi?name=" },
@@ -765,7 +767,7 @@ references = {
     { name = "nessus", url = "http://cgi.nessus.org/plugins/dump.php3?id=" }
 }
 
-# Klassifikationen für die Priorisierung von Alarmen
+-- Klassifikationen für die Priorisierung von Alarmen
 classifications = {
     { name = "misc-activity", description = "Sonstige Aktivitäten", priority = 3 },
     { name = "attempted-recon", description = "Versuchter Informationsabfluss", priority = 2 },
@@ -779,20 +781,20 @@ classifications = {
     { name = "successful-admin", description = "Administratorrechtegewinn", priority = 1 }
 }
 
-# Unterdrückungsregeln zur Vermeidung von False Positives
+-- Unterdrückungsregeln zur Vermeidung von False Positives
 suppress = {
     { gid = 1, sid = 2000001, track = "by_src", ip = "192.168.1.1" },
     { gid = 1, sid = 2000002, track = "by_src", ip = "10.0.0.5" }
 }
 
-# Eigene Regeln einbinden
+-- Eigene Regeln einbinden
 ips = {
     rules = [[
         include /etc/snort/rules/local.rules
     ]]
 }
 
-# Logging-Konfiguration
+-- Logging-Konfiguration
 alert_fast = {
     file = true,
     packet = false, -- Deaktiviere Paketdetails, um die Log-Datei übersichtlicher zu machen
