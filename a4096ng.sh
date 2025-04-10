@@ -757,6 +757,19 @@ stream = {
     }
 }
 
+-- Logging-Konfiguration
+alert_fast = {
+    file = true,
+    packet = false, -- Deaktiviere Paketdetails, um die Log-Datei übersichtlicher zu machen
+    format = "legacy" -- Erzwinge das klassische Log-Format
+}
+
+-- DAQ-Konfiguration
+daq = {
+    modules = { "pcap", "afpacket" }, -- Liste der verwendeten DAQ-Module
+    directory = "/usr/lib/daq"       -- Verzeichnis, in dem sich die DAQ-Module befinden
+}
+
 -- HTTP Inspector für HTTPS-Traffic
 http_inspect = {
     global = {
@@ -780,7 +793,7 @@ frag3 = {
 }
 
 -- Platzhalter für Wizard-Konfiguration (muss definiert werden)
-wizard = nil -- oder definiere default_wizard hier, falls vorhanden
+-- nil oder definiere default_wizard hier, falls vorhanden
 
 -- Referenz-URLs für Alarme
 references = {
@@ -816,13 +829,6 @@ ips = {
     rules = [[
         include /etc/snort/rules/local.rules
     ]]
-}
-
--- Logging-Konfiguration
-alert_fast = {
-    file = true,
-    packet = false, -- Deaktiviere Paketdetails, um die Log-Datei übersichtlicher zu machen
-    format = "legacy" -- Erzwinge das klassische Log-Format
 }
 EOF
 
@@ -864,64 +870,64 @@ create_snort_rules() {
 # Snort Rules for Monitoring HTTPS Traffic over SOCKS5 via Tor
 
 # Rule 1: Detect HTTPS Traffic via SOCKS5 (Port 9050)
-alert tcp any any -> $HOME_NET 9050 (msg:"HTTPS traffic detected over SOCKS5"; content:"CONNECT"; http_method; sid:2000001; rev:1;)
+alert tcp any any -> [HOME_NET] 9050 (msg:"HTTPS traffic detected over SOCKS5"; content:"CONNECT"; http_method; sid:2000001; rev:1;)
 
 # Rule 2: Detect Large HTTPS Packets (Potential Data Exfiltration)
-alert tcp any any -> $HOME_NET 443 (msg:"Large HTTPS packet detected"; dsize:>1400; sid:2000002; rev:1;)
+alert tcp any any -> [HOME_NET] 443 (msg:"Large HTTPS packet detected"; dsize:>1400; sid:2000002; rev:1;)
 
 # Rule 3: Detect Suspicious User-Agent in HTTPS Traffic
-alert tcp any any -> $HOME_NET 443 (msg:"Suspicious User-Agent in HTTPS traffic"; content:"Mozilla/5.0 (Windows NT 10.0; Win64; x64)"; http_header; sid:2000003; rev:1;)
+alert tcp any any -> [HOME_NET] 443 (msg:"Suspicious User-Agent in HTTPS traffic"; content:"Mozilla/5.0 (Windows NT 10.0; x64)"; http_header; sid:2000003; rev:1;)
 
 # Rule 4: Detect HTTPS Traffic with Potentially Harmful Domains
-alert tcp any any -> $HOME_NET 443 (msg:"Potentially harmful domain detected in HTTPS traffic"; content:"malicious.com"; http_uri; nocase; sid:2000004; rev:1;)
+alert tcp any any -> [HOME_NET] 443 (msg:"Potentially harmful domain detected in HTTPS traffic"; content:"malicious.com"; http_uri; sid:2000004; rev:1;)
 
 # Rule 5: Detect DNS Resolution for Malicious Domains via Tor SOCKS5
-alert udp any any -> $HOME_NET 9050 (msg:"DNS resolution for malicious domain via SOCKS5"; content:"malicious.com"; nocase; sid:2000005; rev:1;)
+alert udp any any -> [HOME_NET] 9050 (msg:"DNS resolution for malicious domain via SOCKS5"; content:"malicious.com"; sid:2000005; rev:1;)
 
 # Rule 6: Detect Possible Port Scan via SOCKS5 Proxy (Tor)
-alert tcp any any -> $HOME_NET 9050 (msg:"Port scan detected via SOCKS5 proxy"; flags:S; threshold:type both, track by_src, count 20, seconds 10; sid:2000006; rev:1;)
+alert tcp any any -> [HOME_NET] 9050 (msg:"Port scan detected via SOCKS5 proxy"; flags:S; threshold:type both, track by_src, count 20, seconds 10; sid:2000006; rev:1;)
 
 # Rule 7: Detect HTTPS Traffic with Suspicious Content Over Tor
-alert tcp any any -> $HOME_NET 9050 (msg:"Suspicious HTTPS content detected over Tor"; content:"/admin"; http_uri; nocase; sid:2000007; rev:1;)
+alert tcp any any -> [HOME_NET] 9050 (msg:"Suspicious HTTPS content detected over Tor"; content:"/admin"; http_uri; sid:2000007; rev:1;)
 
 # Rule 8: Detect High Volume HTTPS Traffic via Tor SOCKS5 Proxy
-alert tcp any any -> $HOME_NET 9050 (msg:"High volume HTTPS traffic via SOCKS5 proxy"; flow:to_server,established; threshold:type both, track by_src, count 100, seconds 60; sid:2000008; rev:1;)
+alert tcp any any -> [HOME_NET] 9050 (msg:"High volume HTTPS traffic via SOCKS5 proxy"; flow:to_server,established; threshold:type both, track by_src, count 100, seconds 60; sid:2000008; rev:1;)
 
 # Rule 9: Detect Possible Brute-Force Login Attempts via Tor
-alert tcp any any -> $HOME_NET 443 (msg:"Possible brute-force login attempt detected over Tor"; flow:to_server,established; content:"POST"; http_method; threshold:type both, track by_src, count 5, seconds 60; sid:2000009; rev:1;)
+alert tcp any any -> [HOME_NET] 443 (msg:"Possible brute-force login attempt detected over Tor"; flow:to_server,established; content:"POST"; http_method; threshold:type both, track by_src, count 5, seconds 60; sid:2000009; rev:1;)
 
 # Rule 10: Detect Use of Non-Standard Ports for HTTPS over Tor
-alert tcp any any -> $HOME_NET !443 (msg:"Non-standard HTTPS port detected over Tor"; content:"CONNECT"; http_method; sid:2000010; rev:1;)
+alert tcp any any -> [HOME_NET] !443 (msg:"Non-standard HTTPS port detected over Tor"; content:"CONNECT"; http_method; sid:2000010; rev:1;)
 
 # Rule 11: Detect Potential Command and Control (C2) Traffic Patterns
-alert tcp any any -> $HOME_NET any (msg:"Potential C2 traffic detected"; content:"/gate.php"; http_uri; nocase; sid:2000011; rev:1;)
+alert tcp any any -> [HOME_NET] any (msg:"Potential C2 traffic detected"; content:"/gate.php"; http_uri; sid:2000011; rev:1;)
 
 # Rule 12: Detect Suspicious DNS Queries Over Tor SOCKS5
-alert udp any any -> $HOME_NET 9050 (msg:"Suspicious DNS query detected over Tor"; content:"dnslog"; nocase; sid:2000012; rev:1;)
+alert udp any any -> [HOME_NET] 9050 (msg:"Suspicious DNS query detected over Tor"; content:"dnslog"; sid:2000012; rev:1;)
 
 # Rule 17: Detect Suspicious Tor Bridge Connections
-alert tcp any any -> $HOME_NET 9001 (msg:"Suspicious Tor bridge connection detected"; sid:2000017; rev:1;)
+alert tcp any any -> [HOME_NET] 9001 (msg:"Suspicious Tor bridge connection detected"; sid:2000017; rev:1;)
 
 # Rule 18: Detect Attempts to Bypass Tor SOCKS5 Proxy
-alert tcp any any -> $HOME_NET !9050 (msg:"Direct connection attempt bypassing SOCKS5 proxy"; sid:2000018; rev:1;)
+alert tcp any any -> [HOME_NET] !9050 (msg:"Direct connection attempt bypassing SOCKS5 proxy"; sid:2000018; rev:1;)
 
 # Rule 19: Detect Use of Deprecated TLS Versions
-alert tcp any any -> $HOME_NET 443 (msg:"Deprecated TLS version detected (TLS 1.0/1.1)"; content:"|16 03 01|"; sid:2000019; rev:1;)
+alert tcp any any -> [HOME_NET] 443 (msg:"Deprecated TLS version detected (TLS 1.0/1.1)"; content:"|16 03 01|"; sid:2000019; rev:1;)
 
 # Rule 20: Detect Brute-Force Attempts on Hidden Services
-alert tcp any any -> $HOME_NET 9050 (msg:"Brute-force attack on hidden service detected"; flow:to_server,established; threshold:type both, track by_src, count 5, seconds 60; sid:2000020; rev:1;)
+alert tcp any any -> [HOME_NET] 9050 (msg:"Brute-force attack on hidden service detected"; flow:to_server,established; threshold:type both, track by_src, count 5, seconds 60; sid:2000020; rev:1;)
 
 # Rule 21: Detect Connection to Tor Directory Authorities
-alert tcp any any -> $HOME_NET any (msg:"Connection to Tor directory authority detected"; content:"dirreq"; sid:2000021; rev:1;)
+alert tcp any any -> [HOME_NET] any (msg:"Connection to Tor directory authority detected"; content:"dirreq"; sid:2000021; rev:1;)
 
 # Rule 22: Detect Possible DNS Tunneling
-alert udp any any -> $HOME_NET 53 (msg:"Possible DNS tunneling detected"; content:"|03|dns"; offset:0; depth:10; sid:2000022; rev:1;)
+alert udp any any -> [HOME_NET] 53 (msg:"Possible DNS tunneling detected"; content:"|03|dns"; offset:0; depth:10; sid:2000022; rev:1;)
 
 # Rule 23: Detect Known C2 Communication
-alert tcp any any -> $HOME_NET 443 (msg:"Known C2 communication detected"; content:"/api/v1"; http_uri; sid:2000024; rev:1;)
+alert tcp any any -> [HOME_NET] 443 (msg:"Known C2 communication detected"; content:"/api/v1"; http_uri; sid:2000024; rev:1;)
 
 # Rule 24: Detect Unusual SSL Certificates
-alert tcp any any -> $HOME_NET 443 (msg:"Unusual SSL certificate detected"; content:"|16 03 01 02|"; sid:2000025; rev:1;)
+alert tcp any any -> [HOME_NET] 443 (msg:"Unusual SSL certificate detected"; content:"|16 03 01 02|"; sid:2000025; rev:1;)
 EOF
 
     chmod 755 /etc/snort/rules
