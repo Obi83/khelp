@@ -746,7 +746,7 @@ classifications = {
     { name = "successful-recon-largescale", description = "Großflächiger Informationsabfluss", priority = 2 },
     { name = "attempted-dos", description = "Versuchter Denial-of-Service", priority = 2 },
     { name = "successful-dos", description = "Denial-of-Service", priority = 2 },
-    { name = "attempted-user", description = "Versuch des Benutzerrechtegewinns", priority = 1 },
+    { name = "attempted-user", description = "Versuch des Benutzerrechtegewinns", phttps://github.com/Obi83/khelp/blob/main/a4096lua.shriority = 1 },
     { name = "successful-user", description = "Benutzerrechtegewinn", priority = 1 },
     { name = "attempted-admin", description = "Versuch des Administratorrechtegewinns", priority = 1 },
     { name = "successful-admin", description = "Administratorrechtegewinn", priority = 1 }
@@ -783,26 +783,17 @@ EOF
     fi
 
     # Ensure the log directory exists and has correct permissions
-    if [ ! -d "$LOG_PATH" ]; then
-        mkdir -p "$LOG_PATH"
-        if [ $? -ne 0 ]; then
-            log $LOG_LEVEL_ERROR "Failed to create Snort log directory at $LOG_PATH." "$UPDATE_LOG_FILE"
-            exit 1
-        fi
-        chmod 755 "$LOG_PATH"
-        chown root:root "$LOG_PATH"
+    if [ ! -d "/var/log/snort" ]; then
+    mkdir -p /var/log/snort
+    chmod 755 /var/log/snort
+    chown root:root /var/log/snort
     fi
 
     # Ensure the log file exists and has correct permissions
-    if [ ! -f "$SNORT_LOG_FILE" ]; then
-        touch "$SNORT_LOG_FILE"
-        if [ $? -ne 0 ]; then
-            log $LOG_LEVEL_ERROR "Failed to create Snort log file at $SNORT_LOG_FILE." "$UPDATE_LOG_FILE"
-            exit 1
-        fi
-        chmod 644 "$SNORT_LOG_FILE"
-        chown root:root "$SNORT_LOG_FILE"
-        log $LOG_LEVEL_INFO "Created Snort log file at $SNORT_LOG_FILE" "$UPDATE_LOG_FILE"
+    if [ ! -f "/var/log/snort/snort.log" ]; then
+    touch /var/log/snort/snort.log
+    chmod 644 /var/log/snort/snort.log
+    chown root:root /var/log/snort/snort.log
     fi
 
     log $LOG_LEVEL_INFO "Snort configured successfully." "$UPDATE_LOG_FILE"
@@ -855,18 +846,7 @@ alert tcp any any -> $HOME_NET any (msg:"Potential C2 traffic detected"; content
 # Rule 12: Detect Suspicious DNS Queries Over Tor SOCKS5
 alert udp any any -> $HOME_NET 9050 (msg:"Suspicious DNS query detected over Tor"; content:"dnslog"; nocase; sid:2000012; rev:1;)
 
-# Rule 13: Detect HTTP Sessions with Suspicious Headers
-alert tcp any any -> $HOME_NET 9050 (msg:"Suspicious HTTP header detected via SOCKS5"; content:"X-Forwarded-For"; http_header; sid:2000013; rev:1;)
-
-# Rule 14: Detect Large Data Transfers via Tor (Potential Data Exfiltration)
-alert tcp any any -> $HOME_NET 9050 (msg:"Large data transfer detected over Tor"; dsize:>5000; flow:to_server,established; sid:2000014; rev:1;)
-
-# Rule 15: Detect Repeated Connections from the Same Host to Multiple Ports
-alert tcp any any -> $HOME_NET any (msg:"Repeated connections to multiple ports detected"; flags:S; threshold:type both, track by_src, count 10, seconds 30; sid:2000015; rev:1;)
-
-# Rule 16: Detect Connections to Known Malicious IPs
-alert ip 123.45.67.89 any -> $HOME_NET any (msg:"Connection to known malicious IP detected"; sid:2000016; rev:1;)
-
+# Rule 13: Detect HTTP Sessions with Suspicious Headershttps://github.com/Obi83/khelp/blob/main/a4096lua.sh
 # Rule 17: Detect Suspicious Tor Bridge Connections
 alert tcp any any -> $HOME_NET 9001 (msg:"Suspicious Tor bridge connection detected"; sid:2000017; rev:1;)
 
@@ -915,22 +895,7 @@ create_snort_unicode_map() {
 # ASCII Mapping (20127)
 20127 0020:20 0021:21 0022:22 0023:23 0024:24 0025:25 0026:26 0027:27 0028:28 0029:29 002a:2a 002b:2b 002c:2c 002d:2d 002e:2e 002f:2f 0030:30 0031:31 0032:32 0033:33 0034:34 0035:35 0036:36 0037:37 0038:38 0039:39 003a:3a 003b:3b 003c:3c 003d:3d 003e:3e 003f:3f 0040:40 0041:41 0042:42 0043:43 0044:44 0045:45 0046:46 0047:47 0048:48 0049:49 004a:4a 004b:4b 004c:4c 004d:4d 004e:4e 004f:4f 0050:50 0051:51 0052:52 0053:53 0054:54 0055:55 0056:56 0057:57 0058:58 0059:59 005a:5a 005b:5b 005c:5c 005d:5d 005e:5e 005f:5f 0060:60 0061:61 0062:62 0063:63 0064:64 0065:65 0066:66 0067:67 0068:68 0069:69 006a:6a 006b:6b 006c:6c 006d:6d 006e:6e 006f:6f 0070:70 0071:71 0072:72 0073:73 0074:74 0075:75 0076:76 0077:77 0078:78 0079:79 007a:7a 007b:7b 007c:7c 007d:7d 007e:7e
 
-# KOI8-R Mapping (20866)
-20866 00a0:20 00a1:21 00a2:63 00a3:4c 00a5:59 00a6:7c 00a9:43 00aa:61 00ab:3c 00ad:2d 00ae:52 00b2:32 00b3:33 00b7:2e 00b9:31 00ba:6f 00bb:3e 00c0:41
-EOF
-
-    if [ -f /etc/snort/unicode.map ]; then
-        chmod 600 /etc/snort/unicode.map
-        chown root:root /etc/snort/unicode.map
-        log $LOG_LEVEL_INFO "Snort unicode.map created and secured successfully." "$UPDATE_LOG_FILE"
-    else
-        log $LOG_LEVEL_ERROR "Failed to create unicode.map for Snort." "$UPDATE_LOG_FILE"
-        exit 1
-    fi
-}
-
-create_snort_sid_msg_map() {
-    log $LOG_LEVEL_INFO "Creating sid-msg.map for Snort..." "$UPDATE_LOG_FILE"
+# KOI8-R Mapping (20866)https://github.com/Obi83/khelp/blob/main/a4096lua.sh
 
     cat << 'EOF' > /etc/snort/sid-msg.map
 2000001 || HTTPS traffic detected over SOCKS5
@@ -1005,11 +970,6 @@ EOF
 
     log $LOG_LEVEL_INFO "Snort service created and enabled." "$UPDATE_LOG_FILE"
 }
-
-chmod 755 /var/log/snort
-chmod 644 /var/log/snort/snort.log
-chown root:root /var/log/snort
-chown root:root /var/log/snort/snort.log
 
 configure_snort
 create_snort_rules
