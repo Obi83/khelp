@@ -650,6 +650,27 @@ install_certbot() {
     return 1
 }
 
+install_libdaq-dev() {
+    log $LOG_LEVEL_INFO "Installing libdaq-dev..." "$UPDATE_LOG_FILE"
+    local attempts=0
+    local max_attempts=3
+
+    while [ $attempts -lt $max_attempts ]; do
+        apt install -y libdaq-dev
+        if [ $? -eq 0 ]; then
+            log $LOG_LEVEL_INFO "libdaq-dev installed successfully." "$UPDATE_LOG_FILE"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            log $LOG_LEVEL_ERROR "Failed to install libdaq-dev. Attempt $attempts of $max_attempts. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
+            sleep $((attempts * 5))
+        fi
+    done
+
+    log $LOG_LEVEL_ERROR "Failed to install libdaq-dev after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
+    return 1
+}
+
 # Main script execution
 log $LOG_LEVEL_INFO "Starting khelp setup..." "$UPDATE_LOG_FILE"
 
@@ -669,6 +690,7 @@ install_nginx &
 install_coreutils_shuf &
 install_snort &
 install_certbot &
+install_libdaq-dev &
 
 # Wait for all background tasks to complete
 wait
@@ -721,8 +743,10 @@ configure_snort() {
     # Create the snort.lua configuration file
     cat << EOF > /etc/snort/snort.lua
 -- Netzwerkeinstellungen
-HOME_NET = HOME_NET
-EXTERNAL_NET = EXTERNAL_NET
+HOME_NET = os.getenv("HOME_NET") or "192.168.1.0/24" -- Standardwert für HOME_NET
+EXTERNAL_NET = os.getenv("EXTERNAL_NET") or "!192.168.1.0/24" -- Standardwert für EXTERNAL_NET
+SOCKS_PORTS = os.getenv("SOCKS_PORTS") or "9050" -- Standardwert für SOCKS_PORTS
+HTTPS_PORTS = os.getenv("HTTPS_PORTS") or "443" -- Standardwert für HTTPS_PORTS
 
 -- Stream settings for TCP and HTTP traffic
 stream = {
@@ -2085,16 +2109,6 @@ services=("update_proxies" "iptables" "ufw" "fail2ban" "rsyslog" "snort" "update
 for service in "${services[@]}"; do
     log_service_status "$service"
 done
-
-# Additional checks
-log $LOG_LEVEL_INFO "Verifying iptables rules..." "$UPDATE_LOG_FILE"
-iptables -L -v | tee -a "$UPDATE_LOG_FILE"
-
-log $LOG_LEVEL_INFO "Verifying fail2ban status..." "$UPDATE_LOG_FILE"
-fail2ban-client status | tee -a "$UPDATE_LOG_FILE"
-
-log $LOG_LEVEL_INFO "Verifying ufw status..." "$UPDATE_LOG_FILE"
-ufw status verbose | tee -a "$UPDATE_LOG_FILE"
 
 # Scan local network
 log $LOG_LEVEL_INFO "Scanning local network..." "$UPDATE_LOG_FILE"
