@@ -240,10 +240,6 @@ chmod 644 /var/log/khelp.log
 chmod 644 /var/log/nginx/error.log
 chown root:adm /var/log/khelp.log
 chown root:adm /var/log/nginx/error.log
-chmod 755 /var/log/snort
-chmod 644 /var/log/snort/snort.log
-chown root:root /var/log/snort
-chown root:root /var/log/snort/snort.log
 
 # Function to detect the local network IP range
 detect_ip_range() {
@@ -1013,6 +1009,11 @@ EOF
 
     log $LOG_LEVEL_INFO "Snort service created and enabled." "$UPDATE_LOG_FILE"
 }
+
+chmod 755 /var/log/snort
+chmod 644 /var/log/snort/snort.log
+chown root:root /var/log/snort
+chown root:root /var/log/snort/snort.log
 
 configure_snort
 create_snort_rules
