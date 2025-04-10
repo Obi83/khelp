@@ -1968,6 +1968,16 @@ EOF
         return 1
     fi
 
+    # Ensure Nginx service is running
+    if ! systemctl is-active --quiet nginx; then
+        log $LOG_LEVEL_WARNING "Nginx is not active. Attempting to start it now..." "$UPDATE_LOG_FILE"
+        if ! systemctl start nginx; then
+            log $LOG_LEVEL_ERROR "Failed to start Nginx. Check the service status." "$UPDATE_LOG_FILE"
+            return 1
+        fi
+        log $LOG_LEVEL_INFO "Nginx started successfully." "$UPDATE_LOG_FILE"
+    fi
+
     # Reload Nginx to apply changes
     if systemctl reload nginx; then
         log $LOG_LEVEL_INFO "Nginx reloaded successfully with updated configuration." "$UPDATE_LOG_FILE"
