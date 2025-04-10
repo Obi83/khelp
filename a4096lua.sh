@@ -896,7 +896,30 @@ create_snort_unicode_map() {
 20127 0020:20 0021:21 0022:22 0023:23 0024:24 0025:25 0026:26 0027:27 0028:28 0029:29 002a:2a 002b:2b 002c:2c 002d:2d 002e:2e 002f:2f 0030:30 0031:31 0032:32 0033:33 0034:34 0035:35 0036:36 0037:37 0038:38 0039:39 003a:3a 003b:3b 003c:3c 003d:3d 003e:3e 003f:3f 0040:40 0041:41 0042:42 0043:43 0044:44 0045:45 0046:46 0047:47 0048:48 0049:49 004a:4a 004b:4b 004c:4c 004d:4d 004e:4e 004f:4f 0050:50 0051:51 0052:52 0053:53 0054:54 0055:55 0056:56 0057:57 0058:58 0059:59 005a:5a 005b:5b 005c:5c 005d:5d 005e:5e 005f:5f 0060:60 0061:61 0062:62 0063:63 0064:64 0065:65 0066:66 0067:67 0068:68 0069:69 006a:6a 006b:6b 006c:6c 006d:6d 006e:6e 006f:6f 0070:70 0071:71 0072:72 0073:73 0074:74 0075:75 0076:76 0077:77 0078:78 0079:79 007a:7a 007b:7b 007c:7c 007d:7d 007e:7e
 
 # KOI8-R Mapping (20866)https://github.com/Obi83/khelp/blob/main/a4096lua.sh
+EOF
 
+    if [ -f /etc/snort/unicode.map ]; then
+        chmod 600 /etc/snort/unicode.map
+        chown root:root /etc/snort/unicode.map
+        log $LOG_LEVEL_INFO "Snort unicode.map created and secured successfully." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "Failed to create unicode.map for Snort." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+}
+
+create_snort_sid_msg_map() {
+    log $LOG_LEVEL_INFO "Creating sid-msg.map for Snort..." "$UPDATE_LOG_FILE"
+
+    if [ ! -d "/etc/snort" ]; then
+    echo "Creating /etc/snort directory..."
+    mkdir -p /etc/snort
+    chmod 755 /etc/snort
+    chown root:root /etc/snort
+    echo "Directory /etc/snort created with permissions 755 and owner root:root."
+    fi
+
+    # Erstellen der sid-msg.map
     cat << 'EOF' > /etc/snort/sid-msg.map
 2000001 || HTTPS traffic detected over SOCKS5
 2000002 || Large HTTPS packet detected
@@ -924,6 +947,7 @@ create_snort_unicode_map() {
 2000025 || Unusual SSL certificate detected
 EOF
 
+    # Überprüfen, ob die Datei erstellt wurde
     if [ -f /etc/snort/sid-msg.map ]; then
         chmod 600 /etc/snort/sid-msg.map
         chown root:root /etc/snort/sid-msg.map
