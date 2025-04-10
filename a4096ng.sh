@@ -773,7 +773,7 @@ classifications = {
     { name = "successful-recon-largescale", description = "Großflächiger Informationsabfluss", priority = 2 },
     { name = "attempted-dos", description = "Versuchter Denial-of-Service", priority = 2 },
     { name = "successful-dos", description = "Denial-of-Service", priority = 2 },
-    { name = "attempted-user", description = "Versuch des Benutzerrechtegewinns", phttps://github.com/Obi83/khelp/blob/main/a4096lua.shriority = 1 },
+    { name = "attempted-user", description = "Versuch des Benutzerrechtegewinns", priority = 1 },
     { name = "successful-user", description = "Benutzerrechtegewinn", priority = 1 },
     { name = "attempted-admin", description = "Versuch des Administratorrechtegewinns", priority = 1 },
     { name = "successful-admin", description = "Administratorrechtegewinn", priority = 1 }
@@ -873,7 +873,6 @@ alert tcp any any -> $HOME_NET any (msg:"Potential C2 traffic detected"; content
 # Rule 12: Detect Suspicious DNS Queries Over Tor SOCKS5
 alert udp any any -> $HOME_NET 9050 (msg:"Suspicious DNS query detected over Tor"; content:"dnslog"; nocase; sid:2000012; rev:1;)
 
-# Rule 13: Detect HTTP Sessions with Suspicious Headershttps://github.com/Obi83/khelp/blob/main/a4096lua.sh
 # Rule 17: Detect Suspicious Tor Bridge Connections
 alert tcp any any -> $HOME_NET 9001 (msg:"Suspicious Tor bridge connection detected"; sid:2000017; rev:1;)
 
@@ -922,7 +921,7 @@ create_snort_unicode_map() {
 # ASCII Mapping (20127)
 20127 0020:20 0021:21 0022:22 0023:23 0024:24 0025:25 0026:26 0027:27 0028:28 0029:29 002a:2a 002b:2b 002c:2c 002d:2d 002e:2e 002f:2f 0030:30 0031:31 0032:32 0033:33 0034:34 0035:35 0036:36 0037:37 0038:38 0039:39 003a:3a 003b:3b 003c:3c 003d:3d 003e:3e 003f:3f 0040:40 0041:41 0042:42 0043:43 0044:44 0045:45 0046:46 0047:47 0048:48 0049:49 004a:4a 004b:4b 004c:4c 004d:4d 004e:4e 004f:4f 0050:50 0051:51 0052:52 0053:53 0054:54 0055:55 0056:56 0057:57 0058:58 0059:59 005a:5a 005b:5b 005c:5c 005d:5d 005e:5e 005f:5f 0060:60 0061:61 0062:62 0063:63 0064:64 0065:65 0066:66 0067:67 0068:68 0069:69 006a:6a 006b:6b 006c:6c 006d:6d 006e:6e 006f:6f 0070:70 0071:71 0072:72 0073:73 0074:74 0075:75 0076:76 0077:77 0078:78 0079:79 007a:7a 007b:7b 007c:7c 007d:7d 007e:7e
 
-# KOI8-R Mapping (20866)https://github.com/Obi83/khelp/blob/main/a4096lua.sh
+# KOI8-R Mapping (20866)
 EOF
 
     if [ -f /etc/snort/unicode.map ]; then
@@ -985,6 +984,73 @@ EOF
     fi
 }
 
+create_snort_start() {
+    log $LOG_LEVEL_INFO "Creating Snort script file..." "$UPDATE_LOG_FILE"
+
+    # Generiere das Startskript für Snort
+    cat << 'EOF' > /usr/local/bin/start_snort.sh
+#!/bin/bash
+
+# Funktion, um die primäre Netzwerkschnittstelle zu ermitteln
+get_primary_interface() {
+    local interface
+    interface=$(ip route | grep default | awk '{print $5}')
+
+    # Prüfe, ob eine primäre Schnittstelle gefunden wurde
+    if [ -z "$interface" ]; then
+        echo "Warnung: PRIMARY_INTERFACE ist nicht gesetzt. Versuche Fallback-Interfaces..." >&2
+
+        # Erster Fallback: eth0
+        if ip link show eth0 > /dev/null 2>&1; then
+            PRIMARY_INTERFACE="eth0"
+            echo "Fallback zu eth0 als PRIMARY_INTERFACE." >&2
+        # Zweiter Fallback: wlan0
+        elif ip link show wlan0 > /dev/null 2>&1; then
+            PRIMARY_INTERFACE="wlan0"
+            echo "Fallback zu wlan0 als PRIMARY_INTERFACE." >&2
+        else
+            echo "Fehler: Keine gültige Netzwerkschnittstelle gefunden. Bitte überprüfen Sie Ihre Netzwerkeinstellungen." >&2
+            exit 1
+        fi
+    else
+        PRIMARY_INTERFACE="$interface"
+        echo "Primäre Netzwerkschnittstelle erkannt: $PRIMARY_INTERFACE" >&2
+    fi
+}
+
+# Snort-Konfiguration und Interface definieren
+SNORT_CONF="/etc/snort/snort.lua"
+
+# Ermittle die primäre Netzwerkschnittstelle
+get_primary_interface
+
+# Prüfen, ob die Konfigurationsdatei existiert
+if [ ! -f "$SNORT_CONF" ]; then
+    echo "Fehler: Die Snort-Konfigurationsdatei $SNORT_CONF wurde nicht gefunden!"
+    exit 1
+fi
+
+# Snort ausführen
+echo "Starte Snort mit Konfiguration: $SNORT_CONF und Interface: $PRIMARY_INTERFACE"
+/usr/sbin/snort -c "$SNORT_CONF" -i "$PRIMARY_INTERFACE" --daq-dir /usr/lib/daq
+EOF
+
+    # Prüfe, ob das Skript erfolgreich erstellt wurde
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to create Snort script file." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
+    # Setze Berechtigungen für das Skript
+    chmod 755 /usr/local/bin/start_snort.sh
+    if [ $? -ne 0 ]; then
+        log $LOG_LEVEL_ERROR "Failed to set permissions for Snort script." "$UPDATE_LOG_FILE"
+        exit 1
+    fi
+
+    log $LOG_LEVEL_INFO "Snort start script created successfully." "$UPDATE_LOG_FILE"
+}
+
 create_snort_service() {
     log $LOG_LEVEL_INFO "Creating and enabling Snort service..." "$UPDATE_LOG_FILE"
     cat << EOF > /etc/systemd/system/snort.service
@@ -1027,6 +1093,7 @@ configure_snort
 create_snort_rules
 create_snort_unicode_map
 create_snort_sid_msg_map
+create_snort_start
 create_snort_service
 
 # Configure Fail2Ban Service
