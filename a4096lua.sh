@@ -46,7 +46,7 @@ export UPDATE_LOG_FILE="/var/log/khelp.log"
 export PROXY_UPDATE_LOG_FILE="/var/log/update_proxies.log"
 export PROXY_TIMER_LOG_FILE="/var/log/timer_proxies.log"
 export IPTABLES_LOG_FILE="/var/log/khelp_iptables.log"
-export LOG_FILE="/var/log/snort/snort.log"
+export SNORT_LOG_FILE="/var/log/snort/snort.log"
 
 # Directories
 export KHELP_UPDATE_DIR="/usr/local/share/khelp_update"
@@ -191,6 +191,7 @@ validate_url() {
 log $LOG_LEVEL_INFO "UPDATE_LOG_FILE=$UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "PROXY_UPDATE_LOG_FILE=$PROXY_UPDATE_LOG_FILE" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "IPTABLES_LOG_FILE=$IPTABLES_LOG_FILE" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "SNORT_LOG_FILE=$SNORT_LOG_FILE" "$UPDATE_LOG_FILE"
 
 # Directories
 log $LOG_LEVEL_INFO "KHELP_UPDATE_DIR=$KHELP_UPDATE_DIR" "$UPDATE_LOG_FILE"
@@ -223,6 +224,7 @@ log $LOG_LEVEL_INFO "SNORT_CONF=$SNORT_CONF" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "UPDATE_PROXIES_SCRIPT=$UPDATE_PROXIES_SCRIPT" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "UFW_SCRIPT=$UFW_SCRIPT" "$UPDATE_LOG_FILE"
 log $LOG_LEVEL_INFO "IPTABLES_SCRIPT=$IPTABLES_SCRIPT" "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "LOG_PATH=$LOG_PATH" "$UPDATE_LOG_FILE"
 
 # Service paths
 log $LOG_LEVEL_INFO "SYSTEMD_UPDATE_PROXIES_SERVICE=$SYSTEMD_UPDATE_PROXIES_SERVICE" "$UPDATE_LOG_FILE"
@@ -238,6 +240,10 @@ chmod 644 /var/log/khelp.log
 chmod 644 /var/log/nginx/error.log
 chown root:adm /var/log/khelp.log
 chown root:adm /var/log/nginx/error.log
+chmod 755 /var/log/snort
+chmod 644 /var/log/snort/snort.log
+chown root:root /var/log/snort
+chown root:root /var/log/snort/snort.log
 
 # Function to detect the local network IP range
 detect_ip_range() {
@@ -905,7 +911,6 @@ EOF
 create_snort_unicode_map() {
     log $LOG_LEVEL_INFO "Creating unicode.map for Snort..." "$UPDATE_LOG_FILE"
 
-    # Erstellen der unicode.map mit Unterstützung für UTF-8, ISO-8859-1, ASCII und KOI8-R
     cat << 'EOF' > /etc/snort/unicode.map
 # Unicode Map for Snort
 
@@ -922,7 +927,6 @@ create_snort_unicode_map() {
 20866 00a0:20 00a1:21 00a2:63 00a3:4c 00a5:59 00a6:7c 00a9:43 00aa:61 00ab:3c 00ad:2d 00ae:52 00b2:32 00b3:33 00b7:2e 00b9:31 00ba:6f 00bb:3e 00c0:41
 EOF
 
-    # Überprüfen, ob die Datei erstellt wurde
     if [ -f /etc/snort/unicode.map ]; then
         chmod 600 /etc/snort/unicode.map
         chown root:root /etc/snort/unicode.map
@@ -936,7 +940,6 @@ EOF
 create_snort_sid_msg_map() {
     log $LOG_LEVEL_INFO "Creating sid-msg.map for Snort..." "$UPDATE_LOG_FILE"
 
-    # Erstellen der sid-msg.map
     cat << 'EOF' > /etc/snort/sid-msg.map
 2000001 || HTTPS traffic detected over SOCKS5
 2000002 || Large HTTPS packet detected
@@ -964,7 +967,6 @@ create_snort_sid_msg_map() {
 2000025 || Unusual SSL certificate detected
 EOF
 
-    # Überprüfen, ob die Datei erstellt wurde
     if [ -f /etc/snort/sid-msg.map ]; then
         chmod 600 /etc/snort/sid-msg.map
         chown root:root /etc/snort/sid-msg.map
@@ -975,7 +977,6 @@ EOF
     fi
 }
 
-# Snort Service Creation
 create_snort_service() {
     log $LOG_LEVEL_INFO "Creating and enabling Snort service..." "$UPDATE_LOG_FILE"
     cat << EOF > /etc/systemd/system/snort.service
@@ -1013,10 +1014,11 @@ EOF
     log $LOG_LEVEL_INFO "Snort service created and enabled." "$UPDATE_LOG_FILE"
 }
 
-chmod 755 /var/log/snort
-chmod 644 /var/log/snort/snort.log
-chown root:root /var/log/snort
-chown root:root /var/log/snort/snort.log
+configure_snort
+create_snort_rules
+create_snort_unicode_map
+create_snort_sid_msg_map
+create_snort_service
 
 # Configure Fail2Ban Service
 configure_fail2ban() {
