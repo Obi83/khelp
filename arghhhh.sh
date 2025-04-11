@@ -772,7 +772,7 @@ configure_ufw() {
     ufw default deny incoming
     ufw default allow outgoing
 
-        # Allow specific ports for IPv4
+    # Allow specific ports for IPv4
     ufw deny 22/tcp
     ufw allow 9050/tcp
     ufw allow 9001/tcp
@@ -786,7 +786,7 @@ configure_ufw() {
     else
         log $LOG_LEVEL_WARNING "IPv6 is disabled on the system. Skipping IPv6 configuration in UFW." "$UPDATE_LOG_FILE"
     fi
-    
+
     # Enable UFW service
     systemctl enable ufw
     if [ $? -ne 0 ]; then
