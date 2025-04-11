@@ -773,16 +773,16 @@ configure_ufw() {
     ufw default allow outgoing
 
     # Allow specific ports for IPv4
-    ufw allow 9050/tcp comment "Allow IPv4 traffic on port 9050"
-    ufw allow 9001/tcp comment "Allow IPv4 traffic on port 9001"
-    ufw allow 443/tcp comment "Allow IPv4 traffic on port 443"
-    ufw deny 22/tcp comment "Deny IPv4 traffic on port 22"
+    ufw allow 9050/tcp comment "Allow IPv4 traffic on port 9050" (v4)
+    ufw allow 9001/tcp comment "Allow IPv4 traffic on port 9001" (v4)
+    ufw allow 443/tcp comment "Allow IPv4 traffic on port 443" (v4)
+    ufw deny 22/tcp comment "Deny IPv4 traffic on port 22" (v4)
 
     # Deny specific ports for IPv6
-    ufw deny 22/tcp comment "Deny IPv6 traffic on port 22"
-    ufw deny 9050/tcp comment "Deny IPv6 traffic on port 9050"
-    ufw deny 9001/tcp comment "Deny IPv6 traffic on port 9001"
-    ufw deny 443/tcp comment "Deny IPv6 traffic on port 443"
+    ufw deny 22/tcp comment "Deny IPv6 traffic on port 22" (v6)
+    ufw deny 9050/tcp comment "Deny IPv6 traffic on port 9050" (v6)
+    ufw deny 9001/tcp comment "Deny IPv6 traffic on port 9001" (v6)
+    ufw deny 443/tcp comment "Deny IPv6 traffic on port 443" (v6)
 
     # Block all IPv6 traffic (optional redundancy for additional coverage)
     if [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)" = "0" ]; then
