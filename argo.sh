@@ -267,30 +267,6 @@ get_primary_interface() {
     fi
 }
 
-# Update the system
-update_system() {
-    log $LOG_LEVEL_INFO "Updating and upgrading system" "$UPDATE_LOG_FILE"
-    local attempts=0
-    local max_attempts=3
-
-    while [ $attempts -lt $max_attempts ]; do
-        if apt update && apt full-upgrade -y && apt autoremove -y && apt autoclean; then
-            log $LOG_LEVEL_INFO "System update and upgrade completed." "$UPDATE_LOG_FILE"
-            return 0
-        else
-            log $LOG_LEVEL_ERROR "System update and upgrade failed. Retrying in $((attempts * 5)) seconds..." "$UPDATE_LOG_FILE"
-            attempts=$((attempts + 1))
-            sleep $((attempts * 5))
-        fi
-    done
-
-    log $LOG_LEVEL_ERROR "System update and upgrade failed after $max_attempts attempts. Please check your network connection and try again." "$UPDATE_LOG_FILE"
-    exit 1
-}
-
-# Example usage of the updated function
-update_system
-
 # Determine the primary network interface
 PRIMARY_INTERFACE=$(get_primary_interface)
 if [ $? -ne 0 ] || [ -z "$PRIMARY_INTERFACE" ]; then
@@ -757,7 +733,7 @@ configure_ufw() {
 
     # Enable IPv6 support in UFW
     if [ -f /etc/default/ufw ]; then
-        sed -i 's/^IPV6=.*/IPV6=yes/' /etc/default/ufw
+        sed -i 's/^IPV6=.*/IPV6=no/' /etc/default/ufw
         log $LOG_LEVEL_INFO "Enabled IPv6 support in UFW configuration." "$UPDATE_LOG_FILE"
     else
         log $LOG_LEVEL_ERROR "UFW configuration file /etc/default/ufw not found. Cannot enable IPv6." "$UPDATE_LOG_FILE"
