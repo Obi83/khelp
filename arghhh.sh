@@ -1181,6 +1181,9 @@ EOF
     fi
 }
 
+touch /var/log/nmap_scan.log
+chmod 644 /var/log/nmap_scan.log
+chown root:adm /var/log/nmap_scan.log
 touch /var/log/khelp_iptables.log
 chmod 644 /var/log/khelp_iptables.log
 chown root:adm /var/log/khelp_iptables.log
