@@ -806,81 +806,85 @@ configure_iptables() {
     # Flush all existing rules
     iptables -F
     iptables -X
-    log $LOG_LEVEL_INFO "Flushed all iptables rules and deleted user-defined chains." "$IPTABLES_LOG_FILE"
+    ip6tables -F
+    ip6tables -X
+    log $LOG_LEVEL_INFO "Flushed all iptables and ip6tables rules." "$IPTABLES_LOG_FILE"
 
     # Set default policies for IPv4
     iptables -P INPUT DROP
     iptables -P FORWARD DROP
-    iptables -P OUTPUT ACCEPT
+    iptables -P OUTPUT DROP
     log $LOG_LEVEL_INFO "Set default policies for iptables (IPv4)." "$IPTABLES_LOG_FILE"
 
-    # Configure ip6tables if available and IPv6 is enabled
-    if [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)" = "0" ] && command -v ip6tables &> /dev/null; then
-        ip6tables -F
-        ip6tables -X
-        ip6tables -P INPUT DROP
-        ip6tables -P FORWARD DROP
-        ip6tables -P OUTPUT DROP
-        log $LOG_LEVEL_INFO "Set default policies for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
-        
-        # Allow loopback traffic and established connections for IPv6
-        ip6tables -A INPUT -i lo -j ACCEPT
-        ip6tables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-        log $LOG_LEVEL_INFO "Allowed loopback and established connections for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
-    else
-        log $LOG_LEVEL_WARNING "IPv6 is disabled or ip6tables is not available. Skipping IPv6 configuration." "$IPTABLES_LOG_FILE"
-    fi
+    # Set default policies for IPv6
+    ip6tables -P INPUT DROP
+    ip6tables -P FORWARD DROP
+    ip6tables -P OUTPUT DROP
+    log $LOG_LEVEL_INFO "Set default policies for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
 
     # Allow loopback traffic and established connections for IPv4
     iptables -A INPUT -i lo -j ACCEPT
     iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     log $LOG_LEVEL_INFO "Allowed loopback and established connections for iptables (IPv4)." "$IPTABLES_LOG_FILE"
 
-    # Allow specific ports for IPv4
-    iptables -A INPUT -p tcp --dport 9050 -j ACCEPT
-    iptables -A INPUT -p tcp --dport 9001 -j ACCEPT
-    iptables -A INPUT -p tcp --dport 443 -j ACCEPT
-    iptables -A OUTPUT -p tcp --dport 9050 -j ACCEPT
-    iptables -A OUTPUT -p tcp --dport 9001 -j ACCEPT
-    iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
-    log $LOG_LEVEL_INFO "Allowed ports 9050, 9001, and 443 for iptables (IPv4)." "$IPTABLES_LOG_FILE"
+    # Allow loopback traffic and established connections for IPv6
+    ip6tables -A INPUT -i lo -j ACCEPT
+    ip6tables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    ip6tables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    log $LOG_LEVEL_INFO "Allowed loopback and established connections for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
+
+    # Define important ports
+    local important_ports=(53 80 443 9040 9050)
+
+    # Configure IPv4 rules
+    for port in "${important_ports[@]}"; do
+        if [[ "$port" -eq 443 || "$port" -eq 9050 ]]; then
+            # Allow outgoing HTTPS and SOCKS5 only
+            iptables -A OUTPUT -p tcp --dport "$port" -j ACCEPT
+            log $LOG_LEVEL_INFO "Allowed outgoing traffic on port $port (IPv4)." "$IPTABLES_LOG_FILE"
+        else
+            # Drop all other outgoing traffic explicitly
+            iptables -A OUTPUT -p tcp --dport "$port" -j DROP
+            log $LOG_LEVEL_INFO "Blocked outgoing traffic on port $port (IPv4)." "$IPTABLES_LOG_FILE"
+        fi
+        # Block all incoming traffic on these ports
+        iptables -A INPUT -p tcp --dport "$port" -j DROP
+        log $LOG_LEVEL_INFO "Blocked incoming traffic on port $port (IPv4)." "$IPTABLES_LOG_FILE"
+    done
+
+    # Configure IPv6 rules
+    for port in "${important_ports[@]}"; do
+        # Block all incoming and outgoing traffic for IPv6
+        ip6tables -A INPUT -p tcp --dport "$port" -j DROP
+        ip6tables -A OUTPUT -p tcp --dport "$port" -j DROP
+        log $LOG_LEVEL_INFO "Blocked traffic on port $port (IPv6)." "$IPTABLES_LOG_FILE"
+    done
+
+    # Rate-limit for all defined ports (IPv4)
+    for port in "${important_ports[@]}"; do
+        iptables -A INPUT -p tcp --dport "$port" -m limit --limit 25/second --limit-burst 50 -j ACCEPT
+        iptables -A INPUT -p tcp --dport "$port" -m conntrack --ctstate NEW -j ACCEPT
+        log $LOG_LEVEL_INFO "Applied rate-limit for port $port (IPv4)." "$IPTABLES_LOG_FILE"
+    done
 
     # Drop invalid packets for IPv4 and IPv6
     iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
-    log $LOG_LEVEL_INFO "Dropped invalid packets for iptables (IPv4)." "$IPTABLES_LOG_FILE"
+    ip6tables -A INPUT -m conntrack --ctstate INVALID -j DROP
+    log $LOG_LEVEL_INFO "Dropped invalid packets for iptables and ip6tables." "$IPTABLES_LOG_FILE"
 
-    if command -v ip6tables &> /dev/null; then
-        ip6tables -A INPUT -m conntrack --ctstate INVALID -j DROP
-        log $LOG_LEVEL_INFO "Dropped invalid packets for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
-    fi
-      
-    # Create a logging chain
+    # Create a logging chain for IPv4
     iptables -N LOGGING
     iptables -A INPUT -j LOGGING
     iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
     iptables -A LOGGING -j DROP
     log $LOG_LEVEL_INFO "Configured logging for iptables (IPv4)." "$IPTABLES_LOG_FILE"
 
-    # # Rate-limit SSH, HTTPS, 9050 and 9001
-    iptables -A OUTPUT -p tcp --dport 22 -j DROP
-    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
-    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 -j DROP
-    iptables -A INPUT -p tcp --dport 443 -m limit --limit 25/second --limit-burst 50 -j ACCEPT
-    iptables -A INPUT -p tcp --dport 9050 -m limit --limit 10/second --limit-burst 20 -j ACCEPT
-    iptables -A INPUT -p tcp --dport 9001 -m limit --limit 10/second --limit-burst 20 -j ACCEPT
-    iptables -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/second --limit-burst 5 -j ACCEPT
-    log $LOG_LEVEL_INFO "Applied rate-limit for SSH, HTTPS, SOCKS5, ICMP connections." "$IPTABLES_LOG_FILE"
-
-
     # Save the iptables rules
     mkdir -p /etc/iptables
     iptables-save > /etc/iptables/rules.v4
-    log $LOG_LEVEL_INFO "Saved iptables rules to /etc/iptables/rules.v4." "$IPTABLES_LOG_FILE"
-
-    if [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)" = "0" ] && command -v ip6tables &> /dev/null; then
-        ip6tables-save > /etc/iptables/rules.v6
-        log $LOG_LEVEL_INFO "Saved ip6tables rules to /etc/iptables/rules.v6." "$IPTABLES_LOG_FILE"
-    fi
+    ip6tables-save > /etc/iptables/rules.v6
+    log $LOG_LEVEL_INFO "Saved iptables and ip6tables rules." "$IPTABLES_LOG_FILE"
 }
 
 configure_tor() {
