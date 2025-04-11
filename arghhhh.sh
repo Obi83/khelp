@@ -766,11 +766,18 @@ configure_ufw() {
 
     # Reload UFW to apply configuration changes
     ufw reload
-
+      
     # Configure UFW rules
     ufw --force enable
     ufw default deny incoming
     ufw default allow outgoing
+
+        # Allow specific ports for IPv4
+    ufw deny 22/tcp
+    ufw allow 9050/tcp
+    ufw allow 9001/tcp
+    ufw allow 443/tcp
+    ufw logging full
 
     # Block all IPv6 traffic
     if [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)" = "0" ]; then
@@ -779,14 +786,7 @@ configure_ufw() {
     else
         log $LOG_LEVEL_WARNING "IPv6 is disabled on the system. Skipping IPv6 configuration in UFW." "$UPDATE_LOG_FILE"
     fi
-
-    # Allow specific ports for IPv4
-    ufw deny 22/tcp
-    ufw allow 9050/tcp
-    ufw allow 9001/tcp
-    ufw allow 443/tcp
-    ufw logging full
-
+    
     # Enable UFW service
     systemctl enable ufw
     if [ $? -ne 0 ]; then
