@@ -773,8 +773,12 @@ configure_ufw() {
     ufw default allow outgoing
 
     # Block all IPv6 traffic
-    ufw deny proto ipv6 from any to any
-    log $LOG_LEVEL_INFO "Blocked all incoming and outgoing IPv6 traffic." "$UPDATE_LOG_FILE"
+    if [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)" = "0" ]; then
+        ufw deny proto ipv6 from any to any
+        log $LOG_LEVEL_INFO "Blocked all incoming and outgoing IPv6 traffic." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_WARNING "IPv6 is disabled on the system. Skipping IPv6 configuration in UFW." "$UPDATE_LOG_FILE"
+    fi
 
     # Allow specific ports for IPv4
     ufw deny 22/tcp
@@ -822,63 +826,67 @@ configure_iptables() {
     iptables -X
     log $LOG_LEVEL_INFO "Flushed all iptables rules and deleted user-defined chains." "$IPTABLES_LOG_FILE"
 
-    # Set default policies
+    # Set default policies for IPv4
     iptables -P INPUT DROP
     iptables -P FORWARD DROP
     iptables -P OUTPUT ACCEPT
-    log $LOG_LEVEL_INFO "Set default policies for iptables." "$IPTABLES_LOG_FILE"
+    log $LOG_LEVEL_INFO "Set default policies for iptables (IPv4)." "$IPTABLES_LOG_FILE"
 
-    # Configure ip6tables if available
-    if command -v ip6tables &> /dev/null; then
+    # Configure ip6tables if available and IPv6 is enabled
+    if [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)" = "0" ] && command -v ip6tables &> /dev/null; then
         ip6tables -F
         ip6tables -X
         ip6tables -P INPUT DROP
         ip6tables -P FORWARD DROP
         ip6tables -P OUTPUT DROP
-        log $LOG_LEVEL_INFO "Set default policies for ip6tables." "$IPTABLES_LOG_FILE"
-    else
-        log $LOG_LEVEL_WARNING "ip6tables not available. Skipping IPv6 configuration." "$IPTABLES_LOG_FILE"
-    fi
-
-    # Allow loopback traffic and established connections
-    iptables -A INPUT -i lo -j ACCEPT
-    iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-    log $LOG_LEVEL_INFO "Allowed loopback and established connections for iptables." "$IPTABLES_LOG_FILE"
-
-    if command -v ip6tables &> /dev/null; then
+        log $LOG_LEVEL_INFO "Set default policies for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
+        
+        # Allow loopback traffic and established connections for IPv6
         ip6tables -A INPUT -i lo -j ACCEPT
         ip6tables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-        log $LOG_LEVEL_INFO "Allowed loopback and established connections for ip6tables." "$IPTABLES_LOG_FILE"
+        log $LOG_LEVEL_INFO "Allowed loopback and established connections for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
+    else
+        log $LOG_LEVEL_WARNING "IPv6 is disabled or ip6tables is not available. Skipping IPv6 configuration." "$IPTABLES_LOG_FILE"
     fi
 
-    # Allow specific ports
+    # Allow loopback traffic and established connections for IPv4
+    iptables -A INPUT -i lo -j ACCEPT
+    iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    log $LOG_LEVEL_INFO "Allowed loopback and established connections for iptables (IPv4)." "$IPTABLES_LOG_FILE"
+
+    # Allow specific ports for IPv4
     iptables -A INPUT -p tcp --dport 9050 -j ACCEPT
     iptables -A INPUT -p tcp --dport 9001 -j ACCEPT
     iptables -A INPUT -p tcp --dport 443 -j ACCEPT
-    log $LOG_LEVEL_INFO "Allowed ports 9050, 9001, and 443 for iptables." "$IPTABLES_LOG_FILE"
+    log $LOG_LEVEL_INFO "Allowed ports 9050, 9001, and 443 for iptables (IPv4)." "$IPTABLES_LOG_FILE"
 
-    if command -v ip6tables &> /dev/null; then
-        ip6tables -A INPUT -p tcp --dport 9050 -j ACCEPT
-        ip6tables -A INPUT -p tcp --dport 9001 -j ACCEPT
-        ip6tables -A INPUT -p tcp --dport 443 -j ACCEPT
-        log $LOG_LEVEL_INFO "Allowed ports 9050, 9001, and 443 for ip6tables." "$IPTABLES_LOG_FILE"
-    fi
-
-    # Drop invalid packets
+    # Drop invalid packets for IPv4 and IPv6
     iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
-    log $LOG_LEVEL_INFO "Dropped invalid packets for iptables." "$IPTABLES_LOG_FILE"
+    log $LOG_LEVEL_INFO "Dropped invalid packets for iptables (IPv4)." "$IPTABLES_LOG_FILE"
 
     if command -v ip6tables &> /dev/null; then
         ip6tables -A INPUT -m conntrack --ctstate INVALID -j DROP
-        log $LOG_LEVEL_INFO "Dropped invalid packets for ip6tables." "$IPTABLES_LOG_FILE"
+        log $LOG_LEVEL_INFO "Dropped invalid packets for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
     fi
+
+    # Rate-limit SSH connections (optional)
+    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 -j DROP
+    log $LOG_LEVEL_INFO "Applied rate-limit for SSH connections." "$IPTABLES_LOG_FILE"
+
+    # Create a logging chain
+    iptables -N LOGGING
+    iptables -A INPUT -j LOGGING
+    iptables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables: " --log-level 4
+    iptables -A LOGGING -j DROP
+    log $LOG_LEVEL_INFO "Configured logging for iptables (IPv4)." "$IPTABLES_LOG_FILE"
 
     # Save the iptables rules
     mkdir -p /etc/iptables
     iptables-save > /etc/iptables/rules.v4
     log $LOG_LEVEL_INFO "Saved iptables rules to /etc/iptables/rules.v4." "$IPTABLES_LOG_FILE"
 
-    if command -v ip6tables &> /dev/null; then
+    if [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)" = "0" ] && command -v ip6tables &> /dev/null; then
         ip6tables-save > /etc/iptables/rules.v6
         log $LOG_LEVEL_INFO "Saved ip6tables rules to /etc/iptables/rules.v6." "$IPTABLES_LOG_FILE"
     fi
@@ -1212,11 +1220,19 @@ create_iptables_script() {
     log $LOG_LEVEL_INFO "Creating iptables script..." "$UPDATE_LOG_FILE"
     cat << 'EOF' > /usr/local/bin/iptables.sh
 #!/bin/bash
+# Restore IPv4 rules
 if [ -f /etc/iptables/rules.v4 ]; then
     iptables-restore < /etc/iptables/rules.v4
 else
     echo "/etc/iptables/rules.v4 not found. Exiting."
     exit 1
+fi
+
+# Restore IPv6 rules
+if [ -f /etc/iptables/rules.v6 ]; then
+    ip6tables-restore < /etc/iptables/rules.v6
+else
+    echo "/etc/iptables/rules.v6 not found. Skipping IPv6 rules."
 fi
 EOF
     chmod +x /usr/local/bin/iptables.sh
