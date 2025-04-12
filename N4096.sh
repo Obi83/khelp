@@ -310,7 +310,7 @@ install_packages() {
     local max_attempts=3
 
     while [ $attempts -lt $max_attempts ]; do
-        apt install -y curl tor ufw jq iptables fail2ban sslh proxychains openssl logwatch rsyslog nginx coreutils certbot python3-certbot-nginx selinux-utils selinux-basics policycoreutils selinux-activate
+        apt install -y curl tor ufw jq iptables fail2ban sslh proxychains openssl logwatch rsyslog nginx coreutils certbot python3-certbot-nginx
         if [ $? -eq 0 ]; then
             log $LOG_LEVEL_INFO "packages installed successfully." "$UPDATE_LOG_FILE"
             return 0
@@ -362,6 +362,7 @@ log $LOG_LEVEL_INFO "Backing up configuration files..." "$UPDATE_LOG_FILE"
 backup_config "/etc/proxychains.conf"
 backup_config "/etc/ufw/ufw.conf"
 backup_config "/etc/tor/torrc"
+backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
 backup_config "/etc/rsyslog.conf"
 backup_config "/etc/nginx/sites-available/default"
