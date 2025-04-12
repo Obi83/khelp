@@ -1528,5 +1528,3 @@ if echo "$output" | grep -q "Congratulations"; then
 else
     echo "Tor validation failed."
 fi
-
-log $LOG_LEVEL_INFO "IP Leak Information: $ip_info" "$UPDATE_LOG_FILE"
