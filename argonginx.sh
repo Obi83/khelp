@@ -84,6 +84,7 @@ export NGX_SSL_CONF="/etc/nginx/snippets/self-signed.conf"
 export DOMAIN="example.com"  # Replace with your actual domain
 
 # Nginx Directories
+export time_local="$(date +'%Y-%m-%d %H:%M:%S')"
 export NGX_CONF_DIR="/etc/nginx"
 export NGX_SITES_AVAILABLE="$NGX_CONF_DIR/sites-available"
 export NGX_CONF="/etc/nginx/sites-available/tor_proxy"  # Kleinbuchstaben
