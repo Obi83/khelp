@@ -87,7 +87,6 @@ export DOMAIN="example.com"  # Replace with your actual domain
 export NGX_CONF_DIR="/etc/nginx"
 export NGX_SITES_AVAILABLE="$NGX_CONF_DIR/sites-available"
 export nginx_conf="/etc/nginx/sites-available/tor_proxy"  # Kleinbuchstaben
-export NGINX_CONF="/etc/nginx/sites-available/tor_proxy" # Großbuchstaben
 export NGX_SITES_ENABLED="$NGX_CONF_DIR/sites-enabled"
 
 # IPTables Variables
@@ -551,8 +550,12 @@ configure_iptables() {
     ip6tables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     log $LOG_LEVEL_INFO "Allowed loopback and established connections for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
 
+    # DNS setting
+    iptables -A OUTPUT -p udp --dport 53 -j REJECT
+    iptables -A OUTPUT -p tcp --dport 53 -j REJECT
+
     # Define important ports
-    local important_ports=(53 80 443 9040 9050)
+    local important_ports=(80 443 9040 9050)
 
     # Configure IPv4 rules
     for port in "${important_ports[@]}"; do
@@ -580,11 +583,20 @@ configure_iptables() {
 
     # Rate-limit for all defined ports (IPv4)
     for port in "${important_ports[@]}"; do
-        iptables -A INPUT -p tcp --dport "$port" -m limit --limit 25/second --limit-burst 50 -j ACCEPT
-        iptables -A INPUT -p tcp --dport "$port" -m conntrack --ctstate NEW -j ACCEPT
+        iptables -A INPUT -p tcp --dport "$port" -m limit --limit 10/second --limit-burst 20 -j ACCEPT
         log $LOG_LEVEL_INFO "Applied rate-limit for port $port (IPv4)." "$IPTABLES_LOG_FILE"
     done
 
+    # Rate-limit SSH (Port 22)
+    iptables -A OUTPUT -p tcp --dport 22 -j DROP
+    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 -j DROP
+    log $LOG_LEVEL_INFO "Applied rate-limit for SSH (Port 22)." "$IPTABLES_LOG_FILE"
+
+    # Rate-limit ICMP (Ping)
+    iptables -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/second --limit-burst 5 -j ACCEPT
+    log $LOG_LEVEL_INFO "Applied rate-limit for ICMP (Ping)." "$IPTABLES_LOG_FILE"
+    
     # Drop invalid packets for IPv4 and IPv6
     iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
     ip6tables -A INPUT -m conntrack --ctstate INVALID -j DROP
@@ -760,8 +772,17 @@ EOF
         return 1
     fi
 
+    local dns=$1
+    if proxychains dig @$dns google.com &> /dev/null; then
+        log $LOG_LEVEL_INFO "DNS server $dns is reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_ERROR "DNS server $dns is not reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
+        return 1
+    fi
+
     log $LOG_LEVEL_INFO "ProxyChains configured successfully." "$UPDATE_LOG_FILE"
     return 0
+
 }
 
 configure_resolv_conf() {
@@ -783,19 +804,19 @@ nameserver 8.8.8.8
 nameserver 8.8.4.4
 EOF
 
-    # Validate the DNS servers by performing DNS queries
+    # Validate the DNS servers by performing DNS queries through the proxy
     validate_dns_server() {
         local dns=$1
-        if dig @$dns google.com &> /dev/null; then
-            log $LOG_LEVEL_INFO "DNS server $dns is reachable." "$UPDATE_LOG_FILE"
+        if proxychains dig @$dns google.com &> /dev/null; then
+            log $LOG_LEVEL_INFO "DNS server $dns is reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
         else
-            log $LOG_LEVEL_ERROR "DNS server $dns is not reachable." "$UPDATE_LOG_FILE"
+            log $LOG_LEVEL_ERROR "DNS server $dns is not reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
             return 1
         fi
     }
 
     if ! validate_dns_server "1.1.1.1" || ! validate_dns_server "8.8.8.8"; then
-        log $LOG_LEVEL_CRITICAL "One or more DNS servers are not reachable. Exiting script." "$UPDATE_LOG_FILE"
+        log $LOG_LEVEL_CRITICAL "One or more DNS servers are not reachable through the proxy. Exiting script." "$UPDATE_LOG_FILE"
         exit 1
     fi
     
