@@ -78,13 +78,15 @@ export SSL_CERTS_DIR="$SSL_DIR/certs"
 export SSL_KEY="$SSL_PRIVATE_DIR/nginx-selfsigned.key"
 export SSL_CERT="$SSL_CERTS_DIR/nginx-selfsigned.crt"
 export SSL_DHPARAM="$SSL_CERTS_DIR/dhparam.pem"
+
+# Nginx Variables
 export NGX_SSL_CONF="/etc/nginx/snippets/self-signed.conf"
 export DOMAIN="example.com"  # Replace with your actual domain
-
-# Nginx Directories
 export NGX_CONF_DIR="/etc/nginx"
 export NGX_SITES_AVAILABLE="$NGX_CONF_DIR/sites-available"
 export NGX_SITES_ENABLED="$NGX_CONF_DIR/sites-enabled"
+export NGINX_ACCESS_LOG="/var/log/nginx/https_proxy_access.log"
+export NGINX_ERROR_LOG="/var/log/nginx/https_proxy_error.log"
 
 # IPTables Variables
 export IPTABLES_RULES_FILE="/etc/iptables/rules.v4"
@@ -296,7 +298,7 @@ install_packages() {
     local max_attempts=3
 
     while [ $attempts -lt $max_attempts ]; do
-        apt install -y curl tor ufw jq iptables fail2ban sslh proxychains openssl logwatch rsyslog nginx coreutils certbot python3-certbot-nginx ca-certificates
+        apt install -y curl tor ufw jq iptables fail2ban sslh proxychains openssl logwatch rsyslog nginx-full coreutils certbot python3-certbot-nginx ca-certificates
         if [ $? -eq 0 ]; then
             log $LOG_LEVEL_INFO "packages installed successfully." "$UPDATE_LOG_FILE"
             return 0
@@ -488,6 +490,10 @@ configure_ufw() {
     ufw default deny incoming
     ufw default deny outgoing
 
+    # http https block
+    ufw deny 80
+    ufw deny 443
+
     # Eingehende Verbindungen erlauben
     ufw allow in 9050/tcp  # SOCKS5 
              
@@ -557,6 +563,12 @@ configure_iptables() {
     ip6tables -P FORWARD DROP
     ip6tables -P OUTPUT DROP
     log $LOG_LEVEL_INFO "Set default policies for ip6tables (IPv6)." "$IPTABLES_LOG_FILE"
+
+    # http https block
+    iptables -A INPUT -p tcp --dport 80 -j DROP
+    iptables -A INPUT -p tcp --dport 443 -j DROP
+    iptables -A OUTPUT -p tcp --dport 80 -j DROP
+    iptables -A OUTPUT -p tcp --dport 443 -j DROP
 
     # Allow loopback traffic and established connections for IPv4
     iptables -A INPUT -i lo -j ACCEPT
@@ -918,50 +930,40 @@ EOF
     fi
 }
 
-# Ensureproxy nmap.log exists and has correct permissions
-touch /var/log/nmap_scan.log
-chmod 644 /var/log/nmap_scan.log
-chown root:adm /var/log/nmap_scan.log
+# Function to ensure log files exist and have correct permissions
+ensure_log_permissions() {
+    local log_file="$1"
+    local owner_group="$2"
+    local permissions="$3"
 
-# Ensureproxy iptables.log file exists and has correct permissions
-touch /var/log/khelp_iptables.log
-chmod 644 /var/log/khelp_iptables.log
-chown root:adm /var/log/khelp_iptables.log
+    # Create the log file if it doesn't exist
+    if ! touch "$log_file"; then
+        echo "Error: Failed to create or access $log_file"
+        return 1
+    fi
 
-# Ensureproxy timer log file exists and has correct permissions
-touch "$PROXY_TIMER_LOG_FILE"
-chmod 644 "$PROXY_TIMER_LOG_FILE"
-chown root:root "$PROXY_TIMER_LOG_FILE"
+    # Set ownership and permissions
+    if ! chown "$owner_group" "$log_file"; then
+        echo "Error: Failed to set ownership for $log_file"
+        return 1
+    fi
 
-# Ensure nginx/access.log exists and has correct permissions
-touch /var/log/nginx/access.log
-chmod 644 /var/log/nginx/access.log
-chown root:adm /var/log/nginx/access.log
+    if ! chmod "$permissions" "$log_file"; then
+        echo "Error: Failed to set permissions for $log_file"
+        return 1
+    fi
+}
 
-# Ensure nginx/error.log exists and has correct permissions
-touch /var/log/nginx/error.log
-chmod 644 /var/log/nginx/error.log
-chown root:adm /var/log/nginx/error.log
-
-# Ensure https_proxy_access.log exists and has correct permissions
-touch /var/log/nginx/https_proxy_access.log
-chmod 644 /var/log/nginx/https_proxy_access.log
-chown root:adm /var/log/nginx/https_proxy_access.log
-
-# Ensure https_proxy_error.log exists and has correct permissions
-touch /var/log/nginx/https_proxy_error.log
-chmod 644 /var/log/nginx/https_proxy_error.log
-chown root:adm /var/log/nginx/https_proxy_error.log
-
-# Ensure khelp.log exists and has correct permissions
-touch /var/log/khelp.log
-chmod 644 /var/log/khelp.log
-chown root:adm /var/log/khelp.log
-
-# Ensure tor.log exists and has correct permissions
-touch /var/log/tor/log
-chmod 644 /var/log/tor/log
-chown debian-tor:adm /var/log/tor/log
+# Example usage for log files
+ensure_log_permissions /var/log/nmap_scan.log root:adm 644
+ensure_log_permissions /var/log/khelp_iptables.log root:adm 644
+ensure_log_permissions "$PROXY_TIMER_LOG_FILE" root:root 644
+ensure_log_permissions /var/log/nginx/access.log root:www-data 664
+ensure_log_permissions /var/log/nginx/error.log root:www-data 664
+ensure_log_permissions /var/log/nginx/https_proxy_access.log root:www-data 664
+ensure_log_permissions /var/log/nginx/https_proxy_error.log root:www-data 664
+ensure_log_permissions /var/log/khelp.log root:adm 644
+ensure_log_permissions /var/log/tor/log debian-tor:adm 644
 
 configure_ufw &
 configure_iptables &
