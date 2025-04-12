@@ -362,7 +362,6 @@ log $LOG_LEVEL_INFO "Backing up configuration files..." "$UPDATE_LOG_FILE"
 backup_config "/etc/proxychains.conf"
 backup_config "/etc/ufw/ufw.conf"
 backup_config "/etc/tor/torrc"
-backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
 backup_config "/etc/rsyslog.conf"
 backup_config "/etc/nginx/sites-available/default"
@@ -788,46 +787,6 @@ EOF
 
 }
 
-configure_resolv_conf() {
-    log $LOG_LEVEL_INFO "Configuring resolv.conf to prevent DNS leaks..." "$UPDATE_LOG_FILE"
-    
-    # Backup existing resolv.conf if not already backed up
-    if [ ! -f /etc/resolv.conf.backup ]; then
-        cp /etc/resolv.conf /etc/resolv.conf.backup
-        log $LOG_LEVEL_INFO "Backup of resolv.conf created." "$UPDATE_LOG_FILE"
-    else
-        log $LOG_LEVEL_INFO "Backup of resolv.conf already exists." "$UPDATE_LOG_FILE"
-    fi
-    
-    # Set DNS servers
-    cat <<EOF > /etc/resolv.conf
-nameserver 1.1.1.1
-nameserver 1.0.0.1
-nameserver 8.8.8.8
-nameserver 8.8.4.4
-EOF
-
-    # Validate the DNS servers by performing DNS queries through the proxy
-    validate_dns_server() {
-        local dns=$1
-        if proxychains dig @$dns google.com &> /dev/null; then
-            log $LOG_LEVEL_INFO "DNS server $dns is reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
-        else
-            log $LOG_LEVEL_ERROR "DNS server $dns is not reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
-            return 1
-        fi
-    }
-
-    if ! validate_dns_server "1.1.1.1" || ! validate_dns_server "8.8.8.8"; then
-        log $LOG_LEVEL_CRITICAL "One or more DNS servers are not reachable through the proxy. Exiting script." "$UPDATE_LOG_FILE"
-        exit 1
-    fi
-    
-    # Prevent DHCP client from overwriting resolv.conf
-    chattr +i /etc/resolv.conf
-    log $LOG_LEVEL_INFO "resolv.conf configured and immutable flag set to prevent changes." "$UPDATE_LOG_FILE"
-}
-
 configure_openssl() {
     log $LOG_LEVEL_INFO "Configuring OpenSSL..." "$UPDATE_LOG_FILE"
     
@@ -964,11 +923,9 @@ configure_ufw &
 configure_iptables &
 configure_tor &
 configure_proxychains &
-configure_resolv_conf &
 configure_openssl &
 setup_monitoring &
 setup_syslog &
-
 wait
 
 log $LOG_LEVEL_INFO "All independent tasks completed successfully." "$UPDATE_LOG_FILE"
@@ -1179,7 +1136,6 @@ EOF
 create_ufw_script &
 create_iptables_script &
 create_update_proxies_script &
-
 wait
 
 log $LOG_LEVEL_INFO "All script creation tasks completed successfully." "$UPDATE_LOG_FILE"
@@ -1278,7 +1234,6 @@ create_ufw_service &
 create_iptables_service &
 create_update_proxies_service &
 create_update_proxies_timer &
-
 wait
 
 log $LOG_LEVEL_INFO "All systemd service creation tasks completed successfully." "$UPDATE_LOG_FILE"

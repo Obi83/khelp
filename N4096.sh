@@ -926,7 +926,6 @@ configure_proxychains &
 configure_openssl &
 setup_monitoring &
 setup_syslog &
-
 wait
 
 log $LOG_LEVEL_INFO "All independent tasks completed successfully." "$UPDATE_LOG_FILE"
@@ -1137,7 +1136,6 @@ EOF
 create_ufw_script &
 create_iptables_script &
 create_update_proxies_script &
-
 wait
 
 log $LOG_LEVEL_INFO "All script creation tasks completed successfully." "$UPDATE_LOG_FILE"
@@ -1236,7 +1234,6 @@ create_ufw_service &
 create_iptables_service &
 create_update_proxies_service &
 create_update_proxies_timer &
-
 wait
 
 log $LOG_LEVEL_INFO "All systemd service creation tasks completed successfully." "$UPDATE_LOG_FILE"
