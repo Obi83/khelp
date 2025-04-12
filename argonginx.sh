@@ -86,6 +86,8 @@ export DOMAIN="example.com"  # Replace with your actual domain
 # Nginx Directories
 export NGX_CONF_DIR="/etc/nginx"
 export NGX_SITES_AVAILABLE="$NGX_CONF_DIR/sites-available"
+export nginx_conf="/etc/nginx/sites-available/tor_proxy"  # Kleinbuchstaben
+export NGINX_CONF="/etc/nginx/sites-available/tor_proxy" # Großbuchstaben
 export NGX_SITES_ENABLED="$NGX_CONF_DIR/sites-enabled"
 
 # IPTables Variables
