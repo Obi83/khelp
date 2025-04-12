@@ -229,11 +229,15 @@ log $LOG_LEVEL_INFO "IPTABLES_SERVICE_PATH=$IPTABLES_SERVICE_PATH" "$UPDATE_LOG_
 # Log proxy API URLs
 log $LOG_LEVEL_INFO "PROXY_API_URL1=$PROXY_API_URL1" "$UPDATE_LOG_FILE"
 
-# Set permissions for log files
+# Set permissions for main log files
 chmod 644 /var/log/khelp.log
-chmod 644 /var/log/nginx/error.log
 chown root:adm /var/log/khelp.log
-chown root:adm /var/log/nginx/error.log
+
+# Set permissions for NGINX log files
+chmod 644 /var/log/nginx/error.log
+chmod 644 /var/log/nginx/access.log
+chown www-data:adm /var/log/nginx/error.log
+chown www-data:adm /var/log/nginx/access.log
 
 # Function to detect the local network IP range
 detect_ip_range() {
@@ -1341,13 +1345,22 @@ configure_nginx_ssl() {
         log $LOG_LEVEL_INFO "Backup of nginx.conf created at $nginx_global_conf.bak" "$UPDATE_LOG_FILE"
     fi
 
+    # Ensure the limit_req_zone directive exists in the global http block
     if ! grep -q "limit_req_zone" "$nginx_global_conf"; then
         sed -i '/^http {/a \    limit_req_zone $binary_remote_addr zone=one:10m rate=10r/s;' "$nginx_global_conf"
         log $LOG_LEVEL_INFO "Added rate limiting directive to Nginx global http block." "$UPDATE_LOG_FILE"
     else
         log $LOG_LEVEL_INFO "Rate limiting directive already exists in Nginx configuration, skipping." "$UPDATE_LOG_FILE"
     fi
-    
+
+    # Ensure the log_format directive exists in the global http block
+    if ! grep -q "log_format proxy_logs" "$nginx_global_conf"; then
+        sed -i '/^http {/a \    log_format proxy_logs '\''[\$time_local] \$remote_addr: \$remote_port -> \$server_addr: \$server_port '\''\n                       '\''"\$request" \$status \$body_bytes_sent '\''\n                       '\''"\$http_referer" "\$http_user_agent" SSL: \$ssl_cipher \$ssl_protocol'\'';' "$nginx_global_conf"
+        log $LOG_LEVEL_INFO "Added log_format directive to Nginx global http block." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_INFO "Log_format directive already exists in Nginx configuration, skipping." "$UPDATE_LOG_FILE"
+    fi
+
     # Configure Nginx SSL snippet
     local NGX_SSL_CONF="/etc/nginx/snippets/self-signed.conf"
     cat << 'EOF' > "$NGX_SSL_CONF"
@@ -1429,9 +1442,6 @@ server {
     }
 
     # Logging
-    log_format proxy_logs '[\$time_local] \$remote_addr: \$remote_port -> \$server_addr: \$server_port '
-                           '"\$request" \$status \$body_bytes_sent '
-                           '"\$http_referer" "\$http_user_agent" SSL: \$ssl_cipher \$ssl_protocol';
     access_log /var/log/nginx/https_proxy_access.log proxy_logs;
     error_log /var/log/nginx/https_proxy_error.log;
 
@@ -1463,22 +1473,16 @@ EOF
         return 1
     fi
 
-    # Ensure Nginx service is running
-    if ! systemctl is-active --quiet nginx; then
-        log $LOG_LEVEL_WARNING "Nginx is not active. Attempting to start it now..." "$UPDATE_LOG_FILE"
+    # Reload or start Nginx to apply changes
+    if systemctl reload nginx; then
+        log $LOG_LEVEL_INFO "Nginx reloaded successfully with updated configuration." "$UPDATE_LOG_FILE"
+    else
+        log $LOG_LEVEL_WARNING "Nginx reload failed. Attempting to start the service..." "$UPDATE_LOG_FILE"
         if ! systemctl start nginx; then
             log $LOG_LEVEL_ERROR "Failed to start Nginx. Check the service status." "$UPDATE_LOG_FILE"
             return 1
         fi
         log $LOG_LEVEL_INFO "Nginx started successfully." "$UPDATE_LOG_FILE"
-    fi
-
-    # Reload Nginx to apply changes
-    if systemctl reload nginx; then
-        log $LOG_LEVEL_INFO "Nginx reloaded successfully with updated configuration." "$UPDATE_LOG_FILE"
-    else
-        log $LOG_LEVEL_ERROR "Failed to reload Nginx. Check the service status." "$UPDATE_LOG_FILE"
-        return 1
     fi
 
     log $LOG_LEVEL_INFO "Nginx SSL with strict HTTPS and SOCKS5 proxy configured successfully." "$UPDATE_LOG_FILE"
@@ -1515,5 +1519,14 @@ done
 # Scan local network
 log $LOG_LEVEL_INFO "Scanning local network..." "$UPDATE_LOG_FILE"
 check_local_network
+
+output=$(proxychains curl -s https://check.torproject.org)
+if echo "$output" | grep -q "Congratulations"; then
+    echo "Tor is working correctly."
+else
+    echo "Tor validation failed."
+fi
+
+display_logo
 
 log $LOG_LEVEL_INFO "Verification completed." "$UPDATE_LOG_FILE"
