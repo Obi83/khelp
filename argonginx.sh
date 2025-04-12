@@ -1429,9 +1429,9 @@ server {
     }
 
     # Logging
-    log_format proxy_logs '[$time_local] $remote_addr: $remote_port -> $server_addr: $server_port '
-                           '"$request" $status $body_bytes_sent '
-                           '"$http_referer" "$http_user_agent" SSL: $ssl_cipher $ssl_protocol';
+    log_format proxy_logs '[\$time_local] \$remote_addr: \$remote_port -> \$server_addr: \$server_port '
+                           '"\$request" \$status \$body_bytes_sent '
+                           '"\$http_referer" "\$http_user_agent" SSL: \$ssl_cipher \$ssl_protocol';
     access_log /var/log/nginx/https_proxy_access.log proxy_logs;
     error_log /var/log/nginx/https_proxy_error.log;
 
