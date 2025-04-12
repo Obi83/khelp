@@ -86,7 +86,7 @@ export DOMAIN="example.com"  # Replace with your actual domain
 # Nginx Directories
 export NGX_CONF_DIR="/etc/nginx"
 export NGX_SITES_AVAILABLE="$NGX_CONF_DIR/sites-available"
-export nginx_conf="/etc/nginx/sites-available/tor_proxy"  # Kleinbuchstaben
+export NGX_CONF="/etc/nginx/sites-available/tor_proxy"  # Kleinbuchstaben
 export NGX_SITES_ENABLED="$NGX_CONF_DIR/sites-enabled"
 
 # IPTables Variables
@@ -359,8 +359,6 @@ backup_config "/etc/ufw/ufw.conf"
 backup_config "/etc/tor/torrc"
 backup_config "/etc/resolv.conf"
 backup_config "/etc/nginx/nginx.conf"
-backup_config "/etc/ssl/certs/"
-backup_config "/etc/ssl/private/"
 backup_config "/etc/rsyslog.conf"
 backup_config "/etc/nginx/sites-available/default"
 
@@ -1350,8 +1348,8 @@ configure_nginx_ssl() {
     fi
     
     # Configure Nginx SSL snippet
-    local nginx_ssl_conf="/etc/nginx/snippets/self-signed.conf"
-    cat << 'EOF' > "$nginx_ssl_conf"
+    local NGX_SSL_CONF="/etc/nginx/snippets/self-signed.conf"
+    cat << 'EOF' > "$NGX_SSL_CONF"
 ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
 ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
 ssl_protocols TLSv1.2 TLSv1.3;
@@ -1379,8 +1377,8 @@ add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
 EOF
 
     # Create Nginx configuration for strict HTTPS and SOCKS5 proxy
-    local nginx_conf="/etc/nginx/sites-available/tor_proxy"
-    cat << EOF > "$nginx_conf"
+    local NGX_CONF="/etc/nginx/sites-available/tor_proxy"
+    cat << EOF > "$NGX_CONF"
 server {
     listen 80;
     server_name localhost;
