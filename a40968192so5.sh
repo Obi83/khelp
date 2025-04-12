@@ -230,6 +230,9 @@ chmod 644 /var/log/khelp.log
 chmod 644 /var/log/nginx/error.log
 chown root:adm /var/log/khelp.log
 chown root:adm /var/log/nginx/error.log
+touch /var/log/tor/log
+chmod 644 /var/log/tor/log
+chown debian-tor:adm /var/log/tor/log
 
 # Function to detect the local network IP range
 detect_ip_range() {
@@ -383,6 +386,22 @@ bantime = 86400  # 1 Tag
 [sshd-ddos]
 enabled = true
 
+[nginx-http-auth]
+enabled = true
+port = http,https
+filter = nginx-http-auth
+logpath = /var/log/nginx/error.log
+maxretry = 3
+bantime = 7200  # 2 Stunden
+
+[socks5-auth]
+enabled  = true
+port     = 9050
+filter   = socks5-auth
+logpath  = /var/log/tor/log
+maxretry = 3
+bantime  = 7200  # 2 Stunden
+
 #destemail = your-email@example.com
 #sender = fail2ban@example.com
 #action = %(action_mwl)s
@@ -400,6 +419,15 @@ failregex = ^Received disconnect from <HOST>: 11:  \[preauth\]$
             ^Received disconnect from <HOST>: 3:  \[preauth\]$
             ^Received disconnect from <HOST>: 3: Bye Bye \[preauth\]$
 
+ignoreregex =
+EOF
+
+    log $LOG_LEVEL_INFO "Creating/Updating sshd-ddos filter..." "$UPDATE_LOG_FILE"
+    cat << 'EOF' > /etc/fail2ban/filter.d/socks5-auth.conf
+# Fail2Ban filter for SOCKS5 authentication failures
+[Definition]
+
+failregex = .*<HOST>.*SOCKS authentication failed.*
 ignoreregex =
 EOF
 
@@ -619,7 +647,7 @@ configure_tor() {
 SocksPort 127.0.0.1:9050
 
 # Log all messages of level 'notice' or higher to syslog
-Log notice syslog
+Log notice file /var/log/tor/log
 
 # Run Tor as a daemon
 RunAsDaemon 1
@@ -1440,6 +1468,31 @@ done
 log $LOG_LEVEL_INFO "Scanning local network..." "$UPDATE_LOG_FILE"
 check_local_network
 
+# Function to extract IP leak information
+function ipleak_info() {
+  local output
+  output=$(proxychains curl -s https://ipleak.net | \
+    grep 'id="jsonData"' | \
+    sed -n 's/.*data-json=\(.*\)}.*/\1}/p' | \
+    sed 's/\&quot;/"/g' | \
+    jq '{
+      ip: .ip,
+      isp_name: .isp_name,
+      country_name: .country_name,
+      continent_name: .continent_name,
+      latitude: .latitude,
+      longitude: .longitude,
+      time_zone: .time_zone
+    }')
+  
+  if [[ -z "$output" ]]; then
+    log $LOG_LEVEL_ERROR "Failed to retrieve IP leak information." "$UPDATE_LOG_FILE"
+    return 1
+  fi
+
+  echo "$output" # Print the extracted JSON to the terminal
+}
+
 output=$(proxychains curl -s https://check.torproject.org)
 if echo "$output" | grep -q "Congratulations"; then
     echo "Tor is working correctly."
@@ -1447,4 +1500,11 @@ else
     echo "Tor validation failed."
 fi
 
-log $LOG_LEVEL_INFO "Verification completed." "$UPDATE_LOG_FILE"
+log $LOG_LEVEL_INFO "Retrieving IP leak information..." "$UPDATE_LOG_FILE"
+ip_info=$(ipleak_info)
+if [[ $? -ne 0 ]]; then
+  log $LOG_LEVEL_ERROR "Failed to retrieve IP leak information. Exiting." "$UPDATE_LOG_FILE"
+  exit 1
+fi
+
+log $LOG_LEVEL_INFO "IP Leak Information: $ip_info" "$UPDATE_LOG_FILE"
