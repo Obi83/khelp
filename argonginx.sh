@@ -1449,10 +1449,10 @@ server {
 EOF
 
     # Enable the site by creating a symbolic link
-    local nginx_sites_enabled="/etc/nginx/sites-enabled/tor_proxy"
-    if [ ! -f "$nginx_sites_enabled" ]; then
-        ln -s "$nginx_conf" "$nginx_sites_enabled"
-        log $LOG_LEVEL_INFO "Linked $nginx_conf to $nginx_sites_enabled." "$UPDATE_LOG_FILE"
+    local NGX_SITES_ENABLED="/etc/nginx/sites-enabled/tor_proxy"
+    if [ ! -f "$NGX_SITES_ENABLED" ]; then
+        ln -s "$NGX_CONF" "$NGX_SITES_ENABLED"
+        log $LOG_LEVEL_INFO "Linked $NGX_CONF to $NGX_SITES_ENABLED." "$UPDATE_LOG_FILE"
     else
         log $LOG_LEVEL_INFO "Nginx site configuration already enabled, skipping." "$UPDATE_LOG_FILE"
     fi
