@@ -774,11 +774,13 @@ EOF
         return 1
     fi
 
-    local dns=$1
-    if proxychains dig @$dns google.com &> /dev/null; then
-        log $LOG_LEVEL_INFO "DNS server $dns is reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
+    local dns=${1:-8.8.8.8}
+    local backup_dns=1.1.1.1
+
+    if proxychains dig @$dns google.com &> /dev/null || proxychains dig @$backup_dns google.com &> /dev/null; then
+        log $LOG_LEVEL_INFO "DNS servers are reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
     else
-        log $LOG_LEVEL_ERROR "DNS server $dns is not reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
+        log $LOG_LEVEL_ERROR "DNS servers are not reachable through SOCKS5 proxy." "$UPDATE_LOG_FILE"
         return 1
     fi
 
